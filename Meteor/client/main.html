@@ -1,0 +1,206 @@
+<head>
+  <title>Tidal Wave</title>
+
+  <link href="bower_components/bootstrap/dist/css/bootstrap.css" rel="stylesheet">
+  <link href="bower_components/bootstrap-select/bootstrap-select.css" rel="stylesheet">
+  <link href="bower_components/selectize/dist/css/selectize.bootstrap3.css" rel="stylesheet">
+
+  <style type="text/css">
+    /* To indent navigation */
+    .nav-list {
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-bottom: 0;
+    }
+  </style>
+
+  <style type="text/css">
+    /* ace editor */
+    #editor { 
+    height: 400px;
+    }
+  </style>
+
+  <!-- set options before less.js script -->
+  <script>
+    less = {
+    env: "development"
+    };
+  </script>
+  <script src="bower_components/less/dist/less-1.7.0.js" type="text/javascript"></script>
+
+  <script type="text/javascript" src="bower_components/jquery/dist/jquery.js">
+  </script>
+  <script type="text/javascript" src="bower_components/sifter/sifter.js">
+  </script>
+  <script type="text/javascript" src="bower_components/microplugin/src/microplugin.js">
+  </script>
+  <script type="text/javascript" src="bower_components/selectize/dist/js/selectize.js">
+  </script>
+  <script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.js">
+  </script>
+  <script type="text/javascript" src="bower_components/handlebars/handlebars.js">
+  </script>
+  <script type="text/javascript" src="bower_components/underscore/underscore.js">
+  </script>
+  <script type="text/javascript" src="bower_components/marked/lib/marked.js">
+  </script>
+  <script type="text/javascript" src="bower_components/bootstrap-select/bootstrap-select.js">
+  </script>
+  <script type="text/javascript" src="bower_components/momentjs/moment.js">
+  </script>
+
+  <script type="text/javascript">
+    window.fd = {logging: false};
+  </script>
+  <script type="text/javascript" src="filedrop/filedrop.js">
+  </script>
+
+  <script type="text/javascript" src="bower_components/google-diff-match-patch-js/diff_match_patch_uncompressed.js">
+  </script>
+
+  <script src="/ace/ace.js" type="text/javascript" charset="utf-8">
+  </script>
+</head>
+
+<body>
+  {{> page}}
+</body>
+
+<template name="loginHandler">
+  <div id="login-buttons">
+    <div id="login-dropdown-list" class="accounts-dialog" style="top:20px; left: 20px; width: auto; padding: 20px 20px; position: static;">
+      {{> _loginButtonsLoggedOutAllServices}}
+    </div>
+  </div>
+</template>
+
+<template name="page">
+  {{#if loggedIn}}
+  <div id="main">
+    <button id="logout" class="startgame">Logout</button>
+    {{> GroupEdit }}
+  </div>
+  {{else}}
+  {{> loginHandler }}
+  {{/if}}
+</template>
+
+<template name="GroupEdit">
+  <div id="editor"></div>
+  <div id="markdown">
+    {{{groupeditmarkdown}}}
+  </div>
+</template>
+
+<template name="board">
+  <div id="clock">
+    {{ clock }}
+  </div>
+  <div id="board">
+    <div>
+      <div class="square {{ selected 0 }}">{{ square 0 }}</div>
+      <div class="square {{ selected 1 }}">{{ square 1 }}</div>
+      <div class="square {{ selected 2 }}">{{ square 2 }}</div>
+      <div class="square {{ selected 3 }}">{{ square 3 }}</div>
+    </div>
+    <div>
+      <div class="square {{ selected 4 }}">{{ square 4 }}</div>
+      <div class="square {{ selected 5 }}">{{ square 5 }}</div>
+      <div class="square {{ selected 6 }}">{{ square 6 }}</div>
+      <div class="square {{ selected 7 }}">{{ square 7 }}</div>
+    </div>
+    <div>
+      <div class="square {{ selected 8 }}">{{ square 8 }}</div>
+      <div class="square {{ selected 9 }}">{{ square 9 }}</div>
+      <div class="square {{ selected 10 }}">{{ square 10 }}</div>
+      <div class="square {{ selected 11 }}">{{ square 11 }}</div>
+    </div>
+    <div>
+      <div class="square {{ selected 12 }}">{{ square 12 }}</div>
+      <div class="square {{ selected 13 }}">{{ square 13 }}</div>
+      <div class="square {{ selected 14 }}">{{ square 14 }}</div>
+      <div class="square {{ selected 15 }}">{{ square 15 }}</div>
+    </div>
+  </div>
+</template>
+
+<template name="lobby">
+  <div>
+    {{#if show }}
+    <div id="lobby">
+      <h1>What's your name?</h1>
+      <input id="myname" type="text" />
+      {{#if count}}
+      <h1>{{count}} other players are in the lobby:</h1>
+      {{#each waiting }}
+      <div class="player">{{name}}</div>
+      {{/each}}
+      {{/if}}
+      <div>
+      </div>
+    </div>
+    {{/if}}
+  </div>
+</template>
+
+<template name="scratchpad">
+  {{#if show}}
+  <div id="scratchpad">
+    <input id="scratchpad_input" type="text" />
+    <button name="submit" class="submit">Submit</button>
+  </div>
+  {{/if}}
+</template>
+
+<template name="postgame">
+  <div>
+    {{#if show}}
+    <div id="postgame">
+      <button name="backtolobby" class="lobby">Back to lobby</button>
+    </div>
+    {{/if}}
+  </div>
+</template>
+
+<template name="scores">
+  <div>
+    {{#if show}}
+    <div id="scores">
+      {{#each players}}
+      {{> player }}
+      {{/each}}
+    </div>
+    {{/if}}
+  </div>
+</template>
+
+<template name="player">
+  <div class="player">
+    <div class="header {{winner}}">
+      {{#if name}}
+      {{name}}
+      {{else}}
+      <span class="unnamed">no name</span>
+      {{/if}}
+      <span class="score">{{total_score}}</span>
+      {{#if winner}}
+      <span class="winner_text">Winner!</span>
+      {{/if}}
+    </div>
+    {{> words}}
+  </div>
+</template>
+
+<template name="words">
+  <div class="words">
+    {{#each words}}
+    <div id="word_{{_id}}" class="word {{state}}">
+      <span class="score">
+        {{score}}
+      </span>
+      {{word}}
+    </div>
+    {{/each}}
+  </div>
+</template>

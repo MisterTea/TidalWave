@@ -1,0 +1,32 @@
+{
+  "name": "TidalWave",
+  "version": "0.0.0",
+  "homepage": "https://github.com/MisterTea/TidalWave",
+  "authors": [
+    "Jason Gauci <jgmath2000@gmail.com>"
+  ],
+  "main": "main.js",
+  "moduleType": [
+    "node"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.1.0",
+    "bootstrap": "~3.1.1",
+    "handlebars": "~1.3.0",
+    "underscore": "~1.6.0",
+    "google-diff-match-patch-js": "~1.0.0",
+    "elasticsearch": "~2.1.3",
+    "bootstrap-select": "~1.5.2",
+    "selectize": "~0.9.0",
+    "momentjs": "~2.6.0",
+    "marked": "~0.3.2"
+  }
+}
