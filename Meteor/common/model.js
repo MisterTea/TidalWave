@@ -6,11 +6,12 @@ Agents = new Meteor.Collection('agents');
 Documents = new Meteor.Collection('documents');
 // {name:"MyDoc", parent:"parentDoc", base:"", changes:[]}
 
+SessionStates = new Meteor.Collection('sessionstates');
+
 Meteor.methods({
 });
 
 if (Meteor.isServer) {
-  // publish all the non-idle players.
   Meteor.publish('document_names', function () {
     return Documents.find({}, {fields: {name:1}});
   });
@@ -52,6 +53,18 @@ if (Meteor.isServer) {
     remove: function(userId, doc) {
       console.log("CHECKING3: " + userId + " " + agent.userId);
       return agent.userId == userId;
+    }
+  });
+
+  SessionStates.allow({
+    insert: function(userId, doc) {
+      return true;
+    },
+    update: function(userId, doc, fieldNames, modifier) {
+      return true;
+    },
+    remove: function(userId, doc) {
+      return true;
     }
   });
 }

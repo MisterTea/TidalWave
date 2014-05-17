@@ -9,7 +9,7 @@ if(typeof Meteor == 'undefined') {
         var testDocument = {
           base:"",
           commands:[
-            {name:"ADD", position:0, text:"Sam, the dog, jumped."},
+            {name:"ADD", position:0, text:"Sam, the dog, jumped."}
           ]
         };
         assert.equal("Sam, the dog, jumped.",ot.compile(testDocument));
@@ -34,10 +34,10 @@ if(typeof Meteor == 'undefined') {
             {name:"ADD", position:0, text:"dog, "},
             {name:"ADD", position:0, text:"the "},
             {name:"ADD", position:0, text:"Sam, "},
-            {name:"REMOVE", position:0, count:5},
+            {name:"REMOVE", position:0, text:"Sam, "},
             {name:"ADD", position:0, text:"Sam, "},
-            {name:"REMOVE", position:5, count:9},
-            {name:"ADD", position:5, text:"the dog, "},
+            {name:"REMOVE", position:5, text:"the dog, "},
+            {name:"ADD", position:5, text:"the dog, "}
           ]
         };
         assert.equal("Sam, the dog, jumped.",ot.compile(testDocument));
@@ -60,7 +60,7 @@ if(typeof Meteor == 'undefined') {
           base:"",
           commands:[
             {name:"ADD", position:0, text:"Sam, the dog, jumped."},
-            {name:"REMOVE", position:5, count:4},
+            {name:"REMOVE", position:5, text:"the "},
           ]
         };
         assert.equal(null, ot.createRemoveCommand(testDocument,1,5,4));
@@ -71,7 +71,7 @@ if(typeof Meteor == 'undefined') {
           base:"",
           commands:[
             {name:"ADD", position:0, text:"Sam, the dog, jumped."},
-            {name:"REMOVE", position:4, count:4},
+            {name:"REMOVE", position:4, text:" the"},
           ]
         };
         testDocument.commands.push(ot.createRemoveCommand(testDocument,1,0,1));
@@ -82,7 +82,7 @@ if(typeof Meteor == 'undefined') {
           base:"",
           commands:[
             {name:"ADD", position:0, text:"Sam, the dog, jumped."},
-            {name:"REMOVE", position:4, count:4},
+            {name:"REMOVE", position:4, text:" the"},
           ]
         };
         testDocument.commands.push(ot.createRemoveCommand(testDocument,1,20,1));
@@ -94,7 +94,7 @@ if(typeof Meteor == 'undefined') {
           base:"",
           commands:[
             {name:"ADD", position:0, text:"Sam, the dog, jumped."},
-            {name:"REMOVE", position:5, count:4},
+            {name:"REMOVE", position:5, text:"the "},
           ]
         };
         testDocument.commands.push(ot.createRemoveCommand(testDocument,1,1,8));
@@ -105,7 +105,7 @@ if(typeof Meteor == 'undefined') {
           base:"",
           commands:[
             {name:"ADD", position:0, text:"Sam, the dog, jumped."},
-            {name:"REMOVE", position:5, count:1},
+            {name:"REMOVE", position:5, text:"t"},
           ]
         };
         testDocument.commands.push(ot.createRemoveCommand(testDocument,1,1,8));
@@ -116,7 +116,7 @@ if(typeof Meteor == 'undefined') {
           base:"",
           commands:[
             {name:"ADD", position:0, text:"Sam, the dog, jumped."},
-            {name:"REMOVE", position:5, count:4},
+            {name:"REMOVE", position:5, text:"the "},
           ]
         };
         testDocument.commands.push(ot.createRemoveCommand(testDocument,1,5,9));
@@ -127,7 +127,7 @@ if(typeof Meteor == 'undefined') {
           base:"",
           commands:[
             {name:"ADD", position:0, text:"Sam, the dog, jumped."},
-            {name:"REMOVE", position:5, count:1},
+            {name:"REMOVE", position:5, text:"t"},
           ]
         };
         testDocument.commands.push(ot.createRemoveCommand(testDocument,1,5,9));
@@ -140,7 +140,7 @@ if(typeof Meteor == 'undefined') {
           base:"",
           commands:[
             {name:"ADD", position:0, text:"Sam, the dog, jumped."},
-            {name:"REMOVE", position:5, count:2},
+            {name:"REMOVE", position:5, text:"th"},
           ]
         };
         testDocument.commands.push(ot.createRemoveCommand(testDocument,1,6,3));
@@ -151,7 +151,7 @@ if(typeof Meteor == 'undefined') {
           base:"",
           commands:[
             {name:"ADD", position:0, text:"Sam, the dog, jumped."},
-            {name:"REMOVE", position:6, count:3},
+            {name:"REMOVE", position:6, text:"he "},
           ]
         };
         testDocument.commands.push(ot.createRemoveCommand(testDocument,1,5,2));

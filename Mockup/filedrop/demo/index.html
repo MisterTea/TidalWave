@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+
+    <title>FileDrop.js demo - self-contained HTML5, AJAX, drag &amp; drop file upload</title>
+
+    <link type="text/css" href="index.css" rel="stylesheet" media="all">
+
+    <!--[if lt IE 9]>
+    <script src="ie9.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <header>
+      <a id="logo" href="http://filedropjs.org"><img src="logo.png"></a>
+
+      <ul>
+        <li><a href="http://filedropjs.org">Documentation</a></li>
+        <li><a href="http://filedropjs.org/#download">Download latest</a></li>
+        <li><a href="http://github.com/ProgerXP/FileDrop/issues">Report bugs</a></li>
+      </ul>
+
+      <h1>
+        <a href="http://filedropjs.org">FileDrop.js</a>
+        <span>REVAMPED</span>
+        <a target="_blank" href="https://twitter.com/share?url=http%3A%2F%2Ffiledropjs.org">Share the love!</a>
+      </h1>
+
+      <h2>Self-contained cross-browser HTML5, legacy, AJAX, drag &amp; drop JavaScript file upload</h2>
+    </header>
+
+    <noscript>
+      JavaScript is disabled! This page won't quite work.
+    </noscript>
+
+    <aside>
+      <fieldset>
+        <legend>Features</legend>
+
+        <ul>
+          <li><b>No JS dependencies</b>, Flash or Java applets</li>
+          <li>900 lines of code, 1300 lines of comments</li>
+          <li><b>18 KiB minified</b>, 6 KiB gzipped</li>
+          <li><b>HTML5, drag &amp; drop</b> for modern browsers</li>
+          <li><b>IFrame fallback</b> for legacy agents (IE 6+)</li>
+          <li>Flexible <b>event system</b> with over 15 callbacks</li>
+          <li>Multiple <b>independent FileDrops</b> on one page</li>
+          <li>Ready for <b>jQuery</b>, PHP, ASP.net and others</li>
+          <li>500+ lines of <b>unit tests</b> (<a href="tests.html">tests.html</a>)</li>
+        </ul>
+      </fieldset>
+
+      <fieldset>
+        <legend>Browsers uploading by AJAX</legend>
+        <p>They also support drag &amp; drop on the drop zone.</p>
+
+        <ul>
+          <li>
+            <b class="ff">Firefox:</b>
+            <u>XP SP3:</u> 26.0
+          </li>
+          <li>
+            <b class="ff">Firefox x64:</b>
+            <u>XP SP2 x64:</u> 23.0a1
+          </li>
+          <li>
+            <b class="chrome">Chrome:</b>
+            <u>XP SP2 x64:</u> 29.0
+          </li>
+          <li>
+            <b class="ie">Internet Explorer:</b>
+            <u>Win7 SP1:</u> 10, 11
+          </li>
+          <li>
+            <b class="opera">Opera:</b>
+            <u>XP SP2 x64:</u> 12.16
+          </li>
+          <li>
+            <b class="safari">Safari:</b>
+            <u>XP SP3:</u> 5.1.7
+            <u>Win7 SP1:</u> 5.1.7
+          </li>
+        </ul>
+      </fieldset>
+
+      <fieldset>
+        <legend>Browsers uploading by IFrame</legend>
+        <p>If you set <code>input: false</code> or don't set <code>iframe.url</code> these agents will be unable to upload the data.</p>
+
+        <ul>
+          <li>
+            <b class="ie">Internet Explorer:</b>
+            <u>XP SP3:</u> 6, 8
+            <u>Win7 SP1:</u> 8
+          </li>
+          <li>
+            <b class="ie">Internet Explorer x64:</b>
+            <u>XP SP2 x64:</u> 6, 7
+          </li>
+        </ul>
+      </fieldset>
+
+      <p><a id="report" href="http://filedropjs.org">Report problem with this demo (no page reload)</a></p>
+
+      <fieldset>
+        <legend>Support Notes</legend>
+
+        <ul>
+          <li>
+            <b class="ff">Firefox 3.6</b> and <b class="opera">Opera</b> skip <code>cursor</code> CSS style for <code>&lt;input type="file"&gt;</code>.
+          </li>
+          <li>
+            <b class="ff">Firefox ~13</b> and later ignore <em>overflow: hidden</em> on <code>&lt;fieldset&gt;</code> &ndash; FileDrop will automatically wrap such drop zones into <code>&lt;div&gt;</code> with proper styles but make sure this doesn't affect your layout (for example, <em>margin</em> might show differently).
+          </li>
+          <li>
+            <b class="ie">IE 6-9</b> fire <b>ondrop</b> on <code>&lt;input type="file"&gt;</code> but when the form is submitted this way sends an empty POST body so drag &amp; drop is forcefully disabled for <b class="ie">IE 6</b> (normal upload by clicking on the drop zone is still possible using <b>iframe</b> fallback).
+          </li>
+          <li>
+            <b class="ie">IE 6-10</b> don't support multiple selection in file open dialog.
+          </li>
+          <li>
+            <b class="ie">IE 10</b> lacks <code>readAsBinaryString()</code>. Unless you are calling it directly FileDrop will transparently translate it to <code>readAsArrayBuffer()</code>.
+          </li>
+          <li>
+            <b class="safari">Safari 5</b> provides drag & drop upload but no file reading functions.
+          </li>
+        </ul>
+      </fieldset>
+    </aside>
+
+    <div id="content">
+      <nav>
+        <ul>
+          <li><a href="#basic">Basic usage</a></li>
+          <li><a href="#jquery">jQuery wrapper</a></li>
+          <li><a href="#progress">Progress bar</a></li>
+          <li><a href="#thumbs">Thumbnails</a></li>
+          <li><a href="#text">Read text files</a></li>
+          <li><a href="#dir">Read folders</a></li>
+          <li><a href="http://filedropjs.org/#samples">More samples</a></li>
+        </ul>
+      </nav>
+
+      <article id="basic">
+        <h3>
+          Basic usage
+
+          <span id="btns">
+            <span class="btn" id="badd">+ Add drop zone</span>
+            <span class="btn" id="berror">Cause error on upload</span>
+            <span class="btn" id="babort">Abort upload</span>
+          </span>
+        </h3>
+
+        <p>Lets you upload a file by clicking on the drop zone and, additionally, by dropping it from your computer for supported modern browsers. Pure native JavaScript, no library is used.</p>
+
+        <fieldset id="zbasic">
+          <legend>Drop a file inside…</legend>
+          <p>Or click here to <em>Browse…</em></p>
+
+          <p style="position: relative; z-index: 1">
+            <input type="checkbox" id="zbasicm">
+
+            <label for="zbasicm">
+              Allow multiple selection in <em>Browse</em> dialog.
+            </label>
+          </p>
+        </fieldset>
+
+        <script type="sample/javascript">
+          var options = {iframe: {url: 'upload.php'}};
+          var zone = new FileDrop('zbasic', options);
+
+          zone.event('send', function (files) {
+            files.each(function (file) {
+              file.event('done', function (xhr) {
+                alert('Done uploading ' + this.name + ',' +
+                      ' response:\n\n' + xhr.responseText);
+              });
+
+              file.event('error', function (e, xhr) {
+                alert('Error uploading ' + this.name + ': ' +
+                      xhr.status + ', ' + xhr.statusText);
+              });
+
+              file.sendTo('upload.php');
+            });
+          });
+
+          // <iframe> uploads are special - handle them.
+          zone.event('iframeDone', function (xhr) {
+            alert('Done uploading via <iframe>, response:\n\n' + xhr.responseText);
+          });
+
+          // Toggle multiple file selection in the File Open dialog.
+          fd.addEvent(fd.byID('zbasicm'), 'change', function (e) {
+            zone.multiple((e.currentTarget || e.srcElement).checked);
+          });
+        </script>
+      </article>
+
+      <article id="jquery">
+        <h3>jQuery integration</h3>
+
+        <p>Complete analog of the basic sample rewritten using jQuery wrapper.</p>
+
+        <fieldset id="zjquery">
+          <legend>Drop a file inside…</legend>
+          <p>Or click here to <em>Browse…</em></p>
+
+          <p style="position: relative; z-index: 1">
+            <input type="checkbox" id="zjquerym">
+
+            <label for="zjquerym">
+              Allow multiple selection in <em>Browse</em> dialog.
+            </label>
+          </p>
+        </fieldset>
+
+        <script type="sample/javascript">
+          // Tell FileDrop we want to integrate with jQuery
+          // making $().filedrop() available.
+          fd.jQuery();
+
+          var options = {iframe: {url: 'upload.php'}};
+
+          $('#zjquery')
+            // Create FileDrop on the first node in this collection.
+            .filedrop(options)
+            .on('fdsend', function (jQueryEvent, files) {
+              // 'fd' prefix is added to all FileDrop events that
+              // are triggered on the zone element.
+              files.each(function (file) {
+                file.sendTo('upload.php');
+              });
+
+              // Or if you're more of a functional guy here's your call:
+              //files.invoke('sendTo', 'upload.php');
+            })
+            .on('filedone', function (e, file, xhr) {
+              // FileDrop binds events of all constructed Files to the
+              // zone element and prefixes event names with 'file'.
+              alert('Done uploading ' + file.name + ',' +
+                    ' response:\n\n' + xhr.responseText);
+            })
+            .on('fileerror', function (e, file, xhrError, xhr) {
+              alert('Error uploading ' + file.name + ': ' +
+                    xhr.status + ', ' + xhr.statusText);
+            })
+            .on('fdiframedone', function (e, xhr) {
+              alert('Done uploading via <iframe>, response:\n\n' + xhr.responseText);
+            });
+
+          $('#zjquerym').change(function () {
+            $('#zjquery')
+              // Retrieve created FileDrop object (or create it):
+              .filedrop()
+              .multiple(this.checked);
+              // Would also work retaining 'this' as jQuery collection:
+              //.filedrop('multiple', this.checked);
+          });
+        </script>
+      </article>
+
+      <article id="progress">
+        <h3>
+          Progress bar
+        </h3>
+
+        <p>On AJAX uploads browser reports how much data has been already sent. <b class="ff">Firefox</b> won't trigger this event on small files.</p>
+        <p><b>IFrame</b> (legacy) uploads don't provide this feature but are still supported.</p>
+
+        <fieldset id="zprogress">
+          <legend>Drop a file inside…</legend>
+          <p>Or click here to <em>Browse…</em></p>
+        </fieldset>
+
+        <script type="sample/javascript">
+          var options = {iframe: {url: 'upload.php'}};
+          var zone = new FileDrop('zprogress', options);
+
+          zone.event('send', function (files) {
+            files.each(function (file) {
+              file.event('done', function (xhr) {
+                alert('Done uploading ' + this.name);
+              });
+
+              file.event('progress', function (sent, total) {
+                var p = document.createElement('p');
+                p.textContent = 'Uploaded ' + Math.round(sent / total * 100) + '%...';
+                zone.el.appendChild(p);
+              })
+
+              file.sendTo('upload.php');
+            });
+          });
+
+          zone.event('iframeDone', function (xhr) {
+            alert('Done uploading via <iframe>');
+          });
+        </script>
+      </article>
+
+      <article id="thumbs">
+        <h3>Thumbnails</h3>
+
+        <p><b>HTML5-only.</b> When dropped one or more image files generates thumbnails and displays them right on the page, without uploading the data anywhere.</p>
+
+        <fieldset id="zthumbs" style="min-height: 100px">
+          <legend>Drop an image inside…</legend>
+        </fieldset>
+
+        <script type="sample/javascript">
+          var zone = new FileDrop('zthumbs', {input: false});
+
+          zone.event('upload', function (e) {
+            zone.eventFiles(e).images().each(function (file) {
+              file.readDataURI(function (uri) {
+                var img = new Image;
+                img.src = uri;
+                zone.el.appendChild(img);
+              });
+            });
+          });
+        </script>
+      </article>
+
+      <article id="text">
+        <h3>Read text files</h3>
+
+        <p><b>HTML5-only.</b> Drop a (better) text file from your computer to load it into the <b>textarea</b>. Drop zone can be made from any element - <b>fieldset</b>, <b>div</b> or, say, a <b>textarea</b> itself.</p>
+
+        <div id="ztext">
+          <p>Drop one or more text files…</p>
+        </div>
+
+        <script type="sample/javascript">
+          var zone = new FileDrop('ztext', {input: false});
+
+          zone.event('upload', function (e) {
+            zone.eventFiles(e).each(function (file) {
+              file.readData(
+                function (str) {
+                  var area = document.createElement('textarea');
+                  area.value = str;
+                  zone.el.appendChild(area);
+                },
+                function () { alert('Problem reading this file.'); },
+                'text'
+              );
+            });
+          });
+        </script>
+      </article>
+
+      <article id="dir">
+        <h3>Read folders</h3>
+
+        <p><b>Supported only in Chrome 21+.</b> W3C has a <a href="http://www.w3.org/TR/file-system-api/#the-entry-interface" target="_blank">working draft</a> on File System API that introduces lots of interesting features allowing us to read and write files and directories. This sample will non-recursively list all files and folders, also displaying thumbnails of images it finds.
+
+        <div id="zdir">
+          <p>Drop a directory here…</p>
+        </div>
+
+        <script type="sample/javascript">
+          var zone = new FileDrop('zdir', {input: false});
+
+          zone.event('upload', function (e) {
+            while (cleared = zone.el.firstChild) {
+              zone.el.removeChild(zone.el.firstChild);
+            }
+
+            var error = function () { alert('Problem reading the file system.'); }
+
+            var done = function (files) {
+              // files is standard FileDrop's FileList object.
+              files.each(function (file) {
+                // file is FileDrop.File with native objects accessible
+                // as file.nativeFile and file.nativeEntry.
+                var node = document.createElement('p');
+                node.innerText = file.name
+
+                if (file.nativeFile) {
+                  // This is a file. We can use any FileDrop method here
+                  // like sendTo() and readData() - see below.
+                  node.innerText += ' (' + file.size + ')';
+                } else {
+                  // This is a directory - it has no File API object.
+                  node.innerHTML = '<b>' + node.innerHTML + '/</b>';
+                }
+
+                zone.el.appendChild(node);
+              });
+
+              // Let's show thumbs of images using FileDrop.File methods.
+              files.images().each(function (file) {
+                file.readDataURI(function (uri) {
+                  var img = new Image;
+                  img.src = uri;
+                  zone.el.appendChild(img);
+                });
+              });
+            };
+
+            zone.eventFiles(e).each(function (root) {
+              if (root.listEntries(done, error)) {
+                // Success.
+              } else if (!root.nativeEntry) {
+                zone.el.innerHTML = '<p><b>File System API is not' +
+                                    ' supported by this browser.</b></p>';
+              } else {
+                zone.el.innerHTML = '<p><b>Problem listing ' +
+                                    root.name + '.</b></p>';
+              }
+            });
+          });
+        </script>
+      </article>
+
+      <table id="events">
+        <tr>
+          <th colspan="3">Drag events</th>
+        </tr>
+        <tr>
+          <th><a href="http://filedropjs.org/#dragEnter">dragEnter</a></th>
+          <td>—</td>
+          <td>User drags an object into the drop zone (<b class="ff">Firefox</b>) or document (<b class="chrome">Chrome</b>).</td>
+        </tr>
+        <tr>
+          <th><a href="http://filedropjs.org/#dragLeave">dragLeave</a></th>
+          <td>—</td>
+          <td>Dragged object has left the drop zone or document.</td>
+        </tr>
+
+        <tr>
+          <th colspan="3">Misc events</th>
+        </tr>
+        <tr>
+          <th><a href="http://filedropjs.org/#upload">upload</a></th>
+          <td>—</td>
+          <td>Files were dropped or selected using the <em>Browse</em> button.</td>
+        </tr>
+        <tr>
+          <th><a href="http://filedropjs.org/#send">send</a></th>
+          <td>—</td>
+          <td>File info is normalized (cross-browser) and ready to send.</td>
+        </tr>
+        <tr>
+          <th><a href="http://filedropjs.org/#iframeDone">iframeDone</a></th>
+          <td>—</td>
+          <td>Server response received after uploading file via <b>iframe</b>.</td>
+        </tr>
+
+        <tr>
+          <th colspan="3">Setup events</th>
+        </tr>
+        <tr>
+          <th><a href="http://filedropjs.org/#inputSetup">inputSetup</a></th>
+          <td>—</td>
+          <td>A hidden file input is being set up.</td>
+        </tr>
+        <tr>
+          <th><a href="http://filedropjs.org/#fileSetup">fileSetup</a></th>
+          <td>—</td>
+          <td>File info is uniformized (<b class="ff">Firefox</b>, <b class="chrome">Chrome</b> only).</td>
+        </tr>
+        <tr>
+          <th><a href="http://filedropjs.org/#iframeSetup">iframeSetup</a></th>
+          <td>—</td>
+          <td>A file is about to be sent via <b>iframe</b>.</td>
+        </tr>
+
+        <tr>
+          <th colspan="3">XMLHttpRequest events</th>
+        </tr>
+        <tr>
+          <th><a href="http://filedropjs.org/#xhrSetup">xhrSetup</a></th>
+          <td>—</td>
+          <td>An <b>XHR</b> was created to be used to upload a file.</td>
+        </tr>
+        <tr>
+          <th><a href="http://filedropjs.org/#xhrSend">xhrSend</a></th>
+          <td>—</td>
+          <td>After <b>xhrSetup</b>, <b>XHR</b> needs to be <b>send()</b>.</td>
+        </tr>
+        <tr>
+          <th><a href="http://filedropjs.org/#progress">progress</a></th>
+          <td>—</td>
+          <td>Data upload progress, in <b class="ff">Firefox</b> only works on large files.</td>
+        </tr>
+        <tr>
+          <th><a href="http://filedropjs.org/#error">error</a></th>
+          <td>—</td>
+          <td>Request has ended with an error</td>
+        </tr>
+        <tr>
+          <th><a href="http://filedropjs.org/#done">done</a></th>
+          <td>—</td>
+          <td>Data has been successfully uploaded.</td>
+        </tr>
+      </table>
+
+      <h4>Last server response to upload</h4>
+      <input type="text" id="response" readonly="readonly" placeholder="Nothing uploaded yet">
+      <textarea id="log" cols="20" rows="20" readonly="readonly"></textarea>
+    </div>
+
+    <script type="text/javascript" src="../filedrop.js"></script>
+    <!-- If the above is missing (useful when debugging) -->
+    <script type="text/javascript" src="filedrop.js"></script>
+    <script type="text/javascript" src="filedrop-min.js"></script>
+
+    <script type="text/javascript" src="index.js"></script>
+    <!-- jQuery is only used in plugin samples, it's not required for FileDrop -->
+    <script type="text/javascript" src="jquery.js"></script>
+  </body>
+</html>

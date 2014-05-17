@@ -32,59 +32,6 @@ var clear_selected_positions = function () {
     Session.set('selected_' + pos, false);
 };
 
-//////
-////// lobby template: shows everyone not currently playing, and
-////// offers a button to start a fresh game.
-//////
-
-Template.lobby.show = function () {
-  // only show lobby if we're not in a game
-  return !game();
-};
-
-Template.lobby.waiting = function () {
-  var players = Agents.find({_id: {$ne: Session.get('player_id')},
-                              name: {$ne: ''},
-                              game_id: {$exists: false}});
-
-  return players;
-};
-
-Template.lobby.count = function () {
-  var players = Agents.find({_id: {$ne: Session.get('player_id')},
-                              name: {$ne: ''},
-                              game_id: {$exists: false}});
-
-  return players.count();
-};
-
-Template.lobby.disabled = function () {
-  var me = player();
-  if (me && me.name)
-    return '';
-  return 'disabled="disabled"';
-};
-
-
-Template.lobby.events({
-  'keyup input#myname': function (evt) {
-    var name = $('#lobby input#myname').val().trim();
-    Agents.update(Session.get('player_id'), {$set: {name: name}});
-  },
-  'click button.startgame': function () {
-    Meteor.call('start_new_game');
-  }
-});
-
-//////
-////// board template: renders the board and the clock given the
-////// current game.  if there is no game, show a splash screen.
-//////
-var SPLASH = ['','','','',
-              'W', 'O', 'R', 'D',
-              'P', 'L', 'A', 'Y',
-              '','','',''];
-
 Template.page.events({
   "click #sign-in-google": function(e, tmpl){
     console.log("CLICKED GOOGLE SIGNIN.");
@@ -108,35 +55,6 @@ Template.page.loggedIn = function() {
   return Meteor.user() != null;
 };
 
-Template.board.square = function (i) {
-  var g = game();
-  return g && g.board && g.board[i] || SPLASH[i];
-};
-
-Template.board.selected = function (i) {
-  return Session.get('selected_' + i);
-};
-
-Template.board.clock = function () {
-  var clock = game() && game().clock;
-
-  if (!clock || clock === 0)
-    return;
-
-  // format into M:SS
-  var min = Math.floor(clock / 60);
-  var sec = clock % 60;
-  return min + ':' + (sec < 10 ? ('0' + sec) : sec);
-};
-
-Template.board.events({
-  'click .square': function (evt) {
-    var textbox = $('#scratchpad input');
-    textbox.val(textbox.val() + evt.target.innerHTML);
-    textbox.focus();
-  }
-});
-
 Template.GroupEdit.created = function() {
   console.log("CREATED");
 };
@@ -147,7 +65,7 @@ Template.GroupEdit.rendered = function() {
   var editor = ace.edit("editor");
   editor.setTheme("ace/theme/monokai");
   editor.getSession().setMode("ace/mode/javascript");
-  attach_ace(editor,false);
+  attach_ace(editor);
 };
 
 Template.GroupEdit.groupedit = function() {
@@ -185,85 +103,25 @@ Template.GroupEdit.events({
 });
 
 //////
-////// scratchpad is where we enter new words.
-//////
-
-Template.scratchpad.show = function () {
-  return game() && game().clock > 0;
-};
-
-Template.scratchpad.events({
-  'click button, keyup input': function (evt) {
-    var textbox = $('#scratchpad input');
-    // if we clicked the button or hit enter
-    if ((evt.type === "click" || (evt.type === "keyup" && evt.which === 13))
-        && textbox.val()) {
-      var word_id = Words.insert({player_id: Session.get('player_id'),
-                                  game_id: game() && game()._id,
-                                  word: textbox.val().toUpperCase(),
-                                  state: 'pending'});
-      Meteor.call('score_word', word_id);
-      textbox.val('');
-      textbox.focus();
-      clear_selected_positions();
-    } else {
-      set_selected_positions(textbox.val());
-    }
-  }
-});
-
-Template.postgame.show = function () {
-  return game() && game().clock === 0;
-};
-
-Template.postgame.events({
-  'click button': function (evt) {
-    Agents.update(Session.get('player_id'), {$set: {game_id: null}});
-  }
-});
-
-//////
-////// scores shows everyone's score and word list.
-//////
-
-Template.scores.show = function () {
-  return !!game();
-};
-
-Template.scores.players = function () {
-  return game() && game().players;
-};
-
-Template.player.winner = function () {
-  var g = game();
-  if (g.winners && _.include(g.winners, this._id))
-    return 'winner';
-  return '';
-};
-
-Template.player.total_score = function () {
-  var words = Words.find({game_id: game() && game()._id,
-                          player_id: this._id});
-
-  var score = 0;
-  words.forEach(function (word) {
-    if (word.score)
-      score += word.score;
-  });
-  return score;
-};
-
-Template.words.words = function () {
-  return Words.find({game_id: game() && game()._id,
-                     player_id: this._id});
-};
-
-
-//////
 ////// Initialization
 //////
 
 Meteor.startup(function () {
+  if (Session.get('session_id') != null) {
+    if (SessionStates.findOne(Session.get('session_id')) == null) {
+      // hot reload but server lost agent, remove the client's
+      // context.
+      Session.set('session_id',null);
+    }
+  }
+
+  if (Session.get('session_id') == null) {
+    console.log("CREATING SESSION");
+    var sessionStateId = SessionStates.insert({userId: Meteor.userId()});
+    Session.set('session_id', sessionStateId);
+  }
+  console.log("SESSION ID: " + Session.get('session_id'));
+
   initAceLink();
 
   Deps.autorun(function () {
@@ -274,9 +132,14 @@ Meteor.startup(function () {
     if (Meteor.userId() != null) {
       // Make sure there is a corresponding Agent
       Agents.insert({userId:Meteor.userId()});
+
+      // Create a new SessionState with the user id.
+      var sessionStateId = SessionStates.insert({userId: Meteor.userId()});
+      Session.set('session_id', sessionStateId);
     }
   });
 
+/*
   // send keepalives so the server can tell when we go away.
   //
   // XXX this is not a great idiom. meteor server does not yet have a
@@ -286,12 +149,14 @@ Meteor.startup(function () {
     if (Meteor.status().connected)
       Meteor.call('keepalive', Session.get('player_id'));
   }, 20*1000);
+*/
 });
 
+// Use LDAP authentication, no email signup
 Accounts.ui.config({
   passwordSignupFields: 'USERNAME_ONLY'
 });
-
+// Use LDAP auth, no account creation
 Accounts.config({
   forbidClientAccountCreation: true
 });

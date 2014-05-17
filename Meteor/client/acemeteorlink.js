@@ -5,6 +5,35 @@ var globalEditor = null;
 
 var syncLocked = false;
 
+var posToOffset = function(pos) {
+  var i, line, lines, offset, _i, _len;
+  lines = editorDoc.getLines(0, pos.row);
+  offset = 0;
+  for (i = _i = 0, _len = lines.length; _i < _len; i = ++_i) {
+    line = lines[i];
+    offset += i < pos.row ? line.length : pos.column;
+  }
+  return offset + pos.row;
+};
+
+var offsetToPos = function(offset) {
+  var line, lines, row, _i, _len;
+  lines = editorDoc.getAllLines();
+  row = 0;
+  for (row = _i = 0, _len = lines.length; _i < _len; row = ++_i) {
+    line = lines[row];
+    if (offset <= line.length) {
+      break;
+    }
+    offset -= lines[row].length + 1;
+  }
+
+  return {
+    row: row,
+    column: offset
+  };
+};
+
 DocumentClass = {
   name:"test2",
   eventCallbacks:{},
@@ -19,18 +48,64 @@ DocumentClass = {
   },
   insert: function(position, text) {
     console.log("Creating add command");
-    var command = createAddCommand(this, this.commands.length, position, text);
-    if (command) {
-      console.log(command);
-      console.log(this._id);
-      Documents.update(this._id, {$push: {commands: command}});
-    }
+    var command = {name:"ADD", position:position, text:text};
+    this.commands.push(command);
+    Meteor.call('add', this._id, this.commands.length, position, text);
   },
-  del: function(position, count) {
-    var command = createRemoveCommand(this, this.commands.length, position, count);
-    if (command) {
-      Documents.update(this._id, {$push: {commands: command}});
+  del: function(position, text) {
+    var command = {name:"REMOVE", position:position, text:text};
+    this.commands.push(command);
+    Meteor.call('remove', this._id, this.commands.length, position, text);
+  },
+  updateSelection: function(start,end) {
+    if (Session.get('session_id') == null) {
+      throw "OOPS";
     }
+    var command = {name:"CURSOR", id:Session.get('session_id'), start:start, end:end};
+    this.commands.push(command);
+    Meteor.call('updateSelection', this._id, this.commands.length, Session.get('session_id'), start, end);
+  },
+  applyExternalCommand: function(command) {
+    this.commands.push(command);
+    if (command.name == 'ADD') {
+      suppress = true;
+      editorDoc.insert(offsetToPos(command.position), command.text);
+      suppress = false;
+    } else if (command.name == 'REMOVE') {
+      suppress = true;
+      console.log(offsetToPos(command.position));
+      console.log(offsetToPos(command.position + command.text.length));
+      var range = Range.fromPoints(
+        offsetToPos(command.position),
+        offsetToPos(command.position + command.text.length));
+      editorDoc.remove(range);
+      suppress = false;
+    } else if (command.name == 'CURSOR') {
+    } else {
+      throw "OOPS";
+    }
+    
+  },
+  rollback: function() {
+    var lastCommand = this.commands.pop();
+
+    if (lastCommand.name == 'REMOVE') {
+      suppress = true;
+      editorDoc.insert(offsetToPos(lastCommand.position), lastCommand.text);
+      suppress = false;
+    }
+    else if (lastCommand.name == 'ADD') {
+      suppress = true;
+      var range = Range.fromPoints(
+        offsetToPos(lastCommand.position),
+        offsetToPos(lastCommand.position + lastCommand.text.length));
+      editorDoc.remove(range);
+      suppress = false;
+    } else if (lastCommand.name == 'CURSOR') {
+    } else {
+      throw "OOPS";
+    }
+    
   }
 };
 
@@ -57,6 +132,64 @@ var editorListener = function(change) {
   applyToShareJS(editorDoc, change.data, DocumentClass);
 };
 
+updateLocalDocWhenReady = function() {
+  var doc = Documents.findOne({name:"test2"});
+
+  if (editorDoc == null || doc == null) {
+    window.setTimeout(updateLocalDocWhenReady,1000);
+    console.log("ACE OR METEOR DOC NOT CREATED (YET)");
+    return;
+  }
+
+  suppress = true;
+  console.log("DOC CHANGED");
+  console.log(doc);
+  console.log(DocumentClass);
+  DocumentClass._id = doc._id;
+  DocumentClass.name = doc.name;
+  DocumentClass.base = doc.base;
+
+  console.log(globalEditor.getCursorPosition());
+  var cursor = $.extend(true, {}, globalEditor.getCursorPosition());
+  console.log(cursor);
+  globalEditor.moveCursorToPosition(cursor);
+
+  //while (DocumentClass.commands.length > doc.commands.length) {
+    //console.log("GOT TOO MANY LOCAL COMMANDS.  ROLLING BACK");
+    //DocumentClass.rollback();
+  //}
+
+  for (var i=0;i<doc.commands.length;i++) {
+    if (DocumentClass.commands.length >= i) {
+      if (/*Math.random()>0.2 ||*/ !_.isEqual(doc.commands[i], DocumentClass.commands[i])) {
+        // Rollback until we are prior to this change or at the beginning
+        while (DocumentClass.commands.length>i) {
+          console.log("ROLLING BACK");
+          console.log(doc.commands[i]);
+          console.log(DocumentClass.commands[i]);
+          DocumentClass.rollback();
+        }
+      }
+    }
+
+    if (DocumentClass.commands.length<=i) {
+      // Apply this new change
+      DocumentClass.applyExternalCommand(doc.commands[i]);
+    }
+  }
+
+  if (DocumentClass.commands.length == doc.commands.length &&
+      !_.isEqual(doc.commands, DocumentClass.commands)) {
+    console.log(doc.commands);
+    console.log(DocumentClass.commands);
+    throw "OOPS";
+  }
+  console.log(doc);
+  console.log("SUPRESSING NEXT ACE");
+  //editorDoc.setValue(compile(DocumentClass));
+  suppress = false;
+};
+
 initAceLink = function() {
   var requireImpl = ace.require != null ? ace.require : require;
 
@@ -65,158 +198,90 @@ initAceLink = function() {
   Deps.autorun(function () {
     Meteor.subscribe("document","test2");
     var doc = Documents.findOne({name:"test2"});
-    if (doc != null) {
-      console.log("DOC CHANGED");
-      console.log(doc);
-      DocumentClass._id = doc._id;
-      DocumentClass.name = doc.name;
-      DocumentClass.base = doc.base;
-      DocumentClass.commands = doc.commands;
-      if (editorDoc == null) {
-        console.log("ACE NOT CREATED (YET)");
-        return;
-      }
-      console.log(doc);
-      console.log("SUPRESSING NEXT ACE");
-      console.log(compile(DocumentClass));
-      suppress = true;
-      editorDoc.setValue(compile(DocumentClass));
-      suppress = false;
-    } else {
+
+    if (doc == null) {
+      // Create a document
       // Wait for document to exist.
       console.log("CREATING NEW DOCUMENT");
       Documents.insert({name:"test2", base:"", commands:[]});
+      return;
     }
+
+    updateLocalDocWhenReady(doc);
   });
 };
 
+var getStartOffsetPosition = function(range) {
+  var i, line, lines, offset, _i, _len;
+  lines = editorDoc.getLines(0, range.start.row);
+  offset = 0;
+  for (i = _i = 0, _len = lines.length; _i < _len; i = ++_i) {
+    line = lines[i];
+    offset += i < range.start.row ? line.length : range.start.column;
+  }
+  return offset + range.start.row;
+};
+
 applyToShareJS = function(editorDoc, delta, doc) {
-  var getStartOffsetPosition, pos, text;
-  getStartOffsetPosition = function(range) {
-    var i, line, lines, offset, _i, _len;
-    lines = editorDoc.getLines(0, range.start.row);
-    offset = 0;
-    for (i = _i = 0, _len = lines.length; _i < _len; i = ++_i) {
-      line = lines[i];
-      offset += i < range.start.row ? line.length : range.start.column;
-    }
-    return offset + range.start.row;
-  };
+  var pos, text;
+  console.log("DELTA");
+  console.log(delta);
   pos = getStartOffsetPosition(delta.range);
+  console.log("ACTION: " + delta.action);
   switch (delta.action) {
-    case 'insertText':
-      doc.insert(pos, delta.text);
-      break;
-    case 'removeText':
-      doc.del(pos, delta.text.length);
-      break;
-    case 'insertLines':
-      text = delta.lines.join('\n') + '\n';
-      doc.insert(pos, text);
-      break;
-    case 'removeLines':
-      text = delta.lines.join('\n') + '\n';
-      doc.del(pos, text.length);
-      break;
-    default:
-      throw new Error("unknown action: " + delta.action);
+  case 'insertText':
+    doc.insert(pos, delta.text);
+    break;
+  case 'removeText':
+    doc.del(pos, delta.text);
+    break;
+  case 'insertLines':
+    text = delta.lines.join('\n') + '\n';
+    doc.insert(pos, text);
+    break;
+  case 'removeLines':
+    text = delta.lines.join('\n') + '\n';
+    doc.del(pos, text);
+    break;
+  default:
+    throw new Error("unknown action: " + delta.action);
   }
 };
 
-attach_ace = function(editor, keepEditorContents) {
+attach_ace = function(editor) {
   console.log("ATTACHING ACE");
   var deleteListener, doc, docListener, insertListener, offsetToPos, refreshListener, replaceTokenizer;
   doc = DocumentClass;
   globalEditor = editor;
   editorDoc = editor.getSession().getDocument();
   editorDoc.setNewLineMode('unix');
-  if (keepEditorContents) {
-    doc.del(0, doc.getText().length);
-    doc.insert(0, editorDoc.getValue());
-  } else {
-    editorDoc.setValue(doc.getText());
-  }
+  editorDoc.setValue(doc.getText());
+
   check();
   suppress = false;
   editorDoc.on('change', editorListener);
-  replaceTokenizer = function() {
-    var oldGetLineTokens, oldTokenizer;
-    oldTokenizer = editor.getSession().getMode().getTokenizer();
-    oldGetLineTokens = oldTokenizer.getLineTokens;
-    return oldTokenizer.getLineTokens = function(line, state) {
-      var cIter, docTokens, modeTokens;
-      if ((state == null) || typeof state === "string") {
-        cIter = doc.createIterator(0);
-        state = {
-          modeState: state
-        };
-      } else {
-        cIter = doc.cloneIterator(state.iter);
-        doc.consumeIterator(cIter, 1);
-      }
-      modeTokens = oldGetLineTokens.apply(oldTokenizer, [line, state.modeState]);
-      docTokens = doc.consumeIterator(cIter, line.length);
-      if (docTokens.text !== line) {
-        return modeTokens;
-      }
-      return {
-        tokens: doc.mergeTokens(docTokens, modeTokens.tokens),
-        state: {
-          modeState: modeTokens.state,
-          iter: doc.cloneIterator(cIter)
-        }
-      };
-    };
-  };
-  if (doc.getAttributes != null) {
-    replaceTokenizer();
-  }
-  docListener = function(op) {
-    suppress = true;
-    applyToDoc(editorDoc, op);
-    suppress = false;
-    return check();
-  };
-  offsetToPos = function(offset) {
-    var line, lines, row, _i, _len;
-    lines = editorDoc.getAllLines();
-    row = 0;
-    for (row = _i = 0, _len = lines.length; _i < _len; row = ++_i) {
-      line = lines[row];
-      if (offset <= line.length) {
-        break;
-      }
-      offset -= lines[row].length + 1;
+  globalEditor.selection.on('changeCursor', function() {
+    if (suppress) {
+      return;
     }
-    return {
-      row: row,
-      column: offset
-    };
-  };
-  doc.on('insert', insertListener = function(pos, text) {
-    suppress = true;
-    editorDoc.insert(offsetToPos(pos), text);
-    suppress = false;
-    return check();
-  });
-  doc.on('delete', deleteListener = function(pos, text) {
-    var range;
-    suppress = true;
-    range = Range.fromPoints(offsetToPos(pos), offsetToPos(pos + text.length));
-    editorDoc.remove(range);
-    suppress = false;
-    return check();
-  });
-  doc.on('refresh', refreshListener = function(startoffset, length) {
-    var range;
-    range = Range.fromPoints(offsetToPos(startoffset), offsetToPos(startoffset + length));
-    return editor.getSession().bgTokenizer.start(range.start.row);
+
+    console.log("CURSOR CHANGED");
+    var cursor = $.extend(true, {}, globalEditor.getCursorPosition());
+    console.log(cursor);
+
+    console.log("SELECTION");
+    var selection = $.extend(true, {}, globalEditor.getSelectionRange());
+    console.log(selection);
+
+    // Because a cursor move and key press fire at the same time, and
+    // the cursor move fires first, put a timeout to make sure the key
+    // will take place first.
+    window.setTimeout(function() {
+      console.log("FIRING SELECTION EVENT");
+      doc.updateSelection(posToOffset(selection.start),posToOffset(selection.end));
+    },0);
   });
   doc.detach_ace = function() {
-    doc.removeListener('insert', insertListener);
-    doc.removeListener('delete', deleteListener);
-    doc.removeListener('remoteop', docListener);
-    doc.removeListener('refresh', refreshListener);
     editorDoc.removeListener('change', editorListener);
     return delete doc.detach_ace;
   };
