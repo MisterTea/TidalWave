@@ -61,11 +61,35 @@ Template.GroupEdit.created = function() {
 
 Template.GroupEdit.rendered = function() {
   console.log("RENDERED");
-  Meteor.subscribe("document","test");
   var editor = ace.edit("editor");
   editor.setTheme("ace/theme/monokai");
-  editor.getSession().setMode("ace/mode/javascript");
+  editor.getSession().setMode("ace/mode/markdown");
   attach_ace(editor);
+};
+
+Template.GroupEdit.pageMode = function() {
+  return "ViewOrEdit";
+};
+
+Template.ViewOrEdit.ancestors = function() {
+  return [{name:"One"},{name:"Two"},{name:"Three"}];
+};
+
+Template.ViewOrEdit.title = function() {
+  if (Session.get("document")) {
+    return Session.get("document");
+  } else {
+    return "Please wait...";
+  }
+};
+
+Template.ViewOrEdit.contentHtml = function() {
+  var doc = Documents.findOne({name:Session.get("document")});
+  if (doc) {
+    return marked(compile(doc));
+  } else {
+    return "Please wait...";
+  }
 };
 
 Template.GroupEdit.groupedit = function() {
@@ -90,18 +114,6 @@ Template.GroupEdit.groupeditmarkdown = function() {
 */
 };
 
-Template.GroupEdit.events({
-  'keyup #groupedit': function(evt) {
-    console.log("TYPED KEY IN GROUPEDIT");
-    var doc = Documents.findOne({name:"test"});
-    if (doc) {
-      var textbox = $('#groupedit');
-      console.log(textbox.val());
-      Documents.update(doc._id, {$set: {text:textbox.val()}});
-    }
-  }
-});
-
 //////
 ////// Initialization
 //////
@@ -121,6 +133,10 @@ Meteor.startup(function () {
     Session.set('session_id', sessionStateId);
   }
   console.log("SESSION ID: " + Session.get('session_id'));
+
+  if (Session.get("document") == null) {
+    Session.set("document", "test2");
+  }
 
   initAceLink();
 

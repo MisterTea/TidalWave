@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>ACE in Action</title>
+<style type="text/css" media="screen">
+    #editor { 
+    height:300px
+    }
+</style>
+</head>
+<body>
+
+<div id="editor"></div>
+    
+<script src="src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="ot.js" type="text/javascript" charset="utf-8"></script>
+<script src="ace-hooks.js" type="text/javascript" charset="utf-8"></script>
+<script>
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.getSession().setMode("ace/mode/javascript");
+    attach_ace(editor,false);
+</script>
+
+</body>
+</html>

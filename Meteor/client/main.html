@@ -96,24 +96,28 @@
       {{> Sidebar }}
     </div>
 
-    <div id="content-placeholder">
-      <div id="ancestry" class="col-xs-14 col-lg-10">
-        <ol class="breadcrumb">
-          {{#each pageData.ancestors}}
-          <li><a href="#">{{name}}</a></li>
-          {{/each}}
-          <li class="active">{{pageData.title}}</li>
-        </ol>
-      </div>
-
-      <div id="editor" class="col-xs-7 col-lg-5">{{content}}</div>
-      <div id="content" class="col-xs-7 col-lg-5">{{{contentHtml}}}</div>
-    </div>
+    {{#if pageMode "ViewOrEdit"}}
+    {{> ViewOrEdit}}
+    {{/if}}
   </div>
 
   <div id="footer">
     <p class="text-muted">Powered by <a href="https://github.com/MisterTea/TidalWave">TidalWave</a></p>
   </div>
+</template>
+
+<template name="ViewOrEdit">
+  <div id="ancestry" class="col-xs-14 col-lg-10">
+    <ol class="breadcrumb">
+      {{#each ancestors}}
+      <li><a href="#">{{name}}</a></li>
+      {{/each}}
+      <li class="active">{{title}}</li>
+    </ol>
+  </div>
+
+  <div id="editor" class="col-xs-7 col-lg-5"></div>
+  <div id="content" class="col-xs-7 col-lg-5">{{{contentHtml}}}</div>
 </template>
 
 <template name="Sidebar">

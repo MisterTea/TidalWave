@@ -196,8 +196,8 @@ initAceLink = function() {
   Range = requireImpl("ace/range").Range;
 
   Deps.autorun(function () {
-    Meteor.subscribe("document","test2");
-    var doc = Documents.findOne({name:"test2"});
+    Meteor.subscribe("document",Session.get("document"));
+    var doc = Documents.findOne({name:Session.get("document")});
 
     if (doc == null) {
       // Create a document
