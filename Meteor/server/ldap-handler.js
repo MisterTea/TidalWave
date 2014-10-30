@@ -1,9 +1,8 @@
-Accounts.registerLoginHandler(function(loginRequest) {
+Accounts.registerLoginHandler("LDAP", function(loginRequest) {
   console.log("REQUEST");
   console.log(loginRequest);
 
-  if (!loginRequest.hasOwnProperty('loginType')) return undefined;
-  if (loginRequest.loginType !== "LDAP") return undefined;
+  if (!loginRequest.hasOwnProperty('ldappassword')) return undefined;
   console.log("CHECKING");
 
   if (LDAP.checkAccount(loginRequest)) {
@@ -18,6 +17,7 @@ Accounts.registerLoginHandler(function(loginRequest) {
     }
 
     return {
+      type: "LDAP",
       userId: userId
     };
   }

@@ -53,9 +53,8 @@ var login = function () {
   }
 
   var loginRequest = {
-    loginType: "LDAP",
     username: loginSelector,
-    password: password
+    ldappassword: password
   };
   
   Accounts.callLoginMethod({

@@ -18,14 +18,14 @@ LDAP.checkAccount = function(options) {
   options = options || {};
 
   console.log(options);
-  if (options.hasOwnProperty('username') && options.hasOwnProperty('password')) {
+  if (options.hasOwnProperty('username') && options.hasOwnProperty('ldappassword')) {
     return Async.runSync(function(done) {
       var client = ldap.createClient({
         url: 'ldaps://' + LDAP.serverIP + ':' + LDAP.serverPort
       });
       client.bind(
         'uid='+options.username.username.split("@")[0]+LDAP.bindDn,
-        options.password,
+        options.ldappassword,
         function (err) {
           if (err) {
             console.log("error in ldap:");

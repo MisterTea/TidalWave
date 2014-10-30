@@ -10,8 +10,14 @@ accounts-facebook
 accounts-base
 accounts-google
 accounts-ui-unstyled
-user-status
 accounts-password
+meteor-platform
+autopublish
+insecure
+meteorhacks:npm
+iron:router
+
+
+npm-container
 accounts-ui
-npm
-iron-router
+
