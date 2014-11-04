@@ -1,13 +1,13 @@
 var express = require('express');
 var router = express.Router();
 
-var Hierarchy = require('../hierarchy');
+var pageHierarchy = require('../hierarchy').pageHierarchy;
 
-router.get('/', function(req, res) {
-  res.render('page', {
-    pageDetails:null,
-    editMode:false,
-    pageHierarchy:Hierarchy.pageHierarchy,
+/* GET users listing. */
+router.get('/:pagename', function(req, res) {
+  res.render('diff', {
+    pagename: req.param('pagename'),
+    pageHierarchy:pageHierarchy,
     navbarData:{
       projectName:"Tidal Wave",
       userName:"Jason Gauci",

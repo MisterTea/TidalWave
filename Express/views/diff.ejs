@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <% include header %>
+  
+  <body>
+    <% include variables %>
+
+    <% include navbar %>
+    
+    <div class="main-row">
+      <div id="content-placeholder"></div>
+    </div>
+
+    <% include footer %>
+
+    <script id="page-change-template" type="text/x-handlebars-template">
+      <div class="col-xs-14 col-lg-12">
+        <ol class="breadcrumb">
+          {{#each ancestors}}
+          <li><a href="#">{{name}}</a></li>
+          {{/each}}
+          <li class="active">{{title}}</li>
+        </ol>
+        <ul class="pager">
+          <li class="disabled"><a href="#">&larr; Older</a></li>
+          <li><a href="#">Newer &rarr;</a></li>
+        </ul>
+      </div>
+      <div class="col-xs-7 col-lg-6" style="padding: 0px;">
+        <ul class="count">
+          {{#eachIndex previousContent}}
+          <li>{{{index}}}</li>
+          {{/eachIndex}}
+        </ul>
+        <ul class="diff">
+          {{#each previousContent}}
+          <li class="{{style}}">{{{text}}}</li>
+          {{/each}}
+        </ul>
+      </div>
+      <div class="col-xs-7 col-lg-6" style="padding: 0px;">
+        <ul class="count">
+          {{#eachIndex previousContent}}
+          <li>{{{index}}}</li>
+          {{/eachIndex}}
+        </ul>
+        <ul class="diff">
+          {{#each currentContent}}
+          <li class="{{style}}">{{{text}}}</li>
+          {{/each}}
+        </ul>
+      </div>
+    </script>
+
+    <% include scripts %>
+    <script type="text/javascript" src="/diff.js">
+    </script>
+  </body>
+</html>

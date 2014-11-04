@@ -44,7 +44,7 @@ var User = model.User;
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
-var page = require('./routes/page');
+var diff = require('./routes/diff');
 
 var app = express();
 
@@ -64,7 +64,14 @@ app.use(express.static(sharejs.scriptsDir));
 
 app.use('/', routes);
 app.use('/users', users);
-app.use('/page',page);
+app.use('/page',require('./routes/page'));
+app.use('/diff',diff);
+app.use('/history',require('./routes/history'));
+app.use('/pagesettings',require('./routes/pagesettings'));
+app.use('/profile',require('./routes/profile'));
+
+app.use('/service',require('./routes/hierarchy'));
+app.use('/service',require('./routes/services'));
 
 numClients = 0;
 
@@ -115,13 +122,15 @@ app.use(browserChannel({
                   var pageVersion = pageVersionList[0];
                   console.log("Fetch version from DB");
                   console.log(pageVersion);
-                  // Inject document from database
-                  database.writeSnapshot(data['c'],data['d'],{
-                    v:0,
-                    type:'http://sharejs.org/types/textv1',
-                    data:pageVersion.content
-                  }, function(err){});
-                  console.log(data);
+                  if (pageVersion) {
+                    // Inject document from database
+                    database.writeSnapshot(data['c'],data['d'],{
+                      v:0,
+                      type:'http://sharejs.org/types/textv1',
+                      data:pageVersion.content
+                    }, function(err){});
+                    console.log(data);
+                  }
                   return stream.push(data);
                 }
             });
@@ -191,6 +200,8 @@ app.use(function(err, req, res, next) {
 
 module.exports = app;
 
+var hierarchy = require('./hierarchy');
+
 mongoose.connect('mongodb://localhost/tidalwave');
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
@@ -209,17 +220,17 @@ db.once('open', function callback () {
     //console.log("Checking for new versions");
     database.query(null, "users", null, null, function(dummy,results){
       _.each(results,function(result) {
-        //console.log(result);
+        console.log(result);
         if (!(lastVersionDumped[result.docName] == result.v)) {
           // Dump new PageVersion
 
           var dumpWithPage = function(page) {
             console.log(page);
-            var newPageVersion = new PageVersion({pageId:page._id,version:page.nextVersion,content:result.data});
+            var newPageVersion = new PageVersion({pageId:page._id,version:page.nextVersion,content:result.data,editorIds:[]});
             debug("DUMPING " + page.name + " WITH VERSION " + page.nextVersion);
             console.log(newPageVersion);
             page.nextVersion++;
-            page.save(function (err, innerPage) {
+            page.save(function (err) {
                 if (err) {
                   console.log(err);
                 } else {
@@ -252,5 +263,7 @@ db.once('open', function callback () {
         }
       });
     });
+
+    hierarchy.rebuild();
   }, 1000);
 });

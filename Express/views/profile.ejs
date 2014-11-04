@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <% include header %>
+  
+  <body>
+    <% include variables %>
+
+    <% include navbar %>
+    
+    <div class="main-row col-md-12">
+      <div id="content-placeholder"></div>
+    </div>
+
+    <% include footer %>
+
+    <script id="recent-changes-partial-template" type="text/x-handlebars-template">
+      <div>
+        <ul>
+          {{#each changes}}
+          <li>
+            <span>
+              <a href="{{id}}">{{title}}</a> updated by
+              {{#each editors}}
+              <a href="{{id}}">{{name}}</a>{{#unless @last}},{{/unless}}
+              {{/each}}
+              (<a href="">view change</a>) {{time}}</span>
+          </li>
+          {{#unless @last}}
+          <hr />
+          {{/unless}}
+          {{/each}}
+        </ul>
+      </div>
+    </script>
+
+    <script id="profile-template" type="text/x-handlebars-template">
+      <div class="col-md-2"></div>
+      <div class="col-md-8">
+        {{#ifEqual "<%= profileId %>" "<%= userId %>"}}
+        <div class="well well-lg">
+          <h3>Update Profile</h3>
+          <form class="form-horizontal" role="form">
+            {{#with profile}}
+            <div class="form-group">
+              <label class="col-md-3 control-label" for="inputUsername">Username:</label>
+              <div class="col-md-5">
+                <input type="text" class="form-control" id="inputUsername" placeholder="Username" value="{{username}}">
+              </div>
+            </div>
+            <!-- {{username}}, {{groups}}, {{creationTime}}, {{linkedAccounts}} -->
+            {{/with}}
+          </form>
+        </div>
+
+        <!--
+        <div class="well well-lg">
+          {{#with profile}}
+          <h3>Manage Groups</h3>
+          <select class="groupselectpicker">
+            {{#each groups}}
+            <option>{{name}}</option>
+            {{/each}}
+          </select>
+          {{/with}}
+          {{#with selectedGroup}}
+          <table class="table table-hover">
+            <tr><th>Name</th><th>Type</th><th>Role</th><th>Remove?</th></tr>
+            {{#each users}}
+            <tr>
+              <td>{{name}}</td>
+              <td>{{type}}</td>
+              <td style="padding: 0px;">
+                <select class="form-control">
+                  {{#ifEqual role "Manager"}}
+                  <option selected>Manager</option>
+                  {{else}}
+                  <option>Manager</option>
+                  {{/ifEqual}}
+                  {{#ifEqual role "Member"}}
+                  <option selected>Member</option>
+                  {{else}}
+                  <option>Member</option>
+                  {{/ifEqual}}
+                </select>
+              </td>
+              <td style="padding-left: 20px;"><a href="{{id}}"><span class="glyphicon glyphicon-remove" style="color:red;"></span></a>
+            </tr>
+            {{/each}}
+          </table>
+          <div class="input-group">
+            <select id="select-member" placeholder="Add a member..."></select>
+            <span class="input-group-btn" style="padding-bottom: 5px;">
+              <button class="btn btn-default" type="button">Add</button>
+            </span>
+          </div>
+          {{/with}}
+        </div>
+        -->
+        {{else}}
+        <div class="well well-lg">
+          {{#with profile}}
+          {{username}}, {{groups}}, {{creationTime}}, {{linkedAccounts}}
+          {{/with}}
+        </div>
+        {{/ifEqual}}
+        <div class="well well-lg">
+          <h3>Recent Changes</h3>
+          {{> recentChangesPartial}}
+        </div>
+      </div>
+    </script>
+
+    <% include scripts %>
+    <script type="text/javascript" src="/profile.js">
+    </script>
+  </body>
+</html>

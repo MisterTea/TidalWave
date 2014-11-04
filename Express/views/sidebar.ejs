@@ -1,0 +1,66 @@
+<div class="well col-xs-4 col-lg-2" ng-controller="PageMenuController" id="PageMenuController">
+  <div class="input-group input-group-sm">
+    <input type="text" class="form-control" ng-model="query">
+    <span class="input-group-addon" style="padding: 0px;">
+      <button class="btn btn-default" style="margin: 0px; padding: 0px;">
+        <span class="glyphicon glyphicon-pencil" style="font-size: 18px;"></span>
+      </button>
+    </span>
+  </div>
+  <br />
+  <abn-tree tree-data="my_data" tree-control="my_tree" on-select="my_tree_handler(branch)" expand-level="0" initial-selection=""></abn-tree>
+</div>
+<div id="sidebar-placeholder" class="col-xs-4 col-lg-2" style="display:none"></div>
+
+<script id="category-template" type="text/x-handlebars-template">
+  {{#if children}}
+  <label label-default="" class="nav-header" id="{{name}}">
+    {{#shouldExpand expand id}}
+    <span class="tree-toggler glyphicon glyphicon-minus-sign"></span>
+    {{else}}
+    <span class="tree-toggler glyphicon glyphicon-plus-sign"></span>
+    {{/shouldExpand}}
+    <a href="/page/{{name}}">{{name}}</a>
+  </label>
+  {{#shouldExpand expand id}}
+  <ul class="nav nav-list tree">
+    {{#each children}}
+    <li>
+      {{> categoryPartial}}
+    </li>
+    {{/each}}
+  </ul>
+  {{/shouldExpand}}
+  {{else}}
+  <label label-default="" class="nav-header" id="{{name}}">
+    <span class="tree-toggler glyphicon glyphicon-minus"></span>
+    <a href="/page/{{name}}">{{name}}</a>
+  </label>
+  {{/if}}
+</script>
+
+<script id="root-categories-template" type="text/x-handlebars-template">
+  <div class="well">
+    <div class="input-group input-group-sm">
+      <input type="text" class="form-control">
+      <span class="input-group-addon" style="padding: 0px;">
+        <button class="btn btn-default" style="margin: 0px; padding: 0px;">
+          <span class="glyphicon glyphicon-pencil" style="font-size: 18px;"></span>
+        </button>
+      </span>
+    </div>
+    <br />
+
+    <ul class="nav">
+      {{#each children}}
+      <li>
+        {{> categoryPartial}}
+      </li>
+      {{#unless @last}}
+      <li class="nav-divider"></li>
+      {{/unless}}
+      {{/each}}
+    </ul>
+  </div>
+</script>
+

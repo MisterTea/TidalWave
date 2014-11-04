@@ -1,11 +1,30 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
-  </head>
-  <body>
-    <h1><%= title %></h1>
-    <p>Welcome to <%= title %></p>
-  </body>
-</html>
+<script id="recent-changes-partial-template" type="text/x-handlebars-template">
+  <div>
+  <ul>
+  {{#each recentChanges}}
+  <li>
+  <span>
+  <a href="{{id}}">{{title}}</a> updated by
+  {{#each editors}}
+  <a href="{{id}}">{{name}}</a>{{#unless @last}},{{/unless}}
+  {{/each}}
+  (<a href="">view change</a>) {{time}}</span>
+  </li>
+  {{#unless @last}}
+  <hr />
+  {{/unless}}
+  {{/each}}
+  </ul>
+  </div>
+</script>
+
+<script id="home-page-template" type="text/x-handlebars-template">
+  <div id="home-page-content" class="col-xs-14 col-lg-10">
+  <div class="well well-lg">
+  <div>Recent Changes</div>
+  {{#with changes}}
+  {{> recentChangesPartial}}
+  {{/with}}
+  </div>
+    </div>
+</script>

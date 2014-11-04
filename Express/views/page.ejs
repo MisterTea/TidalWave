@@ -1,337 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" ng-app="TidalWavePage">
   <% include header %>
   
   <body>
+    <% include variables %>
+    <script type="text/javascript">
+      editMode = <%- editMode %>;
+      pageDetails = <%- JSON.stringify(pageDetails) %>;
+    </script>
+
+    <% include navbar %>
     
-    <div
-       id="navbar-placeholder"
-       class="navbar navbar-default navbar-fixed-top"
-       role="navigation">
-    </div>
-
-    <div class="main-row">
-      <div id="sidebar-placeholder" class="col-xs-4 col-lg-2"></div>
-      <div id="content-placeholder"></div>
-    </div>
-
-    <div id="footer">
-      <p class="text-muted">Powered by <a href="https://github.com/MisterTea/TidalWave">TidalWave</a></p>
-    </div>
-
-    <script id="navbar-template" type="text/x-handlebars-template">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="#">{{projectName}}</a>
-        </div>
-        <div class="collapse navbar-collapse navbar-right">
-          <ul class="nav navbar-nav">
-            {{#if userName}}
-            <li><a href="#">{{userName}}</a></li>
-            {{else}}
-            <li><a href="#">Log In</a></li>
-            {{/if}}
-          </ul>
-        </div>
-        <div class="collapse navbar-collapse">
-          <ul class="nav navbar-nav">
-            {{#if onPage}}
-            {{#if editMode}}
-            <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Export <b class="caret"></b></a>
-              <ul class="dropdown-menu">
-                <li><a href="#">Text</a></li>
-                <li><a href="#">PDF</a></li>
-                <li><a href="#">HTML</a></li>
-              </ul>
-            </li>
-            <li><a href="#">Finish Editing</a></li>
-            <li><a href="#">History</a></li>
-            <li><a href="#">Settings</a></li>
-            {{else}}
-            <li><a href="#">Edit</a></li>
-            {{/if}}
-            {{/if}}
-          </ul>
-        </div>
-      </div>
-    </script>
-
-    <script id="category-template" type="text/x-handlebars-template">
-      {{#if children}}
-      <label label-default="" class="nav-header" id="{{name}}">
-        {{#if expand}}
-        <span class="tree-toggler glyphicon glyphicon-minus-sign"></span>
-        {{else}}
-        <span class="tree-toggler glyphicon glyphicon-plus-sign"></span>
-        {{/if}}
-        <a href="{{id}}">{{name}}</a>
-      </label>
-      {{#if expand}}
-      <ul class="nav nav-list tree">
-        {{#each children}}
-        <li>
-          {{> categoryPartial}}
-        </li>
-        {{/each}}
-      </ul>
-      {{/if}}
-      {{else}}
-      <label label-default="" class="nav-header" id="{{name}}">
-        <span class="tree-toggler glyphicon glyphicon-minus"></span>
-        <a href="{{id}}">{{name}}</a>
-      </label>
-      {{/if}}
-    </script>
-
-    <script id="root-categories-template" type="text/x-handlebars-template">
-      <div class="well">
-        <div class="input-group input-group-sm">
-          <input type="text" class="form-control">
-          <span class="input-group-addon" style="padding: 0px;">
-            <button class="btn btn-default" style="margin: 0px; padding: 0px;">
-              <span class="glyphicon glyphicon-pencil" style="font-size: 18px;"></span>
-            </button>
-          </span>
-        </div>
-        <br />
-
-        <ul class="nav">
-          {{#each children}}
-          <li>
-            {{> categoryPartial}}
-          </li>
-          {{#unless @last}}
-          <li class="nav-divider"></li>
-          {{/unless}}
-          {{/each}}
-        </ul>
-      </div>
-    </script>
-
-    <script id="search-template" type="text/x-handlebars-template">
-      <div class="col-xs-14 col-lg-10">
-        <h2>Search Results for '{{query}}'</h2>
-        <ul>
-          {{#each searchResults}}
-          <li>
-            <h4><a href="{{id}}">{{title}}</a></h4>
-            {{{text}}}
-          </li>
-          {{#unless @last}}
-          <hr />
-          {{/unless}}
-          {{/each}}
-        </ul>
-        {{#ifGreaterThan searchResults.length 15}}
-        <ul class="pagination">
-          {{#ifEqual activePage 1}}
-          <li class="disabled"><a href="#">&laquo;</a></li>
-          {{else}}
-          <li><a href="#">&laquo;</a></li>
-          {{/ifEqual}}
-          {{#eachPage searchResults activePage}}
-          {{#if activePage}}
-          <li class="active"><a href="#">{{page}}</a></li>
-          {{else}}
-          <li><a href="#">{{page}}</a></li>
-          {{/if}}
-          {{/eachPage}}
-          {{#ifGreaterThan numPages activePage}}
-          <li><a href="#">&raquo;</a></li>
-          {{else}}
-          <li class="disabled"><a href="#">&raquo;</a></li>
-          {{/ifGreaterThan}}
-        </ul>
-        {{/ifGreaterThan}}
-      </div>
-    </script>
-    
-    <script id="recent-changes-partial-template" type="text/x-handlebars-template">
-      <div>
-        <ul>
-          {{#each recentChanges}}
-          <li>
-            <span>
-              <a href="{{id}}">{{title}}</a> updated by
-              {{#each editors}}
-              <a href="{{id}}">{{name}}</a>{{#unless @last}},{{/unless}}
-              {{/each}}
-              (<a href="">view change</a>) {{time}}</span>
-          </li>
-          {{#unless @last}}
-          <hr />
-          {{/unless}}
-          {{/each}}
-        </ul>
-      </div>
-    </script>
-
-    <script id="home-page-template" type="text/x-handlebars-template">
-      <div id="home-page-content" class="col-xs-14 col-lg-10">
-        <div class="well well-lg">
-          <div>Recent Changes</div>
-          {{#with changes}}
-          {{> recentChangesPartial}}
-          {{/with}}
-        </div>
-      </div>
-    </script>
-
-    <script id="page-history-template" type="text/x-handlebars-template">
-      <div class="col-xs-14 col-lg-10">
-        <table class="table table-bordered table-responsive">
-          <tr>
-            <th>Version</th>
-            <th>Date</th>
-            <th>Editors</th>
-            {{#if comparing}}
-            <th style="width: 10em;">Compare With</th>
-            {{else}}
-            <th>Compare</th>
-            {{/if}}
-            <th>Restore</th>
-          </tr>
-          {{#each history}}
-          <tr>
-            <td>{{version}}</td>
-            <td>{{prettyDate createTime}}</td>
-            <td>{{editors}}</td>
-            <td><input type="checkbox"></td>
-            <td>
-              {{#unless @first}}
-              <a href="#"><span class="glyphicon glyphicon-repeat"></span></a>
-              {{/unless}}
-            </td>
-          </tr>
-          {{/each}}
-        </table>
-      </div>
-    </script>
-
-    <script id="page-settings-template" type="text/x-handlebars-template">
-      <div class="col-xs-2 col-lg-1" style="padding-bottom:100px;"></div>
-      <div id="settings" class="col-xs-10 col-lg-8" style="padding-bottom:100px;">
-        <form class="form-horizontal" role="form">
-          <div class="form-group">
-            <label for="inputTitle" class="col-sm-2 control-label">Title</label>
-            <div class="col-sm-10">
-              <div class="input-group">
-                <div class="right-inner-addon ">
-                  <input type="text" class="form-control" id="inputTitle" value="{{pageData.title}}">
-                  {{#if newTitleIsValid}}
-                  <span class="glyphicon glyphicon-ok-sign text-success"></span>
-                  {{else}}
-                  <span class="glyphicon glyphicon-remove-sign text-danger"></span>
-                  {{/if}}
+    <div class="main-row col-lg-12">
+      <% include sidebar %>
+      <div ng-controller="PageContentController" class="col-lg-10">
+        <div ng-show="settingsActive" id="settings" class="col-xs-10 col-lg-10">
+          <div class="col-md-3"></div>
+          <div class="col-md-6">
+            <div class="well well-lg">
+              <form class="form-horizontal" role="form" ng-submit="updateName()">
+                <div class="form-group">
+                  <label for="inputTitle" class="col-sm-2 control-label">Title</label>
+                  <div class="col-sm-10">
+                    <div class="input-group">
+                      <div class="right-inner-addon ">
+                        <input type="text" class="form-control" id="inputTitle" ng-model="newName">
+                      </div>
+                      <span class="input-group-btn" style="padding-bottom: 5px;">
+                        <button class="btn btn-default" type="submit">Update</button>
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <span class="input-group-btn" style="padding-bottom: 5px;">
-                  <button class="btn btn-default" type="button">Update</button>
-                </span>
-              </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="inputParent" class="col-sm-2 control-label">Parent</label>
-            <div class="col-sm-10">
-              <div class="input-group">
-                <div class="right-inner-addon ">
-                  <input type="text" class="form-control" id="inputParent" value="{{lastAncestorName pageData.ancestors}}">
-                  {{#if newParentIsValid}}
-                  <span class="glyphicon glyphicon-ok-sign text-success"></span>
-                  {{else}}
-                  <span class="glyphicon glyphicon-remove-sign text-danger"></span>
-                  {{/if}}
+              </form>
+              <form class="form-horizontal" role="form" ng-submit="updateParent()">
+                <div class="form-group">
+                  <label for="inputParent" class="col-sm-2 control-label">Parent</label>
+                  <div class="col-sm-10">
+                    <div class="input-group">
+                      <div class="right-inner-addon ">
+                        <input type="text" class="form-control" id="inputParent" value="{{lastAncestorName}}">
+                      </div>
+                      <span class="input-group-btn" style="padding-bottom: 5px;">
+                        <button class="btn btn-default" type="button">Update</button>
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <span class="input-group-btn" style="padding-bottom: 5px;">
-                  <button class="btn btn-default" type="button">Update</button>
-                </span>
-              </div>
+              </form>
             </div>
           </div>
-          <div class="form-group">
-            <label for="inputEmail3" class="col-sm-2 control-label">Share</label>
-            <div class="col-sm-10">
-              <div class="input-group">
-                <select id="select-member" placeholder="User or Group..."></select>
-                <span class="input-group-btn" style="padding-bottom: 5px;">
-                  <button class="btn btn-default" type="button">Add</button>
-                </span>
-              </div>
-            </div>
+        </div>
+
+        <div id="ancestry" class="col-lg-10">
+          <ol class="breadcrumb">
+            <li ng-repeat="ancestor in ancestry"><a ng-href="/page/{{ancestor.name}}">{{ancestor.name}}</a></li>
+            <li class="active">{{page.name}}</li>
+          </ol>
+        </div>
+
+        <div id="editor" class="col-xs-7 col-lg-6" ng-show="editMode">Loading...</div>
+        <div id="content" class="col-xs-7 col-lg-6">
+          <div ng-show="version" class="alert alert-warning" style="text-align: center;">
+            <strong>You are viewing an old version of this page.</strong><br />
+            <a class="alert-link" href="#">View Current version</a>&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
+            <a class="alert-link" href="#">Show Differences</a>&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
+            <a class="alert-link" href="#">Restore this version</a>&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
+            <a class="alert-link" href="#">View Page History</a>
+            <ul class="pager" style="margin-top:5px;">
+              <li class="disabled"><a href="#">&larr; Older</a></li>
+              <li>Version {{version}}</li>
+              <li><a href="#">Newer &rarr;</a></li>
+            </ul>
           </div>
-        </form>
-        <div>
-          <table class="table table-hover">
-            <tr>
-              <th>Name</th>
-              <th>Type</th>
-              <th>Role</th>
-              <th>Remove?</th>
-            </tr>
-            {{#each pageData.users}}
-            <tr>
-              <td>{{name}}</td>
-              <td>{{type}}</td>
-              <td style="padding: 0px;">
-                <select class="form-control">
-                  {{#ifEqual role "Owner"}}
-                  <option selected>Owner</option>
-                  {{else}}
-                  <option>Owner</option>
-                  {{/ifEqual}}
-                  {{#ifEqual role "Manager"}}
-                  <option selected>Manager</option>
-                  {{else}}
-                  <option>Manager</option>
-                  {{/ifEqual}}
-                  {{#ifEqual role "Editor"}}
-                  <option selected>Editor</option>
-                  {{else}}
-                  <option>Editor</option>
-                  {{/ifEqual}}
-                  {{#ifEqual role "Reader"}}
-                  <option selected>Reader</option>
-                  {{else}}
-                  <option>Reader</option>
-                  {{/ifEqual}}
-                </select>
-              </td>
-              <td style="padding-left: 20px;"><a href="{{id}}"><span class="glyphicon glyphicon-remove" style="color:red;"></span></a></td>
-            </tr>
-            {{/each}}
-          </table>
+          <div id="content-markdown">
+          </div>
         </div>
       </div>
-    </script>
+    </div>
+
+    <% include footer %>
+
+    <% include index %>
 
     <script id="page-template" type="text/x-handlebars-template">
-      <div id="ancestry" class="col-xs-14 col-lg-10">
-        <ol class="breadcrumb">
-          {{#each pageData.ancestors}}
-          <li><a href="#">{{name}}</a></li>
-          {{/each}}
-          <li class="active">{{pageData.title}}</li>
-        </ol>
-      </div>
+      <% if(pageDetails && pageDetails.content==null) { %>
+      <div id="editor" class="col-xs-7 col-lg-5">Loading...</div>
+      <% } else { %>
+      <div id="editor" class="col-xs-7 col-lg-5" style="display:none;">Loading...</div>
+      <% } %>
 
-      {{#if editMode}}
-      <div id="editor" class="col-xs-7 col-lg-5" document="<%= pagename %>">Loading...</div>
       <div id="content" class="col-xs-7 col-lg-5">
-      <div id="content-markdown">
-      {{{pageData.contentHtml}}}
-      </div>
-      </div>
-      {{else}}
-      <div id="editor" class="col-xs-7 col-lg-5" document="<%= pagename %>" style="display:none;">Loading...</div>
-      <div id="content" class="col-xs-14 col-lg-10">
-        {{#if isOlderVersion}}
+        {{#if version}}
         <div class="alert alert-warning" style="text-align: center;">
           <strong>You are viewing an old version of this page.</strong><br />
           <a class="alert-link" href="#">View Current version</a>&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
@@ -340,179 +100,18 @@
           <a class="alert-link" href="#">View Page History</a>
           <ul class="pager" style="margin-top:5px;">
             <li class="disabled"><a href="#">&larr; Older</a></li>
-            <li>Version {{pageData.version}}</li>
+            <li>Version {{version}}</li>
             <li><a href="#">Newer &rarr;</a></li>
           </ul>
         </div>
         {{/if}}
         <div id="content-markdown">
-          {{{pageData.contentHtml}}}
         </div>
       </div>
-      {{/if}}
     </script>
 
-    <script id="page-change-template" type="text/x-handlebars-template">
-      <div class="col-xs-14 col-lg-10">
-        <ol class="breadcrumb">
-          {{#each ancestors}}
-          <li><a href="#">{{name}}</a></li>
-          {{/each}}
-          <li class="active">{{title}}</li>
-        </ol>
-        <ul class="pager">
-          <li class="disabled"><a href="#">&larr; Older</a></li>
-          <li><a href="#">Newer &rarr;</a></li>
-        </ul>
-      </div>
-      <div class="col-xs-7 col-lg-5" style="padding: 0px;">
-        <ul class="count">
-          {{#eachIndex previousContent}}
-          <li>{{{index}}}</li>
-          {{/eachIndex}}
-        </ul>
-        <ul class="diff">
-          {{#each previousContent}}
-          <li class="{{style}}">{{{text}}}</li>
-          {{/each}}
-        </ul>
-      </div>
-      <div class="col-xs-7 col-lg-5" style="padding: 0px;">
-        <ul class="count">
-          {{#eachIndex previousContent}}
-          <li>{{{index}}}</li>
-          {{/eachIndex}}
-        </ul>
-        <ul class="diff">
-          {{#each currentContent}}
-          <li class="{{style}}">{{{text}}}</li>
-          {{/each}}
-        </ul>
-      </div>
-    </script>
-
-    <script id="profile-template" type="text/x-handlebars-template">
-      <div class="col-xs-14 col-lg-10">
-        <ul class="nav nav-pills">
-          {{#ifEqual onSection "viewProfile"}}
-          <li class="active"><a href="#">View Profile</a></li>
-          {{else}}
-          <li><a href="#">View Profile</a></li>
-          {{/ifEqual}}
-          {{#ifEqual onSection "editProfile"}}
-          <li class="active"><a href="#">Edit Profile</a></li>
-          {{else}}
-          <li><a href="#">Profile</a></li>
-          {{/ifEqual}}
-          {{#ifEqual onSection "manageGroups"}}
-          <li class="active"><a href="#">Manage Groups</a></li>
-          {{else}}
-          <li><a href="#">Manage Groups</a></li>
-          {{/ifEqual}}
-        </ul>
-        <br />
-        {{#ifEqual onSection "viewProfile"}}
-        <div class="well well-lg">
-          {{#with profile}}
-          {{username}}, {{groups}}, {{creationTime}}, {{linkedAccounts}}
-          {{/with}}
-        </div>
-        <div class="well well-lg">
-          <div>Recent Changes</div>
-          {{#with changes}}
-          {{> recentChangesPartial}}
-          {{/with}}
-        </div>
-        {{/ifEqual}}
-        {{#ifEqual onSection "manageGroups"}}
-        <div class="well well-lg">
-          {{#with profile}}
-          <h3>Manage Groups</h3>
-          <select class="groupselectpicker">
-            {{#each groups}}
-            <option>{{name}}</option>
-            {{/each}}
-          </select>
-          {{/with}}
-          {{#with selectedGroup}}
-          <table class="table table-hover">
-            <tr><th>Name</th><th>Type</th><th>Role</th><th>Remove?</th></tr>
-            {{#each users}}
-            <tr>
-              <td>{{name}}</td>
-              <td>{{type}}</td>
-              <td style="padding: 0px;">
-                <select class="form-control">
-                  {{#ifEqual role "Manager"}}
-                  <option selected>Manager</option>
-                  {{else}}
-                  <option>Manager</option>
-                  {{/ifEqual}}
-                  {{#ifEqual role "Member"}}
-                  <option selected>Member</option>
-                  {{else}}
-                  <option>Member</option>
-                  {{/ifEqual}}
-                </select>
-              </td>
-              <td style="padding-left: 20px;"><a href="{{id}}"><span class="glyphicon glyphicon-remove" style="color:red;"></span></a>
-            </tr>
-            {{/each}}
-          </table>
-          <div class="input-group">
-            <select id="select-member" placeholder="Add a member..."></select>
-            <span class="input-group-btn" style="padding-bottom: 5px;">
-              <button class="btn btn-default" type="button">Add</button>
-            </span>
-          </div>
-          {{/with}}
-        </div>
-        {{/ifEqual}}
-      </div>
-    </script>
-
-    <script type="text/javascript" src="/bower_components/jquery/dist/jquery.js">
-    </script>
-    <script type="text/javascript" src="/bower_components/sifter/sifter.js">
-    </script>
-    <script type="text/javascript" src="/bower_components/microplugin/src/microplugin.js">
-    </script>
-    <script type="text/javascript" src="/bower_components/selectize/dist/js/selectize.js">
-    </script>
-    <script type="text/javascript" src="/bower_components/bootstrap/dist/js/bootstrap.js">
-    </script>
-    <script type="text/javascript" src="/bower_components/handlebars/handlebars.js">
-    </script>
-    <script type="text/javascript" src="/bower_components/underscore/underscore.js">
-    </script>
-    <script type="text/javascript" src="/bower_components/marked/lib/marked.js">
-    </script>
-    <script type="text/javascript" src="/bower_components/bootstrap-select/bootstrap-select.js">
-    </script>
-    <script type="text/javascript" src="/bower_components/momentjs/moment.js">
-    </script>
-
-    <script type="text/javascript">
-      window.fd = {logging: false};
-    </script>
-    <script type="text/javascript" src="/filedrop/filedrop.js">
-    </script>
-
-    <script type="text/javascript" src="/bower_components/google-diff-match-patch-js/diff_match_patch_uncompressed.js">
-    </script>
-
-    <script type="text/javascript" src="/finddeep.js">
-    </script>
-
+    <% include scripts %>
     <script type="text/javascript" src="/page.js">
     </script>
-
-    <script src="/ace/ace.js" type="text/javascript" charset="utf-8">
-    </script>
-    <script src="/channel/bcsocket.js"></script>
-    <script src="/text.js"></script>
-    <script src="/share.uncompressed.js"></script>
-    <script src="/ace_connect.js" type="text/javascript"></script>
-
   </body>
 </html>

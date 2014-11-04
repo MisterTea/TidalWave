@@ -1,21 +1,35 @@
 var mongoose = require('mongoose');
 
 var PageSchema = new mongoose.Schema({
-  name: String,
-  nextVersion: {type:Number, default:1}
+  name: {type:String, index:true, unique:true, required:true},
+  parentPageId: {type:String, index:true},
+  nextVersion: {type:Number, default:1},
+  publish: {type:Boolean, default:false},
+  userPermissions: {type:[String], default:[]},
+  groupPermissions: {type:[String], default:[]}
 });
 exports.Page = mongoose.model("Page",PageSchema);
 
 var PageVersionSchema = mongoose.Schema({
-  pageId:String,
-  version:Number,
-  editorIds:[String],
-  content:String,
+  pageId: {type:String, index:true, required:true},
+  version: {type: Number, index:true, required:true},
+  editorIds:{type:[String], index:true},
+  content:{type:String},
   timestamp: {type: Date, default: Date.now}
 });
 exports.PageVersion = mongoose.model("PageVersion",PageVersionSchema);
 
 var UserSchema = mongoose.Schema({
-  name: String
+  username: {type:String, index:true, unique:true, required:true},
+  firstName: {type:String, index:true},
+  lastName: {type:String, index:true},
+  email: {type:String, index:true, required:true},
+  groups: {type:[String], default: []}
 });
+UserSchema.index({firstName:1, lastName:1});
 exports.User = mongoose.model("User",UserSchema);
+
+var GroupSchema = mongoose.Schema({
+  name: {type:String, index:true, unique:true, required:true}
+});
+exports.Group = mongoose.model("Group",GroupSchema);
