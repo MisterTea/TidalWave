@@ -15,7 +15,7 @@ exports.rebuild = function() {
 
   var completed = {};
   var pageIndexMap = {};
-  var allPages = Page.find({},function(err, pages) {
+  Page.find({},function(err, pages) {
     for (var k=0;k<pages.length;k++) {
       pageIndexMap[pages[k]._id] = k;
     }
@@ -25,7 +25,7 @@ exports.rebuild = function() {
       var onPage = pages[a];
       while (onPage) {
         var parentId = onPage.parentId;
-        if (parentId && pageIndexMap[parentId]) {
+        if (parentId && parentId in pageIndexMap) {
           onPage = pages[pageIndexMap[parentId]];
         } else {
           break;
@@ -43,7 +43,7 @@ exports.rebuild = function() {
         if (!page.parentId) {
           completed[i] = {id:page._id,name:page.name,children:[]};
           pageHierarchy.push(completed[i]);
-        } else if (pageIndexMap[page.parentId] && completed[pageIndexMap[page.parentId]]) {
+        } else if (page.parentId in pageIndexMap && completed[pageIndexMap[page.parentId]]) {
           completed[i] = {id:page._id,name:page.name,children:[]};
           completed[pageIndexMap[page.parentId]].children.push(completed[i]);
         }
@@ -62,7 +62,7 @@ exports.fetch = function(filter,cb) {
   var pageIndexMap = {};
   var pageHierarchy = [];
   console.log("Finding with filter: " + JSON.stringify(filter));
-  var allPages = Page.find(filter,function(err, pages) {
+  Page.find(filter,function(err, pages) {
     if (err) {
       console.log(err.message);
     }
@@ -75,7 +75,7 @@ exports.fetch = function(filter,cb) {
       var onPage = pages[a];
       while (onPage) {
         var parentId = onPage.parentId;
-        if (parentId && pageIndexMap[parentId]) {
+        if (parentId && parentId in pageIndexMap) {
           onPage = pages[pageIndexMap[parentId]];
         } else {
           break;
@@ -92,7 +92,7 @@ exports.fetch = function(filter,cb) {
         if (!page.parentId) {
           completed[i] = {id:page._id,name:page.name,children:[]};
           pageHierarchy.push(completed[i]);
-        } else if (pageIndexMap[page.parentId] && completed[pageIndexMap[page.parentId]]) {
+        } else if (page.parentId in pageIndexMap && completed[pageIndexMap[page.parentId]]) {
           completed[i] = {id:page._id,name:page.name,children:[]};
           completed[pageIndexMap[page.parentId]].children.push(completed[i]);
         }

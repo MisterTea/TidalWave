@@ -2,19 +2,17 @@
 <html lang="en" ng-app="TidalWavePage">
   <% include header %>
   
-  <body>
+  <body ng-cloak>
     <% include variables %>
-    <script type="text/javascript">
-      editMode = <%- editMode %>;
-      pageDetails = <%- JSON.stringify(pageDetails) %>;
-    </script>
+
+    <% include scripts %>
 
     <% include navbar %>
     
     <div class="main-row col-lg-12">
       <% include sidebar %>
-      <div ng-controller="PageContentController" class="col-lg-10">
-        <div ng-show="settingsActive" id="settings" class="col-xs-10 col-lg-10">
+      <div ng-controller="PageContentController">
+        <div ng-show="settingsActive" id="settings" class="col-xs-12 col-lg-12">
           <div class="col-md-3"></div>
           <div class="col-md-6">
             <div class="well well-lg">
@@ -23,7 +21,7 @@
                   <label for="inputTitle" class="col-sm-2 control-label">Title</label>
                   <div class="col-sm-10">
                     <div class="input-group">
-                      <div class="right-inner-addon ">
+                      <div>
                         <input type="text" class="form-control" id="inputTitle" ng-model="newName">
                       </div>
                       <span class="input-group-btn" style="padding-bottom: 5px;">
@@ -33,16 +31,20 @@
                   </div>
                 </div>
               </form>
+
               <form class="form-horizontal" role="form" ng-submit="updateParent()">
                 <div class="form-group">
                   <label for="inputParent" class="col-sm-2 control-label">Parent</label>
                   <div class="col-sm-10">
                     <div class="input-group">
-                      <div class="right-inner-addon ">
-                        <input type="text" class="form-control" id="inputParent" value="{{lastAncestorName}}">
+                      <div>
+                        <div class="control-group">
+                          <select id="select-parent" class="demo-default" placeholder="Pick a parent...">
+                          </select>
+                        </div>
                       </div>
                       <span class="input-group-btn" style="padding-bottom: 5px;">
-                        <button class="btn btn-default" type="button">Update</button>
+                        <button class="btn btn-default" type="submit">Update</button>
                       </span>
                     </div>
                   </div>
@@ -52,9 +54,9 @@
           </div>
         </div>
 
-        <div id="ancestry" class="col-lg-10">
+        <div id="ancestry" ng-show="!editMode" class="col-lg-10">
           <ol class="breadcrumb">
-            <li ng-repeat="ancestor in ancestry"><a ng-href="/page/{{ancestor.name}}">{{ancestor.name}}</a></li>
+            <li ng-repeat="ancestor in ancestry"><a href="" ng-click="changePage(ancestor.name);">{{ancestor.name}}</a></li>
             <li class="active">{{page.name}}</li>
           </ol>
         </div>
@@ -110,7 +112,6 @@
       </div>
     </script>
 
-    <% include scripts %>
     <script type="text/javascript" src="/page.js">
     </script>
   </body>

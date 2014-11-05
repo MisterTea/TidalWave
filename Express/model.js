@@ -2,7 +2,7 @@ var mongoose = require('mongoose');
 
 var PageSchema = new mongoose.Schema({
   name: {type:String, index:true, unique:true, required:true},
-  parentPageId: {type:String, index:true},
+  parentId: {type:String, index:true},
   nextVersion: {type:Number, default:1},
   publish: {type:Boolean, default:false},
   userPermissions: {type:[String], default:[]},

@@ -29,7 +29,7 @@ var socket = null;
 var connection = null;
 var doc = null;
 
-var enableEditMode = function() {
+var enableEditMode = function(pageName) {
   $("#editor").show();
   $("#PageMenuController").hide();
   console.log($("#editor")[0]);
@@ -61,7 +61,7 @@ var enableEditMode = function() {
   socket = new BCSocket(null, {reconnect: true});
   connection = new window.sharejs.Connection(socket);
 
-  doc = connection.get('users', pageDetails.page.name);
+  doc = connection.get('users', pageName);
   doc.subscribe();
 
   doc.whenReady(function () {
@@ -86,23 +86,13 @@ var disableEditMode = function() {
   }
 };
 
+var parentList = null;
+
 $(document).ready(function() {
   //$("#sidebar-placeholder").html(categoriesTemplate(pageHierarchy));
   //$("#navbar-placeholder").html(navbarTemplate(navbarData));
   
   $("span.tree-toggler").click(treeClickHandler);
-
-  console.log("PAGE INFO:");
-  console.log(pageDetails);
-
-  if (pageDetails == null) {
-    // Home Page
-
-    $("#content-placeholder").html(homePageTemplate(homePageData));    
-  } else {
-    // View / Edit
-    //$("#content-placeholder").html(pageTemplate(pageDetails));
-  }
 });
 
 var convertToNav = function(hierarchy, callback) {
@@ -113,12 +103,24 @@ var convertToNav = function(hierarchy, callback) {
   return retval;
 };
 
-angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngAnimate'])
+var changePage = function($http,pageName,pageStateService) {
+  window.location.hash = pageName;
+  $http.get('/service/pageDetailsByName/'+pageName)
+    .success(function(data, status, headers, config) {
+      //TODO: Say success
+      pageStateService.set('pageDetails',data);
+    })
+    .error(function(data, status, headers, config) {
+      //TODO: Alert with an error
+    });
+};
+
+angular.module('TidalWavePage', ['angularBootstrapNavTree'])
   .service('pageStateService', ['$rootScope', function($rootScope) {
     var state = {
       settingsActive:false,
-      editMode:editMode,
-      pageDetails:pageDetails
+      editMode:false,
+      pageDetails:null
     };
     var get = function(key){
       return state[key];
@@ -132,13 +134,13 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngAnimate'])
       set:set
     };
   }])
-  .controller('PageMenuController', ['$scope', '$http', 'pageStateService', function($scope, $http, pageStateService) {
+  .controller('PageMenuController', ['$scope', '$http', '$timeout', 'pageStateService', function($scope, $http, $timeout, pageStateService) {
     $scope.query = "";
     var apple_selected, tree;
     $scope.my_tree_handler = function(branch) {
       console.log("CLICKED ON");
       console.log(branch);
-      window.location = "/page/"+branch.label;
+      changePage($http,branch.label,pageStateService);
     };
     apple_selected = function(branch) {
       console.log("SELECTED APPLE");
@@ -148,23 +150,34 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngAnimate'])
     $scope.my_tree = tree = {};
     $scope.doing_async = true;
 
+    $scope.$on('pageStateServiceUpdate', function(response) {
+      var pageDetails = pageStateService.get('pageDetails');
+      if (pageDetails) {
+        console.log("Selecting branch: " + pageDetails.page.name);
+        console.log($scope.my_tree);
+        $timeout(function() {
+          $scope.my_tree.select_branch_by_name(pageDetails.page.name);
+        });
+      }
+    });
+
     $scope.$watch('query',function(newValue,oldValue) {
       $scope.doing_async = true;
       console.log(oldValue + " TO " + newValue);
       if (newValue.length>0) {
-      $http.get('/service/hierarchyStartsWith/'+newValue)
-        .success(function(data, status, headers, config) {
-          $scope.my_data = [];
-          for (var i=0;i<data.length;i++) {
-            $scope.my_data.push(convertToNav(data[i]));
-          }
-          console.log("MY DATA");
-          console.log(JSON.stringify($scope.my_data));
-          $scope.doing_async = false;
-        })
-        .error(function(data, status, headers, config) {
-          //TODO: Alert with an error
-        });
+        $http.get('/service/pageStartsWith/'+newValue)
+          .success(function(data, status, headers, config) {
+            $scope.my_data = [];
+            for (var i=0;i<data.length;i++) {
+              $scope.my_data.push({id:data[i]._id, label:data[i].name});
+            }
+            console.log("MY DATA");
+            console.log(JSON.stringify($scope.my_data));
+            $scope.doing_async = false;
+          })
+          .error(function(data, status, headers, config) {
+            //TODO: Alert with an error
+          });
       } else {
         $http.get('/service/hierarchy/jgauci')
           .success(function(data, status, headers, config) {
@@ -180,6 +193,12 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngAnimate'])
             //TODO: Alert with an error
           });
       }
+      $timeout(function() {
+        var pageDetails = pageStateService.get('pageDetails');
+        if (pageDetails) {
+          $scope.my_tree.select_branch_by_name(pageDetails.page.name);
+        }
+      }, 10);
     });
     
     $scope.try_async_load = function() {
@@ -205,10 +224,15 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngAnimate'])
     $scope.editMode = pageStateService.get('editMode');
     $scope.projectName = "Tidal Wave";
     $scope.settingsActive = pageStateService.get('settingsActive');
+    $scope.page = {};
     $scope.$on('pageStateServiceUpdate', function(response) {
       console.log("Updating settings");
       $scope.settingsActive = pageStateService.get('settingsActive');
       $scope.editMode = pageStateService.get('editMode');
+      var pageDetails = pageStateService.get('pageDetails');
+      if (pageDetails) {
+        $scope.page = pageDetails.page;
+      }
     });
     $scope.toggleSettings = function() {
       console.log("Toggling setting");
@@ -224,28 +248,87 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngAnimate'])
     };
   }])
   .controller('PageContentController', ['$scope', '$http', 'pageStateService', function($scope, $http, pageStateService) {
-    var pageDetails = pageStateService.get('pageDetails');
-    $scope.page = pageDetails?pageDetails.page:null;
-    $scope.ancestry = pageDetails?pageDetails.ancestry:null;
-    $scope.editMode = false;
-    $scope.newName = pageDetails.page.name;
-    $scope.version = pageDetails?pageDetails.version:null;
+
+    parentList = $('#select-parent').selectize({
+      valueField: '_id',
+      labelField: 'name',
+      searchField: 'name',
+      allowEmptyOption:true,
+      create:false,
+      persist: false,
+      load: function(query, callback) {
+        console.log("LOADING");
+        if (!query.length) {
+          callback();
+          return;
+        }
+        $.ajax({
+          url: '/service/pageStartsWith/' + encodeURIComponent(query),
+          type: 'GET',
+          error: function() {
+            callback();
+          },
+          success: function(res) {
+            console.log(JSON.stringify(res));
+            callback(res);
+          }
+        });
+      }
+    })[0].selectize;
+
+    var pageName = window.location.hash.substring(1);
+    console.log("PAGE NAME: " + pageName);
+    $http.get('/service/pageDetailsByName/'+pageName)
+      .success(function(data, status, headers, config) {
+        //TODO: Say success
+        pageStateService.set('pageDetails',data);
+      })
+      .error(function(data, status, headers, config) {
+        //TODO: Alert with an error
+      });
     console.log("IN PAGE CONTENT CONTROLLER");
+    $scope.editMode = false;
 
     var updateState = function() {
       console.log("UPDATING PAGE STATE");
       var pageDetails = pageStateService.get('pageDetails');
+      if (pageDetails) {
+        $scope.page = pageDetails?pageDetails.page:null;
+        $scope.ancestry = pageDetails?pageDetails.ancestry:null;
+        $scope.newName = pageDetails.page.name;
+        $scope.version = pageDetails?pageDetails.version:null;
+        $scope.lastAncestorName = '';
+        var ancestry = pageDetails.ancestry;
+        console.log(ancestry);
+        if (ancestry.length>0) {
+          var parent = ancestry[ancestry.length-1];
+          parentList.clearOptions();
+          parentList.addOption({_id:parent.id, name:parent.name});
+          parentList.setValue(parent.id);
+        } else {
+          console.log("CLEARING PARENT");
+          parentList.clearOptions();
+          parentList.setValue(null);
+        }
+      } else {
+        if (pageStateService.get('editMode')) {
+          pageStateService.set('editMode',false);
+        }
+      }
+
       if ($scope.editMode && !pageStateService.get('editMode')) {
         // Leave edit mode
+        $scope.editMode = pageStateService.get('editMode');
         console.log("LEAVING EDIT MODE");
         disableEditMode();
+        pageStateService.set('settingsActive',false);
       }
       if (!$scope.editMode && pageStateService.get('editMode')) {
         // Enter edit mode
+        $scope.editMode = pageStateService.get('editMode');
         console.log("ENTERING EDIT MODE");
-        enableEditMode();
+        enableEditMode($scope.page.name);
       }
-      $scope.editMode = pageStateService.get('editMode');
       $scope.settingsActive = pageStateService.get('settingsActive');
       if (pageDetails && pageDetails.content) {
         $("#content-markdown").empty();
@@ -253,18 +336,34 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngAnimate'])
         $("#content-markdown").append($.parseHTML(markdownText));
       }
     };
-    updateState();
 
     $scope.updateName = function() {
+      var pageDetails = pageStateService.get('pageDetails');
       console.log("NEW NAME: " + $scope.newName);
       $http.get('/service/renamePage/'+pageDetails.page.name+'/'+$scope.newName)
         .success(function(data, status, headers, config) {
           console.log("Name changed, redirecting");
-          window.location = '/page/'+$scope.newName+'/edit';
+          changePage($http,$scope.newName,pageStateService);
         })
         .error(function(data, status, headers, config) {
           //TODO: Alert with an error
         });
+    };
+
+    $scope.updateParent = function() {
+      var pageDetails = pageStateService.get('pageDetails');
+      console.log("NEW Parent: " + parentList.getValue());
+      $http.get('/service/setPageParent/'+pageDetails.page._id+'/'+parentList.getValue())
+        .success(function(data, status, headers, config) {
+          //TODO: Say success
+        })
+        .error(function(data, status, headers, config) {
+          //TODO: Alert with an error
+        });
+    };
+
+    $scope.changePage = function(newPage) {
+      changePage($http, newPage, pageStateService);
     };
 
     $scope.$on('pageStateServiceUpdate', function(response) {

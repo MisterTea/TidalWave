@@ -220,7 +220,6 @@ db.once('open', function callback () {
     //console.log("Checking for new versions");
     database.query(null, "users", null, null, function(dummy,results){
       _.each(results,function(result) {
-        console.log(result);
         if (!(lastVersionDumped[result.docName] == result.v)) {
           // Dump new PageVersion
 
