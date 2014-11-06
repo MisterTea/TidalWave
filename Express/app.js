@@ -110,34 +110,14 @@ app.use(browserChannel({
           if (page) {
             console.log("Fetch page from DB");
             console.log(page);
-            PageVersion
-              .find({pageId:page._id})
-              .sort({version:-1})
-              .limit(1)
-              .exec(function(err, pageVersionList){
-                if(err) {
-                  console.log(err);
-                  return null;
-                } else {
-                  var pageVersion = pageVersionList[0];
-                  console.log("Fetch version from DB");
-                  console.log(pageVersion);
-                  if (pageVersion) {
-                    // Inject document from database
-                    database.writeSnapshot(data['c'],data['d'],{
-                      v:0,
-                      type:'http://sharejs.org/types/textv1',
-                      data:pageVersion.content
-                    }, function(err){});
-                    console.log(data);
-                  }
-                  return stream.push(data);
-                }
-            });
-            return true;
-          } else {
-            return stream.push(data);
+            // Inject document from database
+            database.writeSnapshot(data['c'],data['d'],{
+              v:0,
+              type:'http://sharejs.org/types/textv1',
+              data:page.content
+            }, function(err){});
           }
+          return stream.push(data);
         });
         return true;
       } else {
@@ -223,12 +203,17 @@ db.once('open', function callback () {
         if (!(lastVersionDumped[result.docName] == result.v)) {
           // Dump new PageVersion
 
-          var dumpWithPage = function(page) {
+          Page.findOne({name:result.docName}, function(err, page){
+            if (page == null) {
+              console.log("ERROR: UPDATING PAGE THAT DOES NOT EXIST");
+              return;
+            }
             console.log(page);
             var newPageVersion = new PageVersion({pageId:page._id,version:page.nextVersion,content:result.data,editorIds:[]});
             debug("DUMPING " + page.name + " WITH VERSION " + page.nextVersion);
             console.log(newPageVersion);
             page.nextVersion++;
+            page.content = result.data;
             page.save(function (err) {
                 if (err) {
                   console.log(err);
@@ -242,22 +227,6 @@ db.once('open', function callback () {
                   });
                 }
             });
-          };
-
-          Page.findOne({name:result.docName}, function(err, page){
-            if (page == null) {
-              // Page does not exist yet, create
-              var innerPage = new Page({name:result.docName});
-              innerPage.save(function(err, innerInnerPage) {
-                if (err) {
-                  console.log(err);
-                } else {
-                  dumpWithPage(innerInnerPage);
-                }
-              });
-            } else {
-              dumpWithPage(page);
-            }
           });
         }
       });

@@ -67,12 +67,14 @@ var enableEditMode = function(pageName) {
   doc.whenReady(function () {
     console.log(doc);
     if (!doc.type) doc.create('text');
-    if (doc.type && doc.type.name === 'text')
+    if (doc.type && doc.type.name === 'text') {
       doc.attachAce(editor, false, function(change) {
         $("#content-markdown").empty();
         var markdownText = marked(editor.getSession().getDocument().getValue());
         $("#content-markdown").append($.parseHTML(markdownText));
       });
+      editor.focus();
+    }
   });
 };
 
@@ -108,6 +110,8 @@ var changePage = function($http,pageName,pageStateService) {
   $http.get('/service/pageDetailsByName/'+pageName)
     .success(function(data, status, headers, config) {
       //TODO: Say success
+      console.log("GOT PAGE DETAILS FROM HTTP");
+      console.log(data);
       pageStateService.set('pageDetails',data);
     })
     .error(function(data, status, headers, config) {
@@ -149,6 +153,18 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
     $scope.my_data = [];
     $scope.my_tree = tree = {};
     $scope.doing_async = true;
+
+    $scope.createPage = function() {
+      //console.log("Creating page");
+      $http.get('/service/createPage/'+$scope.query)
+        .success(function(data, status, headers, config) {
+          //TODO: Say success
+          changePage($http,$scope.query,pageStateService);
+        })
+        .error(function(data, status, headers, config) {
+          //TODO: Alert with an error
+        });
+    };
 
     $scope.$on('pageStateServiceUpdate', function(response) {
       var pageDetails = pageStateService.get('pageDetails');
@@ -278,20 +294,25 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
 
     var pageName = window.location.hash.substring(1);
     console.log("PAGE NAME: " + pageName);
-    $http.get('/service/pageDetailsByName/'+pageName)
-      .success(function(data, status, headers, config) {
-        //TODO: Say success
-        pageStateService.set('pageDetails',data);
-      })
-      .error(function(data, status, headers, config) {
-        //TODO: Alert with an error
-      });
+    if (pageName) {
+      $http.get('/service/pageDetailsByName/'+pageName)
+        .success(function(data, status, headers, config) {
+          //TODO: Say success
+          pageStateService.set('pageDetails',data);
+        })
+        .error(function(data, status, headers, config) {
+          //TODO: Alert with an error
+        });
+    } else {
+      console.log("ON HOME PAGE");
+    }
     console.log("IN PAGE CONTENT CONTROLLER");
     $scope.editMode = false;
 
     var updateState = function() {
       console.log("UPDATING PAGE STATE");
       var pageDetails = pageStateService.get('pageDetails');
+      console.log(pageDetails);
       if (pageDetails) {
         $scope.page = pageDetails?pageDetails.page:null;
         $scope.ancestry = pageDetails?pageDetails.ancestry:null;
@@ -329,10 +350,13 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         console.log("ENTERING EDIT MODE");
         enableEditMode($scope.page.name);
       }
+
       $scope.settingsActive = pageStateService.get('settingsActive');
-      if (pageDetails && pageDetails.content) {
+      console.log("UPDATING MARKDOWN");
+      console.log(pageDetails);
+      if (pageDetails && typeof pageDetails.page.content != undefined) {
         $("#content-markdown").empty();
-        var markdownText = marked(pageDetails.content);
+        var markdownText = marked(pageDetails.page.content);
         $("#content-markdown").append($.parseHTML(markdownText));
       }
     };

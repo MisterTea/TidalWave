@@ -6,7 +6,8 @@ var PageSchema = new mongoose.Schema({
   nextVersion: {type:Number, default:1},
   publish: {type:Boolean, default:false},
   userPermissions: {type:[String], default:[]},
-  groupPermissions: {type:[String], default:[]}
+  groupPermissions: {type:[String], default:[]},
+  content: String
 });
 exports.Page = mongoose.model("Page",PageSchema);
 
@@ -23,8 +24,10 @@ var UserSchema = mongoose.Schema({
   username: {type:String, index:true, unique:true, required:true},
   firstName: {type:String, index:true},
   lastName: {type:String, index:true},
+  fullName: {type:String, index:true},
   email: {type:String, index:true, required:true},
-  groups: {type:[String], default: []}
+  groups: {type:[String], default: []},
+  loggedIn: {type:Boolean, default:false}
 });
 UserSchema.index({firstName:1, lastName:1});
 exports.User = mongoose.model("User",UserSchema);

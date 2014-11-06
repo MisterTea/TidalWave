@@ -38,28 +38,13 @@ router.get('/pageDetailsByName/:name', function(req, res) {
     console.log("Got page");
     console.log(page);
     if (page) {
-      PageVersion
-        .find({pageId:page._id})
-        .sort({version:-1})
-        .limit(1)
-        .exec(function(err, pageVersionList){
-          if(err) {
-            console.log(err);
-          } else {
-            var pageVersion = pageVersionList[0];
-            if (pageVersion) {
-              var pageDetails = {
-                page:page,
-                ancestry:Hierarchy.pageAncestry[page._id],
-                version:null,
-                content:pageVersion.content
-              };
-              res.status(200).type("application/json").send(JSON.stringify(pageDetails));
-            } else {
-              res.status(404).end();
-            }
-          }
-        });
+      var pageDetails = {
+        page:page,
+        ancestry:Hierarchy.pageAncestry[page._id],
+        version:null,
+        content:page.content
+      };
+      res.status(200).type("application/json").send(JSON.stringify(pageDetails));
     } else {
       res.status(404).end();
     }
@@ -73,6 +58,27 @@ router.get('/setPageParent/:pageId/:parentId', function(req, res) {
     page.save(function(err, innerPage) {
       res.status(200).end();
     });
+  });
+});
+
+router.get('/createPage/:pageName', function(req, res) {
+  var pageName = req.param('pageName');
+  Page.findOne({name:pageName}, function(err, page){
+    if (page == null) {
+      // Page does not exist yet, create
+      var innerPage = new Page({name:pageName,content:''});
+      innerPage.save(function(err, innerInnerPage) {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("Rebuilding hierarchy");
+          Hierarchy.rebuild();
+          res.status(200).end();
+        }
+      });
+    } else {
+      res.status(400).end();
+    }
   });
 });
 

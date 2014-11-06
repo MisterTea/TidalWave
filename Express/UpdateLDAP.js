@@ -50,6 +50,7 @@ var fetchUsers = function(successCallback,errorCallback) {
           email:email,
           firstName:firstName,
           lastName:lastName,
+          fullName:firstName + " " + lastName,
           username:username
         });
 
@@ -229,7 +230,7 @@ db.once('open', function callback () {
           if (usersToSave.length) {
             var onUser = 0;
             var iterateUser = function(err, product, numberAffected) {
-              console.log("Added user: " + JSON.stringify(product));
+              //console.log("Added user: " + JSON.stringify(product));
               onUser++;
               if (usersToSave.length>onUser) {
                 usersToSave[onUser].save(iterateUser);
