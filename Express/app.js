@@ -34,6 +34,7 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var session = require('express-session');
 
 var mongoose = require('mongoose');
 
@@ -45,6 +46,9 @@ var User = model.User;
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var diff = require('./routes/diff');
+
+var passport = require('passport')
+  , LocalStrategy = require('passport-local').Strategy;
 
 var app = express();
 
@@ -61,6 +65,9 @@ app.use(cookieParser());
 app.use(require('less-middleware')(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(sharejs.scriptsDir));
+app.use(session({ secret: 't1d4lw4ve', saveUninitialized:true, resave:true }));
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use('/', routes);
 app.use('/users', users);
