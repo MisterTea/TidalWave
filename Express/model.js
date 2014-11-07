@@ -6,7 +6,7 @@ var PageSchema = new mongoose.Schema({
   nextVersion: {type:Number, default:1},
   publish: {type:Boolean, default:false},
   userPermissions: {type:[String], default:[]},
-  groupPermissions: {type:[String], default:[]},
+  groupPermissions: {type:[String], default:["tidalwave-admin"]},
   content: String
 });
 exports.Page = mongoose.model("Page",PageSchema);

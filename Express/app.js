@@ -50,6 +50,50 @@ var diff = require('./routes/diff');
 var passport = require('passport')
   , LocalStrategy = require('passport-local').Strategy;
 
+// Passport session setup.
+//   To support persistent login sessions, Passport needs to be able to
+//   serialize users into and deserialize users out of the session.  Typically,
+//   this will be as simple as storing the user ID when serializing, and finding
+//   the user by ID when deserializing.
+//
+//   Both serializer and deserializer edited for Remember Me functionality
+passport.serializeUser(function(user, done) {
+  done(null, user.username);
+});
+
+passport.deserializeUser(function(username, done) {
+  User.findOne( { username: username } , function (err, user) {
+    done(err, user);
+  });
+});
+
+var auth = require("./auth");
+
+// Use the LocalStrategy within Passport.
+//   Strategies in passport require a `verify` function, which accept
+//   credentials (in this case, a username and password), and invoke a callback
+//   with a user object.  In the real world, this would query a database;
+//   however, in this example we are using a baked-in set of users.
+passport.use(new LocalStrategy(function(username, password, done) {
+  User.findOne({ username: username }, function(err, user) {
+    if (err) { return done(err); }
+    if (!user) { return done(null, false, { message: 'Unknown user ' + username }); }
+    auth.login(username,password,function() {
+      user.loggedIn = true;
+      user.save(function(err, innerUser) {
+        if (err) {
+          console.log(err);
+        } else {
+          done(null,user);
+        }
+      });
+    }, function(errMessage) {
+      return done(null, false, {message: errMessage});
+    });
+    return true;
+  });
+}));
+
 var app = express();
 
 // view engine setup
@@ -66,9 +110,48 @@ app.use(require('less-middleware')(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(sharejs.scriptsDir));
 app.use(session({ secret: 't1d4lw4ve', saveUninitialized:true, resave:true }));
+// Remember Me middleware
+app.use( function (req, res, next) {
+  if ( req.method == 'POST' && req.url == '/login' ) {
+    if ( req.body.rememberme ) {
+      req.session.cookie.maxAge = 2592000000; // 30*24*60*60*1000 Rememeber 'me' for 30 days
+    } else {
+      req.session.cookie.expires = false;
+    }
+  }
+  next();
+});
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.get('/login', function(req, res){
+  res.render('login', { user: req.user, message: req.session.messages });
+});
+app.post('/login', function(req, res, next) {
+  passport.authenticate('local', function(err, user, info) {
+    if (err) { 
+      next(err);
+      return;
+    }
+    if (!user) {
+      req.session.messages = [info.message];
+      res.redirect('/login');
+      return;
+    }
+    req.logIn(user, function(err) {
+      if (err) {
+        next(err);
+        return;
+      }
+      res.redirect('/');
+      return;
+    });
+  })(req, res, next);
+});
+app.get('/logout', function(req, res){
+  req.logout();
+  res.redirect('/');
+});
 app.use('/', routes);
 app.use('/users', users);
 app.use('/page',require('./routes/page'));
@@ -189,6 +272,9 @@ module.exports = app;
 
 var hierarchy = require('./hierarchy');
 
+var LiveSync = require('./livesync');
+LiveSync.init(database);
+
 mongoose.connect('mongodb://localhost/tidalwave');
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
@@ -202,43 +288,8 @@ db.once('open', function callback () {
     debug('TidalWave server listening on port ' + server.address().port);
   });
 
-  var lastVersionDumped = {};
   setInterval(function() {
-    //console.log("Checking for new versions");
-    database.query(null, "users", null, null, function(dummy,results){
-      _.each(results,function(result) {
-        if (!(lastVersionDumped[result.docName] == result.v)) {
-          // Dump new PageVersion
-
-          Page.findOne({name:result.docName}, function(err, page){
-            if (page == null) {
-              console.log("ERROR: UPDATING PAGE THAT DOES NOT EXIST");
-              return;
-            }
-            console.log(page);
-            var newPageVersion = new PageVersion({pageId:page._id,version:page.nextVersion,content:result.data,editorIds:[]});
-            debug("DUMPING " + page.name + " WITH VERSION " + page.nextVersion);
-            console.log(newPageVersion);
-            page.nextVersion++;
-            page.content = result.data;
-            page.save(function (err) {
-                if (err) {
-                  console.log(err);
-                } else {
-                  debug("DUMPING PAGEVERSION");
-                  newPageVersion.save(function (err,innerPageVersion) {
-                    if (err) {
-                      console.log(err);
-                    }
-                    lastVersionDumped[result.docName] = result.v;
-                  });
-                }
-            });
-          });
-        }
-      });
-    });
-
+    LiveSync.syncAll();
     hierarchy.rebuild();
   }, 1000);
 });

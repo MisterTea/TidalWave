@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>TidalWave Log In</title>
+    <link href="/bower_components/bootstrap/dist/css/bootstrap.css" rel="stylesheet">
+    <link href="/css/login.css" rel="stylesheet">
+    
+  </head>
+  <body>
+    <section id="login">
+      <div class="container">
+        <div class="row">
+          <div class="col-xs-12">
+            <div class="form-wrap">
+              <h1>Log in with your email account</h1>
+              <form role="form" action="/login" method="post" id="login-form" autocomplete="off">
+                <div class="form-group">
+                  <label for="email" class="sr-only">Email</label>
+                  <input type="text" name="username" class="form-control" placeholder="Enter your username...">
+                </div>
+                <div class="form-group">
+                  <label for="key" class="sr-only">Password</label>
+                  <input type="password" name="password" class="form-control" placeholder="Password">
+                </div>
+                <div class="form-group" style="text-align:center;">
+                  <input type="checkbox" name="rememberme"/>
+                  <span class="rememberme">Remember Me</span>
+                </div>
+                <input type="submit" id="btn-login" class="btn btn-custom btn-lg btn-block" value="Log in">
+              </form>
+              <a href="javascript:;" class="forget" data-toggle="modal" data-target=".forget-modal">Forgot your password?</a>
+              <hr>
+            </div>
+          </div> <!-- /.col-xs-12 -->
+        </div> <!-- /.row -->
+      </div> <!-- /.container -->
+    </section>
+    <script type="text/javascript">
+      function showPassword() {
+      var key_attr = $('#key').attr('type');
+      if(key_attr != 'text') {
+      $('.checkbox').addClass('show');
+      $('#key').attr('type', 'text');
+      } else {
+      $('.checkbox').removeClass('show');
+      $('#key').attr('type', 'password');
+      }
+      }
+    </script>
+  </body>
+</html>

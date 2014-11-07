@@ -30,6 +30,7 @@ var connection = null;
 var doc = null;
 
 var enableEditMode = function(pageName) {
+  console.log("Enabling edit mode for page " + pageName);
   $("#editor").show();
   $("#PageMenuController").hide();
   console.log($("#editor")[0]);
@@ -89,12 +90,14 @@ var disableEditMode = function() {
 };
 
 var parentList = null;
+var userPermissionList = null;
+var groupPermissionList = null;
 
 $(document).ready(function() {
   //$("#sidebar-placeholder").html(categoriesTemplate(pageHierarchy));
   //$("#navbar-placeholder").html(navbarTemplate(navbarData));
   
-  $("span.tree-toggler").click(treeClickHandler);
+  //$("span.tree-toggler").click(treeClickHandler);
 });
 
 var convertToNav = function(hierarchy, callback) {
@@ -105,14 +108,17 @@ var convertToNav = function(hierarchy, callback) {
   return retval;
 };
 
-var changePage = function($http,pageName,pageStateService) {
+var changePage = function($http,pageName,pageStateService,callback) {
   window.location.hash = pageName;
-  $http.get('/service/pageDetailsByName/'+pageName)
+  $http.post('/service/pageDetailsByName/'+pageName)
     .success(function(data, status, headers, config) {
       //TODO: Say success
       console.log("GOT PAGE DETAILS FROM HTTP");
       console.log(data);
       pageStateService.set('pageDetails',data);
+      if (callback) {
+        callback();
+      }
     })
     .error(function(data, status, headers, config) {
       //TODO: Alert with an error
@@ -144,7 +150,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
     $scope.my_tree_handler = function(branch) {
       console.log("CLICKED ON");
       console.log(branch);
-      changePage($http,branch.label,pageStateService);
+      changePage($http,branch.label,pageStateService,null);
     };
     apple_selected = function(branch) {
       console.log("SELECTED APPLE");
@@ -159,7 +165,13 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       $http.get('/service/createPage/'+$scope.query)
         .success(function(data, status, headers, config) {
           //TODO: Say success
-          changePage($http,$scope.query,pageStateService);
+          console.log("Created page");
+          var newPage = $scope.query;
+          $scope.query = '';
+          changePage($http,newPage,pageStateService, function() {
+            pageStateService.set('settingsActive', true);
+            pageStateService.set('editMode',true);
+          });
         })
         .error(function(data, status, headers, config) {
           //TODO: Alert with an error
@@ -285,7 +297,66 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
             callback();
           },
           success: function(res) {
-            console.log(JSON.stringify(res));
+            for (var i=0;i<res.length;i++) {
+              if (res[i]._id == pageStateService.get('pageDetails').page._id) {
+                res.splice(i,1);
+                break;
+              }
+            }
+            callback(res);
+          }
+        });
+      }
+    })[0].selectize;
+
+    userPermissionList = $('#userPermissionList').selectize({
+      delimiter: ',',
+      allowEmptyOption:true,
+      create:false,
+      valueField: '_id',
+      labelField: 'fullName',
+      searchField: 'fullName',
+      load: function(query, callback) {
+        console.log("LOADING");
+        if (!query.length) {
+          callback();
+          return;
+        }
+        $.ajax({
+          url: '/service/findUserFullName/' + encodeURIComponent(query),
+          type: 'GET',
+          error: function() {
+            callback();
+          },
+          success: function(res) {
+            console.log(res);
+            callback(res);
+          }
+        });
+      }
+    })[0].selectize;
+
+    groupPermissionList = $('#groupPermissionList').selectize({
+      delimiter: ',',
+      allowEmptyOption:true,
+      create:false,
+      valueField: 'name',
+      labelField: 'name',
+      searchField: 'name',
+      load: function(query, callback) {
+        console.log("LOADING");
+        if (!query.length) {
+          callback();
+          return;
+        }
+        $.ajax({
+          url: '/service/findGroupName/' + encodeURIComponent(query),
+          type: 'GET',
+          error: function() {
+            callback();
+          },
+          success: function(res) {
+            console.log(res);
             callback(res);
           }
         });
@@ -295,7 +366,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
     var pageName = window.location.hash.substring(1);
     console.log("PAGE NAME: " + pageName);
     if (pageName) {
-      $http.get('/service/pageDetailsByName/'+pageName)
+      $http.post('/service/pageDetailsByName/'+pageName)
         .success(function(data, status, headers, config) {
           //TODO: Say success
           pageStateService.set('pageDetails',data);
@@ -331,6 +402,26 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
           parentList.clearOptions();
           parentList.setValue(null);
         }
+
+        userPermissionList.clear();
+        for (var i=0;i<pageDetails.userPermissions.length;i++) {
+          var user = pageDetails.userPermissions[i];
+          console.log("ADDING USER PERMISSION ");
+          console.log(user);
+          userPermissionList.addOption({_id:user.username, fullName:user.fullName});
+          userPermissionList.addItem(user.username);
+        }
+        userPermissionList.refreshItems();
+
+        groupPermissionList.clear();
+        for (var i=0;i<pageDetails.page.groupPermissions.length;i++) {
+          var group = pageDetails.page.groupPermissions[i];
+          console.log("ADDING GROUP PERMISSION ");
+          console.log(group);
+          groupPermissionList.addOption({name:group});
+          groupPermissionList.addItem(group);
+        }
+        groupPermissionList.refreshItems();
       } else {
         if (pageStateService.get('editMode')) {
           pageStateService.set('editMode',false);
@@ -341,8 +432,29 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         // Leave edit mode
         $scope.editMode = pageStateService.get('editMode');
         console.log("LEAVING EDIT MODE");
-        disableEditMode();
-        pageStateService.set('settingsActive',false);
+        $http.get('/service/savePageDynamicContent/'+$scope.page.name)
+          .success(function(data, status, headers, config) {
+            console.log("SAVED PAGE");
+            $http.post('/service/pageDetailsByName/'+$scope.page.name)
+              .success(function(data, status, headers, config) {
+                //TODO: Say success
+                console.log("GOT PAGE DETAILS FROM HTTP");
+                console.log(data);
+                pageStateService.set('pageDetails',data);
+                disableEditMode();
+                pageStateService.set('settingsActive',false);
+              })
+              .error(function(data, status, headers, config) {
+                //TODO: Alert with an error
+                console.log("ERROR");
+                console.log(data);
+              });
+          })
+          .error(function(data, status, headers, config) {
+            //TODO: Alert with an error
+            console.log("ERROR");
+            console.log(data);
+          });
       }
       if (!$scope.editMode && pageStateService.get('editMode')) {
         // Enter edit mode
@@ -361,25 +473,53 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       }
     };
 
-    $scope.updateName = function() {
+    $scope.updateSettings = function() {
       var pageDetails = pageStateService.get('pageDetails');
-      console.log("NEW NAME: " + $scope.newName);
-      $http.get('/service/renamePage/'+pageDetails.page.name+'/'+$scope.newName)
-        .success(function(data, status, headers, config) {
-          console.log("Name changed, redirecting");
-          changePage($http,$scope.newName,pageStateService);
-        })
-        .error(function(data, status, headers, config) {
-          //TODO: Alert with an error
-        });
-    };
+      var pageCopy = JSON.parse(JSON.stringify(pageDetails.page));
 
-    $scope.updateParent = function() {
-      var pageDetails = pageStateService.get('pageDetails');
-      console.log("NEW Parent: " + parentList.getValue());
-      $http.get('/service/setPageParent/'+pageDetails.page._id+'/'+parentList.getValue())
+      console.log("NEW NAME: " + $scope.newName);
+      var nameChanged = (pageCopy.name != $scope.newName);
+      pageCopy.name = $scope.newName;
+
+      var newParent = parentList.getValue();
+      if (!newParent || newParent.length==0) {
+        newParent = null;
+      }
+      console.log("NEW Parent: " + newParent);
+      pageCopy.parentId = newParent;
+
+      if (newParent) {
+        pageCopy.userPermissions = [];
+        pageCopy.groupPermissions = [];
+      } else {
+        console.log(userPermissionList.getValue());
+        console.log(groupPermissionList.getValue());
+
+        if (userPermissionList.getValue().length==0
+            && groupPermissionList.getValue().length==0) {
+          // TODO: Alert with error, someone needs to own this page
+          return;
+        }
+
+        if (userPermissionList.getValue().length>0) {
+          pageCopy.userPermissions = userPermissionList.getValue().split(',');
+        } else {
+          pageCopy.userPermissions = [];
+        }
+        if (groupPermissionList.getValue().length>0) {
+          pageCopy.groupPermissions = groupPermissionList.getValue().split(',');
+        } else {
+          pageCopy.groupPermissions = [];
+        }
+      }
+
+      console.log(pageCopy);
+      $http.post('/service/updatePage/'+JSON.stringify(pageCopy))
         .success(function(data, status, headers, config) {
-          //TODO: Say success
+          if (nameChanged) {
+            console.log("Name changed, redirecting");
+            changePage($http,$scope.newName,pageStateService,null);
+          }
         })
         .error(function(data, status, headers, config) {
           //TODO: Alert with an error
@@ -387,7 +527,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
     };
 
     $scope.changePage = function(newPage) {
-      changePage($http, newPage, pageStateService);
+      changePage($http, newPage, pageStateService,null);
     };
 
     $scope.$on('pageStateServiceUpdate', function(response) {

@@ -1,40 +1,28 @@
 var elasticsearch = require('elasticsearch');
 var client = new elasticsearch.Client({
   host: 'localhost:9200',
-  log: 'trace'
-});
-
-client.ping({
-  requestTimeout: 1000,
-  // undocumented params are appended to the query string
-  hello: "elasticsearch!"
-}, function (error) {
-  if (error) {
-    console.error('elasticsearch cluster is down!');
-  } else {
-    console.log('All is well');
-  }
+  log: 'warning'
 });
 
 client.search({
-  index: 'tidalwave.users',
+  index: 'tidalwave.pages',
   body: {
     from:0,
     size:5,
     query: {
       filtered: {
         filter: {
-          term: {
-            loggedIn: "false"
-          }
+          or: [{
+            terms: {
+              userPermissions: ["jgauci","lahjsdlaj"]
+            }},{
+            terms: {
+              groupPermissions: ["aasdasd", "kjashdkjah"]
+            }}]
         },
         query: {
           match_phrase_prefix: {        
-            fullName: {
-              query:'"jason gauc"',
-              prefix_length:3,
-              max_expansions : 100000
-            }
+            content: "t"
           }
         }
       }

@@ -3,17 +3,21 @@ var router = express.Router();
 
 var pageHierarchy = require('../hierarchy').pageHierarchy;
 
-router.get('/:pagename', function(req, res) {
-  res.render('history', {
-    pagename: req.param('pagename'),
-    pageHierarchy:pageHierarchy,
-    navbarData:{
-      projectName:"Tidal Wave",
-      userName:"Jason Gauci",
-      onPage:false,
-      editMode:false
-    }
-  });
-});
+router.get(
+  '/:pagename',
+  require('../auth-helper').ensureAuthenticated,
+  function(req, res) {
+    res.render('history', {
+      pagename: req.param('pagename'),
+      pageHierarchy:pageHierarchy,
+      navbarData:{
+        projectName:"Tidal Wave",
+        userName:req.user.fullName,
+        onPage:false,
+        editMode:false
+      }
+    });
+  }
+);
 
 module.exports = router;
