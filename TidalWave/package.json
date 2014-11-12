@@ -21,6 +21,7 @@
     "ldapjs": "^0.7.1",
     "less-middleware": "1.0.x",
     "livedb": "^0.4.8",
+    "lodash": "^2.4.1",
     "marked-toc": "^0.2.8",
     "mongodb": "^1.4.19",
     "mongoose": "^3.8.18",

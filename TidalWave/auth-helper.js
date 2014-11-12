@@ -11,3 +11,13 @@ exports.ensureAuthenticated = function(req, res, next) {
   res.redirect('/login');
 };
 
+exports.queryPermissionWrapper = function(query, user) {
+  return query.or(
+    [{userPermissions: user.username},
+     {groupPermissions: user.groups},
+     {derivedUserPermissions: user.username},
+     {derivedGroupPermissions: user.groups}
+    ]);
+  //bypass security
+  //return query;
+};

@@ -13,37 +13,92 @@ var LiveSync = require('../livesync');
 
 var toc = require('marked-toc');
 
+var _ = require('lodash');
+
 var elasticsearch = require('elasticsearch');
 var client = new elasticsearch.Client({
   host: 'localhost:9200',
   log: 'warning'
 });
 
-router.post(
-  '/updatePage/:page',
-  AuthHelper.ensureAuthenticated,
-  function(req, res) {
-    var page = new Page(JSON.parse(req.param('page')));
-    console.log("UPDATING PAGE");
-    console.log(page);
-    Page.findByIdAndUpdate(
-      page._id,
-      {$set: 
-       {name:page.name,
-        parentId:page.parentId,
-        userPermissions:page.userPermissions,
-        groupPermissions:page.groupPermissions
-       }},function(err, page) {
+var queryPermissionWrapper = AuthHelper.queryPermissionWrapper;
+
+var userCanAccessPage = function(user,page,callback) {
+  if (
+    !(_.contains(page.userPermissions,user.username)) &&
+      !(_.intersection(page.groupPermissions,user.groups).length>0) &&
+      !(_.contains(page.derivedUserPermissions,user.username)) &&
+      !(_.intersection(page.derivedGroupPermissions,user.groups).length>0)
+  ) {
+    console.log(JSON.stringify(user) + " CANNOT ACCESS " + JSON.stringify(page));
+    callback(false);
+    return;
+  }
+  if (page.parentId) {
+    Page.findOne({_id:page.parentId},function(err, parentPage) {
       if (err) {
-        console.log("Error updating page");
-        console.log(err);
-        res.status(500).end();
+        // handle error
+        console.log(JSON.stringify(user) + " CANNOT FIND PARENT " + JSON.stringify(page));
+        callback(false);
         return;
       }
-      console.log("Updated successfully");
-      console.log(page);
-      res.status(200).end();
+      userCanAccessPage(user,parentPage,callback);
     });
+  } else {
+    console.log(JSON.stringify(user) + " CAN ACCESS " + JSON.stringify(page));
+    callback(true);
+  }
+};
+
+router.post(
+  '/updatePage',
+  AuthHelper.ensureAuthenticated,
+  function(req, res) {
+    console.log("UPDATING PAGE");
+    console.log(req.body);
+    var page = new Page(req.body);
+    Page.findById(
+      page._id,
+      function(err, outerPage) {
+        console.log("FOUND PAGE TO UPDATE");
+        console.log(outerPage);
+        userCanAccessPage(req.user,outerPage,function(outerSuccess) {
+          if (!outerSuccess) {
+            console.log("TREID TO UPDATE PAGE WITHOUT ACCESS");
+            // Tried to update a page without access
+            res.status(403).end();
+            return;
+          }
+          userCanAccessPage(req.user,page,function(success) {
+            if (success) {
+              console.log("UPDATING PAGE");
+              console.log(page);
+              Page.findByIdAndUpdate(
+                page._id,
+                {$set: 
+                 {name:page.name,
+                  parentId:page.parentId,
+                  userPermissions:page.userPermissions,
+                  groupPermissions:page.groupPermissions
+                 }},function(err, page) {
+                   if (err) {
+                     console.log("Error updating page");
+                     console.log(err);
+                     res.status(500).end();
+                     return;
+                   }
+                   console.log("Updated successfully");
+                   console.log(page);
+                   res.status(200).end();
+                 });
+            } else {
+              console.log("UPDATE WOULD BAN USER FROM HIS OWN PAGE");
+              // Tried to change permissions in a way that would ban the user doing the update.
+              res.status(403).end();
+            }
+          });
+        });
+      });
   }
 );
 
@@ -53,13 +108,18 @@ router.post(
   function(req, res) {
     var pageId = req.param('pageId');
 
-    Page
-      .findOne({_id:pageId})
+    queryPermissionWrapper(Page.findOne({_id:pageId}), req.user)
       .exec(function(err, page) {
         if (err) {
           res.status(404).end();
         } else {
-          res.status(200).type("text/x-markdown").send(toc(page.content));
+          userCanAccessPage(req.user,page,function(success) {
+            if (success) {
+              res.status(200).type("text/x-markdown").send(toc(page.content));
+            } else {
+              res.status(403).end();
+            }
+          });
         }
       });
   }
@@ -71,8 +131,8 @@ router.post(
   function(req, res) {
     var query = req.param('query');
 
-    Page
-      .find({name:new RegExp("^"+query, "i")})
+    queryPermissionWrapper(
+      Page.find({name:new RegExp("^"+query, "i")}), req.user)
       .limit(10)
       .exec(function(err, pages) {
         console.log("Result for " + query + ": " + JSON.stringify(pages));
@@ -86,36 +146,39 @@ router.post(
   AuthHelper.ensureAuthenticated,
   function(req, res) {
     console.log("Getting page details with name: " + req.param('name'));
-    Page.findOne({name:req.param('name')}, function(err, page) {
-      console.log("Got page");
-      console.log(page);
-      if (page) {
-        var pageDetails = {
-          page:page,
-          ancestry:Hierarchy.pageAncestry[page._id],
-          version:null,
-          content:page.content,
-          userPermissions:[]
-        };
-        // Get all users on the permissions list
-        User.find(
-          {'username': { $in: page.userPermissions }},
-          function(err,users) {
-            if (err) {
-              console.log(err);
-              res.status(500).end();
-              return;
-            }
-            for (var i=0;i<users.length;i++) {
-              pageDetails.userPermissions.push(users[i]);
-            }
-            res.status(200).type("application/json").send(JSON.stringify(pageDetails));
-          });
-      } else {
-        res.status(404).end();
-      }
-    });
-  });
+    queryPermissionWrapper(
+      Page.findOne({name:req.param('name')}), req.user)
+      .exec(function(err, page) {
+        console.log("Got page");
+        console.log(page);
+        if (page) {
+          var pageDetails = {
+            page:page,
+            ancestry:Hierarchy.pageAncestry[page._id],
+            version:null,
+            content:page.content,
+            userPermissions:[]
+          };
+          // Get all users on the permissions list
+          User.find(
+            {'username': { $in: page.userPermissions }},
+            function(err,users) {
+              if (err) {
+                console.log(err);
+                res.status(500).end();
+                return;
+              }
+              for (var i=0;i<users.length;i++) {
+                pageDetails.userPermissions.push(users[i]);
+              }
+              res.status(200).type("application/json").send(JSON.stringify(pageDetails));
+            });
+        } else {
+          res.status(404).end();
+        }
+      });
+  }
+);
 
 
 router.post(
@@ -126,12 +189,14 @@ router.post(
     if (newParent == '___null___') {
       newParent = null;
     }
-    Page.findOne({_id:req.param('pageId')}, function(err, page) {
-      page.parentId = newParent;
-      page.save(function(err, innerPage) {
-        res.status(200).end();
+    queryPermissionWrapper(
+      Page.findOne({_id:req.param('pageId')}), req.user)
+      .exec(function(err, page) {
+        page.parentId = newParent;
+        page.save(function(err, innerPage) {
+          res.status(200).end();
+        });
       });
-    });
   });
 
 router.post(
@@ -139,23 +204,25 @@ router.post(
   AuthHelper.ensureAuthenticated,
   function(req, res) {
     var pageName = req.param('pageName');
-    Page.findOne({name:pageName}, function(err, page){
-      if (page == null) {
-        // Page does not exist yet, create
-        var innerPage = new Page({name:pageName,content:'',userPermissions:[req.user.username]});
-        innerPage.save(function(err, innerInnerPage) {
-          if (err) {
-            console.log(err);
-          } else {
-            console.log("Rebuilding hierarchy");
-            Hierarchy.rebuild();
-            res.status(200).end();
-          }
-        });
-      } else {
-        res.status(400).end();
-      }
-    });
+    queryPermissionWrapper(
+      Page.findOne({name:pageName}), req.user)
+      .exec(function(err, page){
+        if (page == null) {
+          // Page does not exist yet, create
+          var innerPage = new Page({name:pageName,content:'',userPermissions:[req.user.username]});
+          innerPage.save(function(err, innerInnerPage) {
+            if (err) {
+              console.log(err);
+            } else {
+              console.log("Rebuilding hierarchy");
+              Hierarchy.rebuild();
+              res.status(200).end();
+            }
+          });
+        } else {
+          res.status(400).end();
+        }
+      });
   }
 );
 
@@ -183,8 +250,12 @@ router.post(
         query: {
           filtered: {
             filter: {
-              term: {
-                loggedIn: "true"
+              not: {
+                filter: {
+                  term: {
+                    lastLoginTime: "none"
+                  }
+                }
               }
             },
             query: {
@@ -192,7 +263,7 @@ router.post(
                 fullName: {
                   query:'"'+fullName+'"',
                   prefix_length:3,
-                  max_expansions : 100000
+                  max_expansions : 1024
                 }
               }
             }
@@ -231,7 +302,7 @@ router.post(
             name: {
               query:'"'+name+'"',
               prefix_length:3,
-              max_expansions : 100000
+              max_expansions : 1024
             }
           }
         }
@@ -273,11 +344,24 @@ router.post(
                 {
                   terms: {
                     userPermissions: [req.user.username]
-                  }},
+                  }
+                },
                 {
                   terms: {
                     groupPermissions: req.user.groups
-                  }}]
+                  }
+                },
+                {
+                  terms: {
+                    derivedUserPermissions: [req.user.username]
+                  }
+                },
+                {
+                  terms: {
+                    derivedGroupPermissions: req.user.groups
+                  }
+                }
+              ]
             },
             query: {
               match_phrase_prefix: {        
@@ -314,6 +398,6 @@ router.post(
   function(req,res) {
     console.log("RECENT CHANGES VISIBLE");
     res.status(200).type("application/json").send("\"asdf\"");
-});
+  });
 
 module.exports = router;

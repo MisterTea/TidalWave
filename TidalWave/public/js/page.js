@@ -520,33 +520,31 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       console.log("NEW Parent: " + newParent);
       pageCopy.parentId = newParent;
 
-      if (newParent) {
-        pageCopy.userPermissions = [];
-        pageCopy.groupPermissions = [];
+      console.log(userPermissionList.getValue());
+      console.log(groupPermissionList.getValue());
+
+      if (userPermissionList.getValue().length==0
+          && groupPermissionList.getValue().length==0) {
+        // TODO: Alert with error, someone needs to own this page
+        return;
+      }
+
+      console.log("PERMISSIONS");
+      console.log(userPermissionList.getValue());
+      if (userPermissionList.getValue().length>0) {
+        pageCopy.userPermissions = userPermissionList.getValue().split(',');
       } else {
-        console.log(userPermissionList.getValue());
-        console.log(groupPermissionList.getValue());
-
-        if (userPermissionList.getValue().length==0
-            && groupPermissionList.getValue().length==0) {
-          // TODO: Alert with error, someone needs to own this page
-          return;
-        }
-
-        if (userPermissionList.getValue().length>0) {
-          pageCopy.userPermissions = userPermissionList.getValue().split(',');
-        } else {
-          pageCopy.userPermissions = [];
-        }
-        if (groupPermissionList.getValue().length>0) {
-          pageCopy.groupPermissions = groupPermissionList.getValue().split(',');
-        } else {
-          pageCopy.groupPermissions = [];
-        }
+        pageCopy.userPermissions = [];
+      }
+      console.log(groupPermissionList.getValue());
+      if (groupPermissionList.getValue().length>0) {
+        pageCopy.groupPermissions = groupPermissionList.getValue().split(',');
+      } else {
+        pageCopy.groupPermissions = [];
       }
 
       console.log(pageCopy);
-      $http.post('/service/updatePage/'+JSON.stringify(pageCopy))
+      $http.post('/service/updatePage',pageCopy)
         .success(function(data, status, headers, config) {
           if (nameChanged) {
             console.log("Name changed, redirecting");

@@ -7,6 +7,8 @@ var PageSchema = new mongoose.Schema({
   publish: {type:Boolean, default:false},
   userPermissions: {type:[String], default:[]},
   groupPermissions: {type:[String], default:[]},
+  derivedUserPermissions: {type:[String], default:[]},
+  derivedGroupPermissions: {type:[String], default:[]},
   content: String
 });
 exports.Page = mongoose.model("Page",PageSchema);
