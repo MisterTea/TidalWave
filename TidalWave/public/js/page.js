@@ -496,7 +496,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
             $("#content-markdown").empty();
             var markdownText = null;
             if (data.length>0) {
-              markdownText = marked("<div class=\"well well-lg\" style=\"display: inline-block;\"><h4>Table of Contents</h4>" + data + "</div><br />\n" + pageDetails.page.content);
+              markdownText = marked("<div class=\"well well-lg\" style=\"display: inline-block;\"><h4>Table of Contents</h4>" + data.replace('#','##') + "</div><br />\n" + pageDetails.page.content);
             } else {
               markdownText = marked(pageDetails.page.content);
             }
