@@ -29,6 +29,7 @@ share = sharejs.server.createClient({
 });
 
 var express = require('express');
+var compression = require('compression');
 var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
@@ -94,6 +95,11 @@ passport.use(new LocalStrategy(function(username, password, done) {
 
 var app = express();
 
+// Compress content
+app.use(compression({
+  threshold: 512
+}));
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -104,8 +110,8 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(require('less-middleware')(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'public')));
+//app.use(require('less-middleware')(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {maxAge: 60000}));
 app.use(express.static(sharejs.scriptsDir));
 app.use(session({ secret: 't1d4lw4ve', saveUninitialized:true, resave:true }));
 // Remember Me middleware

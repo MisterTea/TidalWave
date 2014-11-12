@@ -1,59 +1,59 @@
-<!--
-<script src="/bower_components/angular/angular.min.js">
+<script src="/bower_components/angular/angular.js">
 </script>
-<script src="/bower_components/angular-animate/angular-animate.min.js">
+<script src="/bower_components/angular-animate/angular-animate.js">
 </script>
 <script src="/otherjs/angular-bootstrap-nav-tree/dist/abn_tree_directive.js">
 </script>
 
-<script type="text/javascript" src="/bower_components/jquery/dist/jquery.min.js">
+<script type="text/javascript" src="/bower_components/jquery/dist/jquery.js">
 </script>
-<script type="text/javascript" src="/bower_components/sifter/sifter.min.js">
+<script type="text/javascript" src="/bower_components/sifter/sifter.js">
 </script>
 <script type="text/javascript" src="/bower_components/microplugin/src/microplugin.js">
 </script>
-<script type="text/javascript" src="/bower_components/selectize/dist/js/selectize.min.js">
+<script type="text/javascript" src="/bower_components/selectize/dist/js/selectize.js">
 </script>
-<script type="text/javascript" src="/bower_components/bootstrap/dist/js/bootstrap.min.js">
+<script type="text/javascript" src="/bower_components/bootstrap/dist/js/bootstrap.js">
 </script>
-<script type="text/javascript" src="/bower_components/handlebars/handlebars.min.js">
+<script type="text/javascript" src="/bower_components/handlebars/handlebars.js">
 </script>
 <script type="text/javascript" src="/bower_components/underscore/underscore.js">
 </script>
-<script type="text/javascript" src="/bower_components/bootstrap-select/bootstrap-select.min.js">
+<script type="text/javascript" src="/bower_components/bootstrap-select/bootstrap-select.js">
 </script>
-<script type="text/javascript" src="/bower_components/momentjs/min/moment.min.js">
-</script>
-
-<script type="text/javascript" src="/otherjs/filedrop/filedrop-min.js">
+<script type="text/javascript" src="/bower_components/momentjs/moment.js">
 </script>
 
-<script type="text/javascript" src="/bower_components/google-diff-match-patch-js/diff_match_patch.js">
+<script type="text/javascript" src="/otherjs/filedrop/filedrop.js">
 </script>
-<script type="text/javascript" src="/bower_components/FileSaver/FileSaver.min.js">
+
+<script type="text/javascript" src="/bower_components/google-diff-match-patch-js/diff_match_patch_uncompressed.js">
+</script>
+<script type="text/javascript" src="/bower_components/FileSaver/FileSaver.js">
 </script>
 
 <script type="text/javascript" src="/otherjs/finddeep.js">
 </script>
 
-<script src="/otherjs/ace/ace.min.js" type="text/javascript" charset="utf-8">
+<script src="/otherjs/ace/ace.js" type="text/javascript" charset="utf-8">
 </script>
 
 <script src="/bower_components/highlightjs/highlight.pack.js"></script>
 <script type="text/javascript" src="/bower_components/marked/lib/marked.js">
 </script>
 
-<script src="/bower_components/jspdf/dist/jspdf.min.js"></script>
+<script src="/bower_components/jspdf/dist/jspdf.debug.js"></script>
 <script src="/otherjs/jspdf.plugin.from_html.js"></script>
 <script src="/otherjs/jspdf.plugin.standard_fonts_metrics.js"></script>
 <script src="/otherjs/jspdf.plugin.split_text_to_size.js"></script>
--->
 
+<!--
 <script src="/thirdparty.js"></script>
+-->
 
 <script src="/channel/bcsocket.js"></script>
 <script src="/text.js"></script>
-<script src="/share.js"></script>
+<script src="/share.uncompressed.js"></script>
 
 <script src="/js/ace_connect.js" type="text/javascript"></script>
 
@@ -62,6 +62,9 @@
 <script type="text/javascript" src="/js/page.js">
 </script>
 
+<script type="text/javascript">
+  window.fd = {logging: false};
+</script>
 <script type="text/javascript">
     hljs.initHighlightingOnLoad();
     // Synchronous highlighting with highlight.js

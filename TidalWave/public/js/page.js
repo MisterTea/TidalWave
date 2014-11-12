@@ -150,6 +150,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         console.log($scope.my_tree);
         $timeout(function() {
           $scope.my_tree.select_branch_by_name(pageDetails.page.name);
+          $scope.my_tree.expand_all();
         });
       }
     });
@@ -175,9 +176,10 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
             for (var i=0;i<data.length;i++) {
               $scope.my_data.push({id:data[i]._id, label:data[i].name});
             }
-            console.log("MY DATA");
-            console.log(JSON.stringify($scope.my_data));
             $scope.doing_async = false;
+            $timeout(function() {
+              $scope.my_tree.expand_all();
+            });
           })
           .error(function(data, status, headers, config) {
             //TODO: Alert with an error
@@ -191,9 +193,10 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
             for (var i=0;i<data.length;i++) {
               $scope.my_data.push(convertToNav(data[i]));
             }
-            console.log("MY DATA");
-            console.log(JSON.stringify($scope.my_data));
             $scope.doing_async = false;
+            $timeout(function() {
+              $scope.my_tree.expand_all();
+            });
           })
           .error(function(data, status, headers, config) {
             //TODO: Alert with an error
@@ -273,7 +276,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       doc.save(pageDetails.page.name + ".pdf");
     };
   }])
-  .controller('PageContentController', ['$scope', '$http', 'pageStateService', function($scope, $http, pageStateService) {
+  .controller('PageContentController', ['$scope', '$http', '$timeout', 'pageStateService', function($scope, $http, $timeout, pageStateService) {
     $http.post('/service/recentChangesVisible')
       .success(function(data, status, headers, config) {
         // TODO: Implement this url
@@ -402,11 +405,9 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
     $scope.editMode = false;
 
     var updateState = function() {
-      console.log("UPDATING PAGE STATE");
       $scope.searchContentResults = pageStateService.get('searchContentResults');
       $scope.query = pageStateService.get('query');
       var pageDetails = pageStateService.get('pageDetails');
-      console.log(pageDetails);
       if (pageDetails) {
         $scope.page = pageDetails?pageDetails.page:null;
         $scope.ancestry = pageDetails?pageDetails.ancestry:null;
