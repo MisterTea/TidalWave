@@ -8,7 +8,7 @@ var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
 
-router.get(
+router.post(
   '/hierarchy/:uid',
   require('../auth-helper').ensureAuthenticated,
   function(req, res) {
@@ -16,7 +16,7 @@ router.get(
   }
 );
 
-router.get(
+router.post(
   '/hierarchyStartsWith/:query',
   require('../auth-helper').ensureAuthenticated,
   function(req, res) {

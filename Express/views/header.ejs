@@ -215,4 +215,23 @@ input[type=button]:hover {
     };
   </script>
   <script src="/bower_components/less/dist/less-1.7.5.js" type="text/javascript"></script>
+
+  <link rel="stylesheet" href="/bower_components/highlightjs/styles/default.css">
+  <script src="/bower_components/highlightjs/highlight.pack.js"></script>
+  <script type="text/javascript" src="/bower_components/marked/lib/marked.js">
+  </script>
+  <script>
+    hljs.initHighlightingOnLoad();
+    // Synchronous highlighting with highlight.js
+    marked.setOptions({
+      highlight: function (code) {
+        return require('highlight.js').highlightAuto(code).value;
+      }
+    });
+  </script>
+
+  <script src="/bower_components/jspdf/dist/jspdf.debug.js"></script>
+  <script src="/js/jspdf.plugin.from_html.js"></script>
+  <script src="/js/jspdf.plugin.standard_fonts_metrics.js"></script>
+  <script src="/js/jspdf.plugin.split_text_to_size.js"></script>
 </head>

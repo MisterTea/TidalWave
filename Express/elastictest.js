@@ -22,7 +22,7 @@ client.search({
         },
         query: {
           match_phrase_prefix: {        
-            content: "t"
+            content: "\"Item 1\""
           }
         }
       }

@@ -6,7 +6,7 @@ var PageSchema = new mongoose.Schema({
   nextVersion: {type:Number, default:1},
   publish: {type:Boolean, default:false},
   userPermissions: {type:[String], default:[]},
-  groupPermissions: {type:[String], default:["tidalwave-admin"]},
+  groupPermissions: {type:[String], default:[]},
   content: String
 });
 exports.Page = mongoose.model("Page",PageSchema);
@@ -27,12 +27,14 @@ var UserSchema = mongoose.Schema({
   fullName: {type:String, index:true},
   email: {type:String, index:true, required:true},
   groups: {type:[String], default: []},
-  loggedIn: {type:Boolean, default:false}
+  lastLoginTime: {type:Date, default:null},
+  fromLdap: {type:Boolean, required:true}
 });
 UserSchema.index({firstName:1, lastName:1});
 exports.User = mongoose.model("User",UserSchema);
 
 var GroupSchema = mongoose.Schema({
-  name: {type:String, index:true, unique:true, required:true}
+  name: {type:String, index:true, unique:true, required:true},
+  fromLdap: {type:Boolean, required:true}
 });
 exports.Group = mongoose.model("Group",GroupSchema);

@@ -45,7 +45,7 @@ router.post(
   }
 );
 
-router.get(
+router.post(
   '/pageStartsWith/:query',
   AuthHelper.ensureAuthenticated,
   function(req, res) {
@@ -98,7 +98,7 @@ router.post(
   });
 
 
-router.get(
+router.post(
   '/setPageParent/:pageId/:parentId',
   AuthHelper.ensureAuthenticated,
   function(req, res) {
@@ -114,7 +114,7 @@ router.get(
     });
   });
 
-router.get(
+router.post(
   '/createPage/:pageName',
   AuthHelper.ensureAuthenticated,
   function(req, res) {
@@ -139,7 +139,7 @@ router.get(
   }
 );
 
-router.get(
+router.post(
   '/savePageDynamicContent/:pageName',
   AuthHelper.ensureAuthenticated,
   function(req, res) {
@@ -150,7 +150,7 @@ router.get(
   }
 );
 
-router.get(
+router.post(
   '/findUserFullName/:fullName',
   AuthHelper.ensureAuthenticated,
   function(req, res) {
@@ -196,7 +196,7 @@ router.get(
   }
 );
 
-router.get(
+router.post(
   '/findGroupName/:name',
   AuthHelper.ensureAuthenticated,
   function(req, res) {
@@ -205,7 +205,7 @@ router.get(
       index: 'tidalwave.groups',
       body: {
         from:0,
-        size:5,
+        size:10,
         query: {
           match_phrase_prefix: {        
             name: {
@@ -224,6 +224,9 @@ router.get(
         var result = hits[i]._source;
         result._id = hits[i]._id;
         results.push(result);
+        if (results.length==5) {
+          break;
+        }
       }
       res.status(200).type("application/json").send(JSON.stringify(results));
     }, function (error) {
@@ -233,27 +236,33 @@ router.get(
   }
 );
 
-router.get(
+router.post(
   '/findPageContent/:content',
   AuthHelper.ensureAuthenticated,
   function(req, res) {
-    var fullName = req.param('fullName');
+    var content = req.param('content');
     client.search({
       index: 'tidalwave.pages',
       body: {
         from:0,
-        size:5,
+        size:10,
         query: {
           filtered: {
             filter: {
-              term: {
-                loggedIn: "true"
-              }
+              or: [
+                {
+                  terms: {
+                    userPermissions: [req.user.username]
+                  }},
+                {
+                  terms: {
+                    groupPermissions: req.user.groups
+                  }}]
             },
             query: {
               match_phrase_prefix: {        
-                fullName: {
-                  query:'"'+fullName+'"',
+                content: {
+                  query:'"'+content+'"',
                   prefix_length:3,
                   max_expansions : 100000
                 }
@@ -278,5 +287,13 @@ router.get(
     });
   }
 );
+
+router.post(
+  '/recentChangesVisible',
+  AuthHelper.ensureAuthenticated,
+  function(req,res) {
+    console.log("RECENT CHANGES VISIBLE");
+    res.status(200).type("application/json").send("\"asdf\"");
+});
 
 module.exports = router;

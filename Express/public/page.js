@@ -1,30 +1,3 @@
-var recentChanges = {
-  recentChanges:[
-    {
-      id:"test5",
-      title:"Test Document 5",
-      editors:[{id:"jason",name:"jason"},{id:"asdf",name:"asdf"}],
-      time:"Yesterday"
-    },
-    {
-      id:"test5",
-      title:"Test Document 5",
-      editors:[{id:"jason",name:"jason"},{id:"asdf",name:"asdf"}],
-      time:"Yesterday"
-    }
-  ]
-};
-
-var homePageData = {
-  changes:recentChanges
-};
-
-var pageTemplate = Handlebars.compile($("#page-template").html());
-
-Handlebars.compile($("#recent-changes-partial-template").html());
-Handlebars.registerPartial("recentChangesPartial", $("#recent-changes-partial-template").html());
-var homePageTemplate = Handlebars.compile($("#home-page-template").html());
-
 var socket = null;
 var connection = null;
 var doc = null;
@@ -93,13 +66,6 @@ var parentList = null;
 var userPermissionList = null;
 var groupPermissionList = null;
 
-$(document).ready(function() {
-  //$("#sidebar-placeholder").html(categoriesTemplate(pageHierarchy));
-  //$("#navbar-placeholder").html(navbarTemplate(navbarData));
-  
-  //$("span.tree-toggler").click(treeClickHandler);
-});
-
 var convertToNav = function(hierarchy, callback) {
   var retval = {"label":hierarchy.name,"id":hierarchy.id,"children":[]};
   for (var i=0;i<hierarchy.children.length;i++) {
@@ -108,21 +74,18 @@ var convertToNav = function(hierarchy, callback) {
   return retval;
 };
 
+var getPageName = function() {
+  if (window.location.pathname=='view') {
+    return null;
+  }
+  return decodeURI(window.location.pathname.split('/').pop());
+};
+
 var changePage = function($http,pageName,pageStateService,callback) {
-  window.location.hash = pageName;
-  $http.post('/service/pageDetailsByName/'+pageName)
-    .success(function(data, status, headers, config) {
-      //TODO: Say success
-      console.log("GOT PAGE DETAILS FROM HTTP");
-      console.log(data);
-      pageStateService.set('pageDetails',data);
-      if (callback) {
-        callback();
-      }
-    })
-    .error(function(data, status, headers, config) {
-      //TODO: Alert with an error
-    });
+  if (pageName == getPageName()) {
+    return;
+  }
+  window.location = '/view/'+pageName;
 };
 
 angular.module('TidalWavePage', ['angularBootstrapNavTree'])
@@ -130,7 +93,9 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
     var state = {
       settingsActive:false,
       editMode:false,
-      pageDetails:null
+      pageDetails:null,
+      searchContentResults:null,
+      query:null
     };
     var get = function(key){
       return state[key];
@@ -162,7 +127,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
 
     $scope.createPage = function() {
       //console.log("Creating page");
-      $http.get('/service/createPage/'+$scope.query)
+      $http.post('/service/createPage/'+$scope.query)
         .success(function(data, status, headers, config) {
           //TODO: Say success
           console.log("Created page");
@@ -193,7 +158,18 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       $scope.doing_async = true;
       console.log(oldValue + " TO " + newValue);
       if (newValue.length>0) {
-        $http.get('/service/pageStartsWith/'+newValue)
+        $http.post('/service/findPageContent/'+newValue)
+          .success(function(data, status, headers, config) {
+            pageStateService.set('searchContentResults',data);
+            pageStateService.set('query',newValue);
+            console.log("PAGE CONTENT DATA");
+            console.log(JSON.stringify($scope.searchContentResults));
+          })
+          .error(function(data, status, headers, config) {
+            //TODO: Alert with an error
+          });
+
+        $http.post('/service/pageStartsWith/'+newValue)
           .success(function(data, status, headers, config) {
             $scope.my_data = [];
             for (var i=0;i<data.length;i++) {
@@ -207,7 +183,9 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
             //TODO: Alert with an error
           });
       } else {
-        $http.get('/service/hierarchy/jgauci')
+        pageStateService.set('searchContentResults',null);
+        pageStateService.set('query',null);
+        $http.post('/service/hierarchy/jgauci')
           .success(function(data, status, headers, config) {
             $scope.my_data = [];
             for (var i=0;i<data.length;i++) {
@@ -274,8 +252,51 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         'editMode',
         !pageStateService.get('editMode'));
     };
+
+    $scope.saveHTML = function() {
+      var pageDetails = pageStateService.get('pageDetails');
+      var blob = new Blob([marked(pageDetails.page.content)], {type: "text/plain;charset=utf-8"});
+      saveAs(blob, pageDetails.page.name + ".html");
+    };
+
+    $scope.savePDF = function() {
+      var pageDetails = pageStateService.get('pageDetails');
+      var doc = new jsPDF();          
+      doc.fromHTML(
+        marked(pageDetails.page.content),
+        15,
+        15,
+        {
+          'width': 800
+        });
+
+      doc.save(pageDetails.page.name + ".pdf");
+    };
   }])
   .controller('PageContentController', ['$scope', '$http', 'pageStateService', function($scope, $http, pageStateService) {
+    $http.post('/service/recentChangesVisible')
+      .success(function(data, status, headers, config) {
+        // TODO: Implement this url
+        $scope.recentChanges = [
+          {
+            id:"test5",
+            title:"Test Document 5",
+            editors:[{id:"jason",name:"jason"},{id:"asdf",name:"asdf"}],
+            time:"Yesterday"
+          },
+          {
+            id:"test5",
+            title:"Test Document 5",
+            editors:[{id:"jason",name:"jason"},{id:"asdf",name:"asdf"}],
+            time:"Yesterday"
+          }
+        ];
+      })
+      .error(function(data, status, headers, config) {
+        //TODO: Alert with an error
+        console.log("ERROR");
+        console.log(data);
+      });
 
     parentList = $('#select-parent').selectize({
       valueField: '_id',
@@ -292,7 +313,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         }
         $.ajax({
           url: '/service/pageStartsWith/' + encodeURIComponent(query),
-          type: 'GET',
+          type: 'POST',
           error: function() {
             callback();
           },
@@ -324,7 +345,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         }
         $.ajax({
           url: '/service/findUserFullName/' + encodeURIComponent(query),
-          type: 'GET',
+          type: 'POST',
           error: function() {
             callback();
           },
@@ -351,7 +372,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         }
         $.ajax({
           url: '/service/findGroupName/' + encodeURIComponent(query),
-          type: 'GET',
+          type: 'POST',
           error: function() {
             callback();
           },
@@ -363,9 +384,9 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       }
     })[0].selectize;
 
-    var pageName = window.location.hash.substring(1);
+    var pageName = getPageName();
     console.log("PAGE NAME: " + pageName);
-    if (pageName) {
+    if (pageName && pageName != 'view') {
       $http.post('/service/pageDetailsByName/'+pageName)
         .success(function(data, status, headers, config) {
           //TODO: Say success
@@ -382,6 +403,8 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
 
     var updateState = function() {
       console.log("UPDATING PAGE STATE");
+      $scope.searchContentResults = pageStateService.get('searchContentResults');
+      $scope.query = pageStateService.get('query');
       var pageDetails = pageStateService.get('pageDetails');
       console.log(pageDetails);
       if (pageDetails) {
@@ -432,7 +455,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         // Leave edit mode
         $scope.editMode = pageStateService.get('editMode');
         console.log("LEAVING EDIT MODE");
-        $http.get('/service/savePageDynamicContent/'+$scope.page.name)
+        $http.post('/service/savePageDynamicContent/'+$scope.page.name)
           .success(function(data, status, headers, config) {
             console.log("SAVED PAGE");
             $http.post('/service/pageDetailsByName/'+$scope.page.name)

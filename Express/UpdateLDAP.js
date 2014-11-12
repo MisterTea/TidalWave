@@ -207,14 +207,15 @@ db.once('open', function callback () {
                 // Update the user record from LDAP
                 console.log(JSON.stringify(newUser) + "!= " + JSON.stringify(user));
                 user = _.extend(user,newUser);
+                user.fromLdap = true;
                 console.log("Updating user: " + JSON.stringify(user));
                 user.save();
               }
 
               // Consume the LDAP record
               delete userIdMap[user.username];
-            } else {
-              // Record was not in LDAP, remove
+            } else if (user.fromLdap) {
+              // Record was not in LDAP anymore, remove
               console.log("Removing user: " + JSON.stringify(user));
               user.remove();
             }
@@ -223,6 +224,7 @@ db.once('open', function callback () {
           var usersToSave = [];
           for (var userId in userIdMap) {
             var ldapUser = userIdMap[userId];
+            ldapUser.fromLdap = true;
             var userRecord = new User(ldapUser);
             usersToSave.push(userRecord);
           }
@@ -263,7 +265,7 @@ db.once('open', function callback () {
             if (groupNameMap[group.name]) {
               // The group still exists
               delete groupNameMap[group.name];
-            } else {
+            } else if(group.fromLdap) {
               // The group is deleted
               console.log("Removing group: " + JSON.stringify(group));
               group.remove();
@@ -273,7 +275,7 @@ db.once('open', function callback () {
 
         var groupsToSave = [];
         for (var groupName in groupNameMap) {
-          var group = new Group({name:groupName});
+          var group = new Group({name:groupName,fromLdap:true});
           groupsToSave.push(group);
         }
 

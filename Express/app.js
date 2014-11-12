@@ -43,8 +43,6 @@ var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
 
-var routes = require('./routes/index');
-var users = require('./routes/users');
 var diff = require('./routes/diff');
 
 var passport = require('passport')
@@ -79,7 +77,7 @@ passport.use(new LocalStrategy(function(username, password, done) {
     if (err) { return done(err); }
     if (!user) { return done(null, false, { message: 'Unknown user ' + username }); }
     auth.login(username,password,function() {
-      user.loggedIn = true;
+      user.lastLoginTime = Date.now();
       user.save(function(err, innerUser) {
         if (err) {
           console.log(err);
@@ -143,7 +141,7 @@ app.post('/login', function(req, res, next) {
         next(err);
         return;
       }
-      res.redirect('/');
+      res.redirect('/view');
       return;
     });
   })(req, res, next);
@@ -152,8 +150,10 @@ app.get('/logout', function(req, res){
   req.logout();
   res.redirect('/');
 });
-app.use('/', routes);
-app.use('/users', users);
+app.get('/', function(req,res) {
+  res.redirect('/view');
+});
+app.use('/view', require('./routes/index'));
 app.use('/page',require('./routes/page'));
 app.use('/diff',diff);
 app.use('/history',require('./routes/history'));

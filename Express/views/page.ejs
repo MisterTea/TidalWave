@@ -12,7 +12,60 @@
     <div class="main-row col-lg-12">
       <% include sidebar %>
       <div ng-controller="PageContentController">
-        <div ng-show="page">
+
+        <div ng-show="searchContentResults">
+          <div class="col-md-10">
+            <h2>Search Results for '{{query}}'</h2>
+            <ol ng-show="searchContentResults.length<=10">
+              <li ng-repeat="result in searchContentResults">
+                <h4><a ng-href="/view/{{result.name}}">{{result.name}}</a></h4>
+              </li>
+              <hr ng-if="!$last" />
+            </ol>
+            <ul class="pagination" ng-show="searchContentResults.length>10">
+              <li class="disabled" ng-show="activePage==0"><a href="#">&laquo;</a></li>
+              <li ng-show="activePage!=0"><a href="#">&laquo;</a></li>
+              <!--
+              {{#eachPage searchContentResults activePage}}
+              {{#if activePage}}
+              <li class="active"><a href="#">{{page}}</a></li>
+              {{else}}
+              <li><a href="#">{{page}}</a></li>
+              {{/if}}
+              {{/eachPage}}
+              {{#ifGreaterThan numPages activePage}}
+              <li><a href="#">&raquo;</a></li>
+              {{else}}
+              <li class="disabled"><a href="#">&raquo;</a></li>
+              {{/ifGreaterThan}}
+              -->
+            </ul>
+          </div>
+        </div>
+
+        <div ng-show="!page && !searchContentResults">
+          <div id="home-page-content" class="col-xs-14 col-lg-10">
+            <div class="well well-lg">
+              <div>Recent Changes</div>
+              <div>
+                <ul>
+                  <li ng-repeat="change in recentChanges">
+                    <span>
+                    <a href="{{change.id}}">{{change.title}}</a> updated by
+                    <span ng-repeat="editor in change.editors">
+                      <a href="{{editor.id}}">{{editor.name}}<span ng-if="!$last">,</span></a>
+                    </span>
+                    (<a href="">view change</a>) {{change.time}}
+                    </span>
+                    <hr ng-if="!$last" />
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div ng-show="page && !searchContentResults">
           <div ng-show="settingsActive" id="settings" class="col-xs-12 col-lg-12">
             <div class="col-md-12">
               <div class="well well-lg", style="padding-top:0px; padding-bottom:200px">
@@ -81,35 +134,5 @@
     <% include footer %>
 
     <% include index %>
-
-    <script id="page-template" type="text/x-handlebars-template">
-      <% if(pageDetails && pageDetails.content==null) { %>
-                                                        <div id="editor" class="col-xs-7 col-lg-5">Loading...</div>
-                                                        <% } else { %>
-                                                                    <div id="editor" class="col-xs-7 col-lg-5" style="display:none;">Loading...</div>
-                                                                    <% } %>
-
-  <div id="content" class="col-xs-7 col-lg-5">
-  {{#if version}}
-  <div class="alert alert-warning" style="text-align: center;">
-  <strong>You are viewing an old version of this page.</strong><br />
-  <a class="alert-link" href="#">View Current version</a>&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
-  <a class="alert-link" href="#">Show Differences</a>&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
-  <a class="alert-link" href="#">Restore this version</a>&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
-  <a class="alert-link" href="#">View Page History</a>
-  <ul class="pager" style="margin-top:5px;">
-  <li class="disabled"><a href="#">&larr; Older</a></li>
-  <li>Version {{version}}</li>
-  <li><a href="#">Newer &rarr;</a></li>
-  </ul>
-  </div>
-  {{/if}}
-      <div id="content-markdown">
-      </div>
-    </div>
-    </script>
-
-    <script type="text/javascript" src="/page.js">
-    </script>
   </body>
 </html>

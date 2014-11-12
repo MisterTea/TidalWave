@@ -8,14 +8,22 @@ router.get(
   require('../auth-helper').ensureAuthenticated,
   function(req, res) {
     res.render('page', {
-      pageDetails:null,
-      editMode:false,
-      pageHierarchy:Hierarchy.pageHierarchy,
-      navbarData:{
+      server:{
         projectName:"Tidal Wave",
-        userName:req.user.fullName,
-        onPage:false,
-        editMode:false
+        user:req.user
+      }
+    });
+  }
+);
+
+router.get(
+  '/:page',
+  require('../auth-helper').ensureAuthenticated,
+  function(req, res) {
+    res.render('page', {
+      server:{
+        projectName:"Tidal Wave",
+        user:req.user
       }
     });
   }
