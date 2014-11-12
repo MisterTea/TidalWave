@@ -11,6 +11,8 @@ var User = model.User;
 var AuthHelper = require('../auth-helper');
 var LiveSync = require('../livesync');
 
+var toc = require('marked-toc');
+
 var elasticsearch = require('elasticsearch');
 var client = new elasticsearch.Client({
   host: 'localhost:9200',
@@ -42,6 +44,24 @@ router.post(
       console.log(page);
       res.status(200).end();
     });
+  }
+);
+
+router.post(
+  '/getTOC/:pageId',
+  AuthHelper.ensureAuthenticated,
+  function(req, res) {
+    var pageId = req.param('pageId');
+
+    Page
+      .findOne({_id:pageId})
+      .exec(function(err, page) {
+        if (err) {
+          res.status(404).end();
+        } else {
+          res.status(200).type("text/x-markdown").send(toc(page.content));
+        }
+      });
   }
 );
 

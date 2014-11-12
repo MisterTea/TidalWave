@@ -491,9 +491,17 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       console.log("UPDATING MARKDOWN");
       console.log(pageDetails);
       if (pageDetails && typeof pageDetails.page.content != undefined) {
-        $("#content-markdown").empty();
-        var markdownText = marked(pageDetails.page.content);
-        $("#content-markdown").append($.parseHTML(markdownText));
+        $http.post('/service/getTOC/'+pageDetails.page._id)
+          .success(function(data, status, headers, config) {
+            $("#content-markdown").empty();
+            var markdownText = null;
+            if (data.length>0) {
+              markdownText = marked("<div class=\"well well-lg\" style=\"display: inline-block;\"><h4>Table of Contents</h4>" + data + "</div><br />\n" + pageDetails.page.content);
+            } else {
+              markdownText = marked(pageDetails.page.content);
+            }
+            $("#content-markdown").append($.parseHTML(markdownText));
+          });
       }
     };
 
