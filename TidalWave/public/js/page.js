@@ -2,8 +2,8 @@ var socket = null;
 var connection = null;
 var doc = null;
 
-var enableEditMode = function(pageName) {
-  console.log("Enabling edit mode for page " + pageName);
+var enableEditMode = function(pageStateService, $http) {
+  console.log("Enabling edit mode");
   $("#editor").show();
   $("#PageMenuController").hide();
   console.log($("#editor")[0]);
@@ -17,15 +17,35 @@ var enableEditMode = function(pageName) {
   zone.event('send', function (files) {
     // Depending on browser support files (FileList) might contain multiple items.
     files.each(function (file) {
-      console.log(file);
-      // React on successful AJAX upload:
-      file.event('done', function (xhr) {
-        // 'this' here points to fd.File instance that has triggered the event.
-        alert('Done uploading ' + this.name + ', response:\n\n' + xhr.responseText);
-      });
+      if(file.type.match(/image.*/)){
+        console.log(file);
+        //alert(file.name + ' ' + file.type + ' (' + file.size + ') bytes');
+        var fr = new FileReader();
 
-      // Send the file:
-      file.sendTo('upload.php');
+        // For some reason onload is being called 2x.
+        var called=false;
+        fr.onload = function(e) {
+          if (called) return;
+          called = true;
+          // Render thumbnail.
+          var mime = e.target.result.split(',')[0].substring(5);
+          var data = e.target.result.split(',')[1];
+          var pageDetails = pageStateService.get('pageDetails');
+          $http.post('/service/saveImage', {mime:mime,base64:data,pageName:pageDetails.page._id,name:file.name})
+            .success(function(data, status, headers, config) {
+              console.log("INJECTING IMAGE");
+              editor.insert("<img src=\"/service/getImage/"+data+"\"></img>");
+              //TODO: Say success
+            })
+            .error(function(data, status, headers, config) {
+              //TODO: Alert with an error
+            });
+          
+        };
+        fr.readAsDataURL(file.nativeFile);
+        // Send the file:
+        //file.sendTo('upload.php');
+      }
     });
   });
   var editor = ace.edit("editor");
@@ -35,7 +55,8 @@ var enableEditMode = function(pageName) {
   socket = new BCSocket(null, {reconnect: true});
   connection = new window.sharejs.Connection(socket);
 
-  doc = connection.get('users', pageName);
+  var pageDetails = pageStateService.get('pageDetails');
+  doc = connection.get('users', pageDetails.page._id);
   doc.subscribe();
 
   doc.whenReady(function () {
@@ -89,18 +110,30 @@ var changePage = function($http,pageName,pageStateService,callback) {
 };
 
 angular.module('TidalWavePage', ['angularBootstrapNavTree'])
-  .service('pageStateService', ['$rootScope', function($rootScope) {
+  .service('pageStateService', ['$rootScope', '$http', function($rootScope, $http) {
     var state = {
       settingsActive:false,
       editMode:false,
       pageDetails:null,
       searchContentResults:null,
-      query:null
+      query:null,
+      user:null
     };
     var get = function(key){
       return state[key];
     };
     var set = function(key,value) {
+      //console.log("SETTING " + key + " " + JSON.stringify(value));
+      if (key == 'user' && state.user != null && !_.isEqual(state.user,value)) {
+        // Push the new user
+        $http.post('/service/updateMe', value)
+          .success(function(data, status, headers, config) {
+            //TODO: Say success
+          })
+          .error(function(data, status, headers, config) {
+            //TODO: Alert with an error
+          });
+      }
       state[key] = value;
       $rootScope.$broadcast('pageStateServiceUpdate', {key:key,value:value});
     };
@@ -229,7 +262,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
     };
   }])
   .controller('NavbarController', ['$scope', '$http', 'pageStateService', function($scope, $http, pageStateService) {
-    $scope.username = "Jason Gauci";
+    $scope.username = "(Loading)";
     $scope.editMode = pageStateService.get('editMode');
     $scope.projectName = "Tidal Wave";
     $scope.settingsActive = pageStateService.get('settingsActive');
@@ -241,6 +274,17 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       var pageDetails = pageStateService.get('pageDetails');
       if (pageDetails) {
         $scope.page = pageDetails.page;
+      } else {
+        $scope.page = null;
+      }
+      var user = pageStateService.get('user');
+      if (user) {
+        $scope.username = user.fullName;
+      }
+      if (user && $scope.page) {
+        $scope.isWatchingPage = _.contains(user.watchedPageIds, $scope.page._id);
+      } else {
+        $scope.isWatchingPage = false;
       }
     });
     $scope.toggleSettings = function() {
@@ -248,6 +292,19 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       pageStateService.set(
         'settingsActive',
         !pageStateService.get('settingsActive'));
+    };
+    $scope.toggleWatch = function() {
+      console.log("TOGGLING WATCH");
+      var user = pageStateService.get('user');
+      if ($scope.isWatchingPage) {
+        // Stop watching
+        user.watchedPageIds = _.without(user.watchedPageIds,$scope.page._id);
+      } else {
+        // Start watching
+        user.watchedPageIds.push($scope.page._id);
+      }
+      console.log("USER CHANGED");
+      pageStateService.set('user',user);
     };
     $scope.toggleEditMode = function() {
       console.log("Toggling setting");
@@ -375,6 +432,15 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       }
     })[0].selectize;
 
+    $http.post('/service/me')
+      .success(function(data, status, headers, config) {
+        //TODO: Say success
+        pageStateService.set('user',data);
+      })
+      .error(function(data, status, headers, config) {
+        //TODO: Alert with an error
+      });
+
     var pageName = getPageName();
     console.log("PAGE NAME: " + pageName);
     if (pageName && pageName != 'view') {
@@ -398,18 +464,21 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       var pageDetails = pageStateService.get('pageDetails');
       if (pageDetails) {
         $scope.page = pageDetails?pageDetails.page:null;
-        $scope.ancestry = pageDetails?pageDetails.ancestry:null;
         $scope.newName = pageDetails.page.name;
         $scope.derivedUserPermissions = pageDetails.page.derivedUserPermissions;
         $scope.derivedGroupPermissions = pageDetails.page.derivedGroupPermissions;
         $scope.version = pageDetails?pageDetails.version:null;
         $scope.lastAncestorName = '';
-        var ancestry = pageDetails.ancestry;
+        var ancestry = $scope.ancestry = pageDetails.ancestry.slice();
+
+        // Remove the page itself from the ancestry
+        ancestry.pop();
+
         console.log(ancestry);
-        if (ancestry.length>0) {
+        if (ancestry && ancestry.length>0) {
           var parent = ancestry[ancestry.length-1];
           parentList.clearOptions();
-          parentList.addOption({_id:parent.id, name:parent.name});
+          parentList.addOption({_id:parent._id, name:parent.name});
           parentList.setValue(parent.id);
         } else {
           console.log("CLEARING PARENT");
@@ -446,7 +515,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         // Leave edit mode
         $scope.editMode = pageStateService.get('editMode');
         console.log("LEAVING EDIT MODE");
-        $http.post('/service/savePageDynamicContent/'+$scope.page.name)
+        $http.post('/service/savePageDynamicContent/'+$scope.page._id)
           .success(function(data, status, headers, config) {
             console.log("SAVED PAGE");
             $http.post('/service/pageDetailsByName/'+$scope.page.name)
@@ -474,7 +543,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         // Enter edit mode
         $scope.editMode = pageStateService.get('editMode');
         console.log("ENTERING EDIT MODE");
-        enableEditMode($scope.page.name);
+        enableEditMode(pageStateService,$http);
       }
 
       $scope.settingsActive = pageStateService.get('settingsActive');

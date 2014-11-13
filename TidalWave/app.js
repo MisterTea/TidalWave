@@ -9,6 +9,7 @@ argv = require('optimist').argv;
 livedb = require('livedb');
 
 var _ = require('underscore');
+var readLine = require ("readline");
 
 try {
   require('heapdump');
@@ -107,7 +108,7 @@ app.set('view engine', 'ejs');
 // uncomment after placing your favicon in /public
 //app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(logger('dev'));
-app.use(bodyParser.json());
+app.use(bodyParser.json({limit: '50mb'}));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 //app.use(require('less-middleware')(path.join(__dirname, 'public')));
@@ -169,14 +170,14 @@ app.use('/profile',require('./routes/profile'));
 app.use('/service',require('./routes/hierarchy'));
 app.use('/service',require('./routes/services'));
 
-numClients = 0;
+var pageConnectionMap = {};
 
 app.use(browserChannel({
   webserver: app,
   sessionTimeoutInterval: 5000
 }, function(client) {
   var stream;
-  numClients++;
+  var document = null;
   console.log("New Client Connected");
   stream = new Duplex({
     objectMode: true
@@ -198,11 +199,17 @@ app.use(browserChannel({
     if (data['a']=='sub') {
       // User is subscribing to a new document
       console.log("Got new sub");
+      document = data['d'];
       if (!database.collections[data['c']] ||
           !database.collections[data['c']][data['d']]) {
         // Document does not exist
         console.log("New document");
-        Page.findOne({name:data['d']},function(err,page){
+
+        pageConnectionMap[data['d']] = pageConnectionMap[data['d']] ?
+          pageConnectionMap[data['d']]+1 :
+          1;
+
+        Page.findOne({_id:data['d']},function(err,page){
           if (page) {
             console.log("Fetch page from DB");
             console.log(page);
@@ -230,8 +237,13 @@ app.use(browserChannel({
   client.on('close', function(reason) {
     stream.push(null);
     stream.emit('close');
-    numClients--;
-    return console.log('client went away', numClients);
+    pageConnectionMap[document]--;
+    if (pageConnectionMap[document]==0) {
+      delete pageConnectionMap[document];
+      LiveSync.syncAndRemove(document, function(){
+      });
+    }
+    return console.log('client went away');
   });
   stream.on('end', function() {
     console.log("CLIENT END");
@@ -290,12 +302,30 @@ db.once('open', function callback () {
 
   app.set('port', process.env.PORT || 3000);
 
-  var server = app.listen(app.get('port'), function() {
+  var server = exports.server = app.listen(app.get('port'), function() {
     debug('TidalWave server listening on port ' + server.address().port);
-  });
 
-  setInterval(function() {
-    LiveSync.syncAll();
-    hierarchy.rebuild();
-  }, 1000);
+    setInterval(function() {
+      LiveSync.syncAll();
+      hierarchy.rebuild();
+    }, 1000*60*60);
+
+    if (process.platform === "win32"){
+      var rl = readLine.createInterface ({
+        input: process.stdin,
+        output: process.stdout
+      });
+      rl.on ("SIGINT", function (){
+        process.emit ("SIGINT");
+      });
+    }
+  
+    process.on ("SIGINT", function(){
+      console.log("CAUGHT CTRL-C");
+      // Do one last sync before we go away
+      LiveSync.syncAll();
+      
+      process.exit ();
+    });
+  });
 });

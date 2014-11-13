@@ -21,6 +21,10 @@
   <div class="collapse navbar-collapse">
     <div ng-show="page.name">
       <ul class="nav navbar-nav">
+        <li><a ng-href="/history/{{page.name}}">Page History</a></li>
+        <li ng-class="isWatchingPage?'active':''">
+          <a href="" ng-click="toggleWatch()">{{isWatchingPage?"Unwatch":"Watch"}}</a>
+        </li>
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown">Export <b class="caret"></b></a>
           <ul class="dropdown-menu">
@@ -28,10 +32,11 @@
             <li><a ng-click="saveHTML()">HTML</a></li>
           </ul>
         </li>
-        <li><a ng-href="/history/{{page.name}}">History</a></li>
         <li ng-show="editMode"><a href="" ng-click="toggleEditMode()">Finish Editing</a></li>
         <li ng-show="!editMode"><a href="" ng-click="toggleEditMode()">Edit</a></li>
-        <li ng-show="editMode" ng-class="settingsActive?'active':''"><a href="" ng-click="toggleSettings()">Settings</a></li>
+        <li ng-show="editMode" ng-class="settingsActive?'active':''">
+          <a href="" ng-click="toggleSettings()">Settings</a>
+        </li>
       </ul>
     </div>
   </div>

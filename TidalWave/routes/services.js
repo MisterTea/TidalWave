@@ -7,6 +7,7 @@ var model = require('../model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
+var Image = model.Image;
 
 var AuthHelper = require('../auth-helper');
 var LiveSync = require('../livesync');
@@ -30,7 +31,7 @@ var userCanAccessPage = function(user,page,callback) {
       !(_.contains(page.derivedUserPermissions,user.username)) &&
       !(_.intersection(page.derivedGroupPermissions,user.groups).length>0)
   ) {
-    console.log(JSON.stringify(user) + " CANNOT ACCESS " + JSON.stringify(page));
+    //console.log(JSON.stringify(user) + " CANNOT ACCESS " + JSON.stringify(page));
     callback(false);
     return;
   }
@@ -38,14 +39,14 @@ var userCanAccessPage = function(user,page,callback) {
     Page.findOne({_id:page.parentId},function(err, parentPage) {
       if (err) {
         // handle error
-        console.log(JSON.stringify(user) + " CANNOT FIND PARENT " + JSON.stringify(page));
+        //console.log(JSON.stringify(user) + " CANNOT FIND PARENT " + JSON.stringify(page));
         callback(false);
         return;
       }
       userCanAccessPage(user,parentPage,callback);
     });
   } else {
-    console.log(JSON.stringify(user) + " CAN ACCESS " + JSON.stringify(page));
+    //console.log(JSON.stringify(user) + " CAN ACCESS " + JSON.stringify(page));
     callback(true);
   }
 };
@@ -61,6 +62,25 @@ var saveAllDocuments = function(documents, callback) {
     }
   };
   documents[onDocument].save(iterate);
+};
+
+var getAncestry = function(page, callback) {
+  console.log("GETTING ANCESTRY");
+  console.log(page);
+  if (page.parentId) {
+    Page.findById(page.parentId,function(err, parentPage) {
+      if (err || !parentPage) {
+        callback(["Error"]);
+        return;
+      }
+      getAncestry(parentPage, function(parentAncestry) {
+        parentAncestry.push({_id:page._id,name:page.name});
+        callback(parentAncestry);
+      });
+    });
+  } else {
+    callback([{_id:page._id,name:page.name}]);
+  }
 };
 
 var updateDerivedPermissions = function(page,callback) {
@@ -99,6 +119,36 @@ var updateDerivedPermissions = function(page,callback) {
     }
   });
 };
+
+router.post(
+  '/me',
+  AuthHelper.ensureAuthenticated,
+  function(req, res) {
+    res.status(200).type('application/json').send(req.user);
+  }
+);
+
+router.post(
+  '/updateMe',
+  AuthHelper.ensureAuthenticated,
+  function(req, res) {
+    var newUser = req.body;
+    if (newUser._id != req.user._id) {
+      res.status(403).done();
+      return;
+    }
+    User.findByIdAndUpdate(
+      newUser._id,
+      newUser,
+      function(err, dummyUser) {
+        if (err) {
+          console.log("ERROR: " + JSON.stringify(err));
+          res.status(500).done();
+        }
+        res.status(200).done();
+      });
+  }
+);
 
 router.post(
   '/updatePage',
@@ -226,27 +276,29 @@ router.post(
         console.log("Got page");
         console.log(page);
         if (page) {
-          var pageDetails = {
-            page:page,
-            ancestry:Hierarchy.pageAncestry[page._id],
-            version:null,
-            content:page.content,
-            userPermissions:[]
-          };
-          // Get all users on the permissions list
-          User.find(
-            {'username': { $in: page.userPermissions }},
-            function(err,users) {
-              if (err) {
-                console.log(err);
-                res.status(500).end();
-                return;
-              }
-              for (var i=0;i<users.length;i++) {
-                pageDetails.userPermissions.push(users[i]);
-              }
-              res.status(200).type("application/json").send(JSON.stringify(pageDetails));
-            });
+          getAncestry(page, function(ancestry) {
+            var pageDetails = {
+              page:page,
+              ancestry:ancestry,
+              version:null,
+              content:page.content,
+              userPermissions:[]
+            };
+            // Get all users on the permissions list
+            User.find(
+              {'username': { $in: page.userPermissions }},
+              function(err,users) {
+                if (err) {
+                  console.log(err);
+                  res.status(500).end();
+                  return;
+                }
+                for (var i=0;i<users.length;i++) {
+                  pageDetails.userPermissions.push(users[i]);
+                }
+                res.status(200).type("application/json").send(JSON.stringify(pageDetails));
+              });
+          });
         } else {
           res.status(404).end();
         }
@@ -304,8 +356,10 @@ router.post(
   '/savePageDynamicContent/:pageName',
   AuthHelper.ensureAuthenticated,
   function(req, res) {
+    console.log("SAVING DYNAMIC CONTENT");
     var pageName = req.param('pageName');
     LiveSync.sync(pageName, function() {
+      console.log("PAGE SAVED.  RETURNING 200");
       res.status(200).end();
     });
   }
@@ -472,6 +526,52 @@ router.post(
   function(req,res) {
     console.log("RECENT CHANGES VISIBLE");
     res.status(200).type("application/json").send("\"asdf\"");
+  });
+
+var chance = new require('chance')();
+
+router.post(
+  '/saveImage',
+  AuthHelper.ensureAuthenticated,
+  function(req,res) {
+    console.log("SAVING IMAGE");
+    var imageData = req.body;
+
+    var uniqueName =
+          imageData.pageName + "_" +
+          chance.string({length: 8, pool:"1234567890abcdef"}) + "_" +
+          imageData.name;
+
+    var image = new Image({
+      base64:imageData.base64,
+      data:new Buffer(imageData.base64, 'base64'),
+      mime:imageData.mime,
+      name:uniqueName});
+
+    image.save(function (err) {
+      if (err) {
+        res.status(500).end();
+      }
+      res.status(200).type("text/plain").send(uniqueName);
+    });
+  });
+
+router.get(
+  '/getImage/:name',
+  AuthHelper.ensureAuthenticated,
+  function(req,res) {
+    var name = req.param('name');
+    console.log("Getting image with name " + name);
+
+    Image.find({name:name}, function(err,results) {
+      if (results.length>1) {
+        res.status(500).end();
+      } else if(results.length==0) {
+        res.status(404).end();
+      }
+      var image = results[0];
+      res.status(200).type(image.mime).send(image.data);
+    });
   });
 
 module.exports = router;
