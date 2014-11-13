@@ -248,20 +248,23 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       } else {
         pageStateService.set('searchContentResults',null);
         pageStateService.set('query',null);
-        $http.post('/service/hierarchy/jgauci')
-          .success(function(data, status, headers, config) {
-            $scope.my_data = [];
-            for (var i=0;i<data.length;i++) {
-              $scope.my_data.push(convertToNav(data[i]));
-            }
-            $scope.doing_async = false;
-            $timeout(function() {
-              $scope.my_tree.expand_all();
+        var user = pageStateService.get('user');
+        if (user) {
+          $http.post('/service/hierarchy/'+user.username)
+            .success(function(data, status, headers, config) {
+              $scope.my_data = [];
+              for (var i=0;i<data.length;i++) {
+                $scope.my_data.push(convertToNav(data[i]));
+              }
+              $scope.doing_async = false;
+              $timeout(function() {
+                $scope.my_tree.expand_all();
+              });
+            })
+            .error(function(data, status, headers, config) {
+              //TODO: Alert with an error
             });
-          })
-          .error(function(data, status, headers, config) {
-            //TODO: Alert with an error
-          });
+        }
       }
       $timeout(function() {
         var pageDetails = pageStateService.get('pageDetails');
