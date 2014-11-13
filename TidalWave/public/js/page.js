@@ -49,6 +49,8 @@ var enableEditMode = function(pageStateService, $http) {
     });
   });
   var editor = ace.edit("editor");
+  editor.setReadOnly(true);
+  editor.setValue("Loading...");
   editor.getSession().setUseWrapMode(true); // lines should wrap
   //editor.setTheme("ace/theme/monokai");
   editor.getSession().setMode("ace/mode/markdown");
@@ -61,6 +63,7 @@ var enableEditMode = function(pageStateService, $http) {
   doc.subscribe();
 
   doc.whenReady(function () {
+    editor.setReadOnly(false);
     console.log(doc);
     if (!doc.type) doc.create('text');
     if (doc.type && doc.type.name === 'text') {
