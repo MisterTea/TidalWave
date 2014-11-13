@@ -70,7 +70,7 @@
     // Synchronous highlighting with highlight.js
     marked.setOptions({
       highlight: function (code) {
-        return require('highlight.js').highlightAuto(code).value;
+        return hljs.highlightAuto(code).value;
       }
     });
 </script>
