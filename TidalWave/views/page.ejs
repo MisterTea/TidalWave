@@ -112,11 +112,19 @@
                       <p class="form-control-static" ng-if="derivedUserPermissions.join(',').length>0">From Parent: {{derivedUserPermissions.join(',')}}</p>
                       <input type="text" class="demo-default" id="userPermissionList" ng-model="userPermissionList">
                     </div>
+
                     <label for="groupPermissionList" class="col-md-2 control-label">Groups</label>
                     <div class="col-md-10">
                       <p class="form-control-static" ng-if="derivedGroupPermissions.join(',').length>0">From Parent: {{derivedGroupPermissions.join(',')}}</p>
                       <input type="text" class="form-control" id="groupPermissionList" ng-model="groupPermissionList">
                     </div>
+
+                    <div class="checkbox">
+                      <label>
+                        <input type="checkbox" ng-model="isPublic"> Public
+                      </label>
+                    </div>
+
                   </div>
                   <div class="col-md-12">
                     <div class="col-md-2 col-md-offset-5">

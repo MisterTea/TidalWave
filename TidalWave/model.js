@@ -9,7 +9,8 @@ var PageSchema = new mongoose.Schema({
   groupPermissions: {type:[String], default:[]},
   derivedUserPermissions: {type:[String], default:[]},
   derivedGroupPermissions: {type:[String], default:[]},
-  content: String
+  content: String,
+  isPublic: {type: Boolean, default: false}
 });
 exports.Page = mongoose.model("Page",PageSchema);
 

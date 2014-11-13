@@ -214,6 +214,23 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
           $scope.my_tree.expand_all();
         });
       }
+      var user = pageStateService.get('user');
+      if (user) {
+        $http.post('/service/hierarchy/'+user.username)
+          .success(function(data, status, headers, config) {
+            $scope.my_data = [];
+            for (var i=0;i<data.length;i++) {
+              $scope.my_data.push(convertToNav(data[i]));
+            }
+            $scope.doing_async = false;
+            $timeout(function() {
+              $scope.my_tree.expand_all();
+            });
+          })
+          .error(function(data, status, headers, config) {
+            //TODO: Alert with an error
+          });
+      }
     });
 
     $scope.$watch('query',function(newValue,oldValue) {
@@ -250,6 +267,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         pageStateService.set('query',null);
         var user = pageStateService.get('user');
         if (user) {
+          console.log("UPDATING HIERARCHY");
           $http.post('/service/hierarchy/'+user.username)
             .success(function(data, status, headers, config) {
               $scope.my_data = [];
@@ -264,6 +282,8 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
             .error(function(data, status, headers, config) {
               //TODO: Alert with an error
             });
+        } else {
+          console.log("NO USER");
         }
       }
       $timeout(function() {
@@ -530,6 +550,10 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         $scope.lastAncestorName = '';
         var ancestry = $scope.ancestry = pageDetails.ancestry.slice();
 
+        if ($scope.page) {
+          $scope.isPublic = $scope.page.isPublic;
+        }
+
         // Remove the page itself from the ancestry
         ancestry.pop();
 
@@ -640,6 +664,8 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       }
       console.log("NEW Parent: " + newParent);
       pageCopy.parentId = newParent;
+
+      pageCopy.isPublic = $scope.isPublic;
 
       console.log(userPermissionList.getValue());
       console.log(groupPermissionList.getValue());

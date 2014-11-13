@@ -13,7 +13,8 @@ exports.ensureAuthenticated = function(req, res, next) {
 
 exports.queryPermissionWrapper = function(query, user) {
   return query.or(
-    [{userPermissions: user.username},
+    [{isPublic: true},
+     {userPermissions: user.username},
      {groupPermissions: user.groups},
      {derivedUserPermissions: user.username},
      {derivedGroupPermissions: user.groups}

@@ -25,6 +25,11 @@ var client = new elasticsearch.Client({
 var queryPermissionWrapper = AuthHelper.queryPermissionWrapper;
 
 var userCanAccessPage = function(user,page,callback) {
+  if (page.isPublic) {
+    callback(true);
+    return;
+  }
+
   if (
     !(_.contains(page.userPermissions,user.username)) &&
       !(_.intersection(page.groupPermissions,user.groups).length>0) &&
@@ -182,7 +187,8 @@ router.post(
                     userPermissions:page.userPermissions,
                     groupPermissions:page.groupPermissions,
                     derivedUserPermissions:page.derivedUserPermissions,
-                    derivedGroupPermissions:page.derivedGroupPermissions
+                    derivedGroupPermissions:page.derivedGroupPermissions,
+                    isPublic:page.isPublic
                    }},function(err, page) {
                      if (err) {
                        console.log("Error updating page");
