@@ -21,7 +21,9 @@
   <div class="collapse navbar-collapse">
     <div ng-show="page.name">
       <ul class="nav navbar-nav">
-        <li><a ng-href="/history/{{page.name}}">Page History</a></li>
+        <li ng-class="history?'active':''">
+          <a href="" ng-click="toggleHistory()">Page History</a>
+        </li>
         <li ng-class="isWatchingPage?'active':''">
           <a href="" ng-click="toggleWatch()">{{isWatchingPage?"Unwatch":"Watch"}}</a>
         </li>

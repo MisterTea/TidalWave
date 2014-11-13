@@ -306,6 +306,35 @@ router.post(
   }
 );
 
+router.post(
+  '/pageHistory/:pageId',
+  AuthHelper.ensureAuthenticated,
+  function(req, res) {
+    console.log("Getting history");
+    var pageId = req.param('pageId');
+
+    queryPermissionWrapper(
+      Page.findById(pageId), req.user).exec(function(err, page) {
+        if (err) {
+          res.status(500).end();
+          return;
+        }
+        if (!page) {
+          res.status(403).end();
+          return;
+        }
+        PageVersion.find({pageId:page._id}, function(err, pageVersions) {
+          if (err) {
+            res.status(500).end();
+            return;
+          }
+          pageVersions.reverse();
+          res.status(200).type("application/json").send(JSON.stringify(pageVersions));
+        });
+      });
+  }
+);
+
 
 router.post(
   '/setPageParent/:pageId/:parentId',

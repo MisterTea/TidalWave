@@ -10,8 +10,33 @@
     <div class="main-row col-lg-12">
       <% include sidebar %>
       <div ng-controller="PageContentController">
+        <div ng-show="page && history">
+          <div class="col-xs-14 col-lg-10">
+            <table class="table table-bordered table-responsive">
+              <tr>
+                <th>Version</th>
+                <th>Date</th>
+                <th>Editors</th>
 
-        <div ng-show="searchContentResults">
+                <th style="width: 10em;" ng-if="comparing">Compare With</th>
+                <th ng-if="!comparing">Compare</th>
+
+                <th>Restore</th>
+              </tr>
+              <tr ng-repeat="pageVersion in history">
+                <td>{{pageVersion.version}}</td>
+                <td>{{prettyDate(pageVersion.timestamp)}}</td>
+                <td>{{pageVersion.editors}}</td>
+                <td><input type="checkbox"></td>
+                <td ng-if="!$last">
+                  <a href="#"><span class="glyphicon glyphicon-repeat"></span></a>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <div ng-show="searchContentResults && !history">
           <div class="col-md-10">
             <h2>Search Results for '{{query}}'</h2>
             <ol ng-show="searchContentResults.length<=10">
@@ -63,7 +88,7 @@
           </div>
         </div>
 
-        <div ng-show="page && !searchContentResults">
+        <div ng-show="page && !searchContentResults && !history">
           <div ng-show="settingsActive" id="settings" class="col-xs-12 col-lg-12">
             <div class="col-md-12">
               <div class="well well-lg", style="padding-top:0px; padding-bottom:300px">

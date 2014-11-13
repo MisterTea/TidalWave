@@ -117,7 +117,8 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       pageDetails:null,
       searchContentResults:null,
       query:null,
-      user:null
+      user:null,
+      history:null
     };
     var get = function(key){
       return state[key];
@@ -287,6 +288,29 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         $scope.isWatchingPage = false;
       }
     });
+    $scope.toggleHistory = function() {
+      console.log("Toggling history");
+      var history = pageStateService.get('history');
+      if (history) {
+        console.log("Clearing history");
+        pageStateService.set('history',null);
+      } else {
+        console.log("Fetching history");
+        $http.post('/service/pageHistory/'+pageStateService.get('pageDetails').page._id)
+          .success(function(data, status, headers, config) {
+            // TODO: Implement this url
+            console.log("GOT HISTORY");
+            console.log(data);
+            pageStateService.set('history',data);
+          })
+          .error(function(data, status, headers, config) {
+            //TODO: Alert with an error
+            console.log("ERROR");
+            console.log(data);
+          });
+
+      }
+    };
     $scope.toggleSettings = function() {
       console.log("Toggling setting");
       pageStateService.set(
@@ -345,6 +369,11 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         console.log("ERROR");
         console.log(data);
       });
+
+    $scope.prettyDate = function(date) {
+      var utcTime = new Date(date).getTime()/1000;
+      return moment.unix(utcTime).format("dddd, MMMM Do YYYY, h:mm:ss a");
+    };
 
     parentList = $('#select-parent').selectize({
       valueField: '_id',
@@ -510,6 +539,9 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
           pageStateService.set('editMode',false);
         }
       }
+
+      var history = pageStateService.get('history');
+      $scope.history = history;
 
       if ($scope.editMode && !pageStateService.get('editMode')) {
         // Leave edit mode
