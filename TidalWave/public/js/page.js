@@ -1,8 +1,24 @@
 var socket = null;
 var connection = null;
 var doc = null;
+var editor = null;
 
-var enableEditMode = function(pageStateService, $http) {
+// Helper function to resize the ace editor as the window size changes.
+function resizeAce() {
+  if($('#editor').is(":visible")) {
+    $('#editor').height($(window).height() - 130);
+    $('#content').height($(window).height() - 130);
+    $('#content').css("overflow-y","scroll");
+    editor.resize(true);
+  } else {
+    $('#content').css("height", "auto");
+    $('#content').css("overflow-y","visible");
+  }
+};
+//listen for changes
+$(window).resize(resizeAce);
+
+var enableEditMode = function(pageStateService, $http, $timeout) {
   console.log("Enabling edit mode");
   $("#editor").show();
   $("#PageMenuController").hide();
@@ -48,7 +64,10 @@ var enableEditMode = function(pageStateService, $http) {
       }
     });
   });
-  var editor = ace.edit("editor");
+  editor = ace.edit("editor");
+  $timeout(function() {
+    resizeAce();
+  },1);
   editor.setReadOnly(true);
   editor.setValue("Loading...");
   editor.getSession().setUseWrapMode(true); // lines should wrap
@@ -77,8 +96,12 @@ var enableEditMode = function(pageStateService, $http) {
   });
 };
 
-var disableEditMode = function() {
+var disableEditMode = function($timeout) {
+  editor = null;
   $("#editor").hide();
+  $timeout(function() {
+    resizeAce();
+  },1);
   $("#PageMenuController").show();
   if (doc) {
     doc.destroy();
@@ -560,7 +583,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
                 console.log("GOT PAGE DETAILS FROM HTTP");
                 console.log(data);
                 pageStateService.set('pageDetails',data);
-                disableEditMode();
+                disableEditMode($timeout);
                 pageStateService.set('settingsActive',false);
               })
               .error(function(data, status, headers, config) {
@@ -579,7 +602,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         // Enter edit mode
         $scope.editMode = pageStateService.get('editMode');
         console.log("ENTERING EDIT MODE");
-        enableEditMode(pageStateService,$http);
+        enableEditMode(pageStateService,$http,$timeout);
       }
 
       $scope.settingsActive = pageStateService.get('settingsActive');
