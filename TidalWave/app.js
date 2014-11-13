@@ -237,16 +237,16 @@ app.use(browserChannel({
   client.on('close', function(reason) {
     stream.push(null);
     stream.emit('close');
+    return console.log('client went away');
+  });
+  stream.on('end', function() {
+    console.log("CLIENT END");
     pageConnectionMap[document]--;
     if (pageConnectionMap[document]==0) {
       delete pageConnectionMap[document];
       LiveSync.syncAndRemove(document, function(){
       });
     }
-    return console.log('client went away');
-  });
-  stream.on('end', function() {
-    console.log("CLIENT END");
     return client.close();
   });
   return share.listen(stream);
@@ -291,7 +291,7 @@ module.exports = app;
 var hierarchy = require('./hierarchy');
 
 var LiveSync = require('./livesync');
-LiveSync.init(database);
+LiveSync.init(backend.driver, database);
 
 mongoose.connect('mongodb://localhost/tidalwave');
 var db = mongoose.connection;

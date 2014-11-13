@@ -8,10 +8,12 @@ var User = model.User;
 var debug = require('debug')('Sync');
 
 var lastVersionDumped = {};
+var driver = null;
 var database = null;
 
-exports.init = function(liveDatabase) {
-  database = liveDatabase;
+exports.init = function(driver_, database_) {
+  driver = driver_;
+  database = database_;
 };
 
 var dumpPageVersion = function(result, callback) {
@@ -80,11 +82,14 @@ exports.sync = function(docName, callback) {
   });
 };
 
+var util = require('./node_modules/livedb/lib/util');
+
 exports.syncAndRemove = function(docName) {
   console.log("Removing liveDB doc " + docName);
   exports.sync(docName, function() {
     delete database.collections['users'][docName];
     delete database.ops['users'][docName];
+    delete driver.versions[util.encodeCD('users', docName)];
   });
 };
 
