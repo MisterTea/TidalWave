@@ -130,9 +130,18 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.get('/login', function(req, res){
-  res.render('login', { user: req.user, message: req.session.messages });
+  var redirect = req.param('redirect');
+  if (!redirect) {
+    redirect = '';
+  }
+  res.render('login', { user: req.user, message: req.session.messages, redirectUrl:redirect });
 });
 app.post('/login', function(req, res, next) {
+  console.log("REDIRECT "+req.param('redirect'));
+  var redirect = req.param('redirect');
+  if (!redirect) {
+    redirect = "/view";
+  }
   passport.authenticate('local', function(err, user, info) {
     if (err) { 
       next(err);
@@ -148,7 +157,7 @@ app.post('/login', function(req, res, next) {
         next(err);
         return;
       }
-      res.redirect('/view');
+      res.redirect(redirect);
       return;
     });
   })(req, res, next);

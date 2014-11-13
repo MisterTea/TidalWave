@@ -8,7 +8,10 @@ exports.ensureAuthenticated = function(req, res, next) {
     next();
     return;
   }
-  res.redirect('/login');
+  console.log("PATH");
+  console.log(req.baseUrl + req.url);
+  console.log(req.path);
+  res.redirect('/login?redirect='+req.baseUrl + req.url);
 };
 
 exports.queryPermissionWrapper = function(query, user) {

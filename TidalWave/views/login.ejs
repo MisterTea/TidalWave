@@ -13,7 +13,7 @@
           <div class="col-xs-12">
             <div class="form-wrap">
               <h1>Log in with your OpenDirectory account</h1>
-              <form role="form" action="/login" method="post" id="login-form" autocomplete="off">
+              <form role="form" action="/login?redirect=<%= redirectUrl %>" method="post" id="login-form" autocomplete="off">
                 <div class="form-group">
                   <label for="email" class="sr-only">Email</label>
                   <input type="text" name="username" class="form-control" placeholder="Enter your username...">
