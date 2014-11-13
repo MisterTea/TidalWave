@@ -181,8 +181,8 @@ router.post(
                     parentId:page.parentId,
                     userPermissions:page.userPermissions,
                     groupPermissions:page.groupPermissions,
-                    derivedUserPermissions:page.userPermissions,
-                    derivedGroupPermissions:page.groupPermissions
+                    derivedUserPermissions:page.derivedUserPermissions,
+                    derivedGroupPermissions:page.derivedGroupPermissions
                    }},function(err, page) {
                      if (err) {
                        console.log("Error updating page");
