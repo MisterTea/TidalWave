@@ -49,6 +49,7 @@ var enableEditMode = function(pageStateService, $http) {
     });
   });
   var editor = ace.edit("editor");
+  editor.getSession().setUseWrapMode(true); // lines should wrap
   //editor.setTheme("ace/theme/monokai");
   editor.getSession().setMode("ace/mode/markdown");
 

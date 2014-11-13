@@ -544,7 +544,7 @@ router.post(
       res.status(200).type("application/json").send(JSON.stringify(results));
     }, function (error) {
       console.log(error.message);
-      res.status(500).done();
+      res.status(500).end();
     });
   }
 );
