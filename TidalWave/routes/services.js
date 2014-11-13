@@ -50,6 +50,56 @@ var userCanAccessPage = function(user,page,callback) {
   }
 };
 
+var saveAllDocuments = function(documents, callback) {
+  var onDocument = 0;
+  var iterate = function(err, product, numberAffected) {
+    onDocument++;
+    if (documents.length>onDocument) {
+      documents[onDocument].save(iterate);
+    } else {
+      callback();
+    }
+  };
+  documents[onDocument].save(iterate);
+};
+
+var updateDerivedPermissions = function(page,callback) {
+  // Store off the derived permission to propagate
+  var baseUserPermissions = page.userPermissions;
+  var baseGroupPermissions = page.groupPermissions;
+
+  // Find all children pages
+  Page.find({parentId:page._id}, function(err, pages) {
+    if (pages.length==0) {
+      // No children to update, return
+      callback();
+    } else {
+      // Update all children's derived permissions
+      for (var i=0;i<pages.length;i++) {
+        pages[i].derivedUserPermissions = baseUserPermissions;
+        pages[i].derviedGroupPermissions = baseGroupPermissions;
+      }
+
+      // Save all children
+      saveAllDocuments(pages,function() {
+
+        // Recursively update derived permissions for grandchildren.
+        var onUpdate=0;
+        var iterate = function() {
+          onUpdate++;
+          if (onUpdate>=pages.length) {
+            // We are done
+            callback();
+          } else {
+            updateDerivedPermissions(pages[onUpdate],iterate);
+          }
+        };
+        updateDerivedPermissions(pages[onUpdate],iterate);
+      });
+    }
+  });
+};
+
 router.post(
   '/updatePage',
   AuthHelper.ensureAuthenticated,
@@ -73,24 +123,48 @@ router.post(
             if (success) {
               console.log("UPDATING PAGE");
               console.log(page);
-              Page.findByIdAndUpdate(
-                page._id,
-                {$set: 
-                 {name:page.name,
-                  parentId:page.parentId,
-                  userPermissions:page.userPermissions,
-                  groupPermissions:page.groupPermissions
-                 }},function(err, page) {
-                   if (err) {
-                     console.log("Error updating page");
-                     console.log(err);
-                     res.status(500).end();
-                     return;
-                   }
-                   console.log("Updated successfully");
-                   console.log(page);
-                   res.status(200).end();
-                 });
+              var updatePage = function(page) {
+                Page.findByIdAndUpdate(
+                  page._id,
+                  {$set: 
+                   {name:page.name,
+                    parentId:page.parentId,
+                    userPermissions:page.userPermissions,
+                    groupPermissions:page.groupPermissions,
+                    derivedUserPermissions:page.userPermissions,
+                    derivedGroupPermissions:page.groupPermissions
+                   }},function(err, page) {
+                     if (err) {
+                       console.log("Error updating page");
+                       console.log(err);
+                       res.status(500).end();
+                       return;
+                     }
+                     console.log("Updated successfully");
+                     console.log(page);
+                     updateDerivedPermissions(page,function() {
+                       res.status(200).end();
+                     });
+                   });
+              };
+
+              if (page.parentId) {
+                // We need to fetch the parent in case the derived
+                // permissions have changed.
+                Page.findById(page.parentId, function(err, parentPage) {
+                  if (err) {
+                    res.status(500).end();
+                    return;
+                  }
+                  page.derivedUserPermissions = parentPage.userPermissions;
+                  page.derivedGroupPermissions = parentPage.groupPermissions;
+                  updatePage(page);
+                });
+              } else {
+                page.derivedUserPermissions = [];
+                page.derivedGroupPermissions = [];
+                updatePage(page);
+              }
             } else {
               console.log("UPDATE WOULD BAN USER FROM HIS OWN PAGE");
               // Tried to change permissions in a way that would ban the user doing the update.

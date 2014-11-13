@@ -281,18 +281,6 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       .success(function(data, status, headers, config) {
         // TODO: Implement this url
         $scope.recentChanges = [
-          {
-            id:"test5",
-            title:"Test Document 5",
-            editors:[{id:"jason",name:"jason"},{id:"asdf",name:"asdf"}],
-            time:"Yesterday"
-          },
-          {
-            id:"test5",
-            title:"Test Document 5",
-            editors:[{id:"jason",name:"jason"},{id:"asdf",name:"asdf"}],
-            time:"Yesterday"
-          }
         ];
       })
       .error(function(data, status, headers, config) {
@@ -412,6 +400,8 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
         $scope.page = pageDetails?pageDetails.page:null;
         $scope.ancestry = pageDetails?pageDetails.ancestry:null;
         $scope.newName = pageDetails.page.name;
+        $scope.derivedUserPermissions = pageDetails.page.derivedUserPermissions;
+        $scope.derivedGroupPermissions = pageDetails.page.derivedGroupPermissions;
         $scope.version = pageDetails?pageDetails.version:null;
         $scope.lastAncestorName = '';
         var ancestry = pageDetails.ancestry;

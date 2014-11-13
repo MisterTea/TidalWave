@@ -66,7 +66,7 @@
         <div ng-show="page && !searchContentResults">
           <div ng-show="settingsActive" id="settings" class="col-xs-12 col-lg-12">
             <div class="col-md-12">
-              <div class="well well-lg", style="padding-top:0px; padding-bottom:200px">
+              <div class="well well-lg", style="padding-top:0px; padding-bottom:300px">
                 <form class="form-horizontal" role="form" ng-submit="updateSettings()">
                   <div class="form-group col-md-6">
                     <h3>Details</h3>
@@ -84,11 +84,13 @@
                     <h3>Permissions</h3>
                     <label for="userPermissionList" class="col-md-2 control-label">Users</label>
                     <div class="col-md-10">
-                        <input type="text" class="demo-default" id="userPermissionList" ng-model="userPermissionList">
+                      <p class="form-control-static">From Parent: {{derivedUserPermissions.join(',')}}</p>
+                      <input type="text" class="demo-default" id="userPermissionList" ng-model="userPermissionList">
                     </div>
                     <label for="groupPermissionList" class="col-md-2 control-label">Groups</label>
                     <div class="col-md-10">
-                        <input type="text" class="form-control" id="groupPermissionList" ng-model="groupPermissionList">
+                      <p class="form-control-static">From Parent: {{derivedGroupPermissions.join(',')}}</p>
+                      <input type="text" class="form-control" id="groupPermissionList" ng-model="groupPermissionList">
                     </div>
                   </div>
                   <div class="col-md-12">
