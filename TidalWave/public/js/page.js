@@ -641,6 +641,16 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
           if (nameChanged) {
             console.log("Name changed, redirecting");
             changePage($http,$scope.newName,pageStateService,null);
+          } else {
+            // Update page details
+            $http.post('/service/pageDetailsByName/'+$scope.newName)
+              .success(function(data, status, headers, config) {
+                //TODO: Say success
+                pageStateService.set('pageDetails',data);
+              })
+              .error(function(data, status, headers, config) {
+                //TODO: Alert with an error
+              });
           }
         })
         .error(function(data, status, headers, config) {
