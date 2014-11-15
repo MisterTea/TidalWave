@@ -99,6 +99,9 @@ window.sharejs.Doc.prototype.attachAce = function(editor, keepEditorContents, ed
   ctx.onInsert = function(pos, text) {
     suppress = true;
     editorDoc.insert(offsetToPos(pos), text);
+    if(editorListenerCallback) {
+      editorListenerCallback(null);
+    }
     suppress = false;
     return check();
   };
@@ -107,6 +110,9 @@ window.sharejs.Doc.prototype.attachAce = function(editor, keepEditorContents, ed
     suppress = true;
     range = Range.fromPoints(offsetToPos(pos), offsetToPos(pos + length));
     editorDoc.remove(range);
+    if(editorListenerCallback) {
+      editorListenerCallback(null);
+    }
     suppress = false;
     return check();
   };
