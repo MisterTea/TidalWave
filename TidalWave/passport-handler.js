@@ -1,6 +1,13 @@
 var passport = require('passport')
 , LocalStrategy = require('passport-local').Strategy;
-var auth = require("./auth");
+
+var options = require('./options-handler').options;
+var auth = null;
+if (options.auth == 'ldap') {
+  auth = require("./auth-ldap");
+} else if(options.auth == 'plain') {
+  auth = require('./auth-plain');
+}
 
 var model = require('./model');
 var Page = model.Page;
