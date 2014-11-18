@@ -1,0 +1,14 @@
+{
+  "auth":"plain", # Choices are plain or ldap
+  "port":null, # Override the default port (3000 for http, 8443 for https)
+  "ldap":{
+    "server":"ldaps://myldapserver:636",
+    "userField":"uid",
+    "bindDN":"cn=users,dc=com"
+  },
+  "credentials": { # For https
+    "certificateFile":"mycert.pem",
+    "privateKeyFile":"keystore.pem",
+    "passphrase":"myPassphrase"
+  }
+}
