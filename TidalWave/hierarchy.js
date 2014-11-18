@@ -64,13 +64,16 @@ exports.fetch = function(user,filter,cb) {
   var pageIndexMap = {};
   var pageHierarchy = [];
   console.log("Finding with filter: " + JSON.stringify(filter));
+  console.log(user);
   AuthHelper.queryPermissionWrapper(Page.find(filter),user)
     .exec(function(err, pages) {
       if (err) {
         console.log(err.message);
       }
 
+      console.log("PAGES");
       for (var k=0;k<pages.length;k++) {
+        console.log(pages[k]);
         pageIndexMap[pages[k]._id] = k;
       }
 

@@ -25,8 +25,6 @@ exports.PageVersion = mongoose.model("PageVersion",PageVersionSchema);
 
 var UserSchema = mongoose.Schema({
   username: {type:String, index:true, unique:true, required:true},
-  firstName: {type:String, index:true},
-  lastName: {type:String, index:true},
   fullName: {type:String, index:true},
   email: {type:String, index:true, required:true},
   groups: {type:[String], default: []},
@@ -36,6 +34,12 @@ var UserSchema = mongoose.Schema({
 });
 UserSchema.index({firstName:1, lastName:1});
 exports.User = mongoose.model("User",UserSchema);
+
+var UserPasswordSchema = mongoose.Schema({
+  userId: {type: String, required:true, index:true},
+  password: { type: String, required:true }
+});
+exports.UserPassword = mongoose.model("UserPassword",UserPasswordSchema);
 
 var GroupSchema = mongoose.Schema({
   name: {type:String, index:true, unique:true, required:true},

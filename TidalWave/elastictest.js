@@ -22,8 +22,8 @@ client.search({
         },
         query: {
           match_phrase_prefix: {        
-            fullName: {
-              query:'"'+'Jas'+'"',
+            username: {
+              query:'jgauci',
               prefix_length:3,
               max_expansions : 1024
             }
@@ -53,17 +53,13 @@ client.search({
     query: {
       filtered: {
         filter: {
-          or: [{
-            terms: {
-              userPermissions: ["jgauci","lahjsdlaj"]
-            }},{
-              terms: {
-                groupPermissions: ["aasdasd", "kjashdkjah"]
-              }}]
+          terms: {
+            userPermissions: ["jgmath2000@gmail.com"]
+          }
         },
         query: {
           match_phrase_prefix: {        
-            content: "\"Item 1\""
+            content: "w"
           }
         }
       }

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>TidalWave Log In</title>
+    <link href="/bower_components/bootstrap/dist/css/bootstrap.css" rel="stylesheet">
+    <link href="/css/login.css" rel="stylesheet">
+    
+  </head>
+  <body>
+    <section id="login">
+      <div class="container">
+        <div class="row">
+          <div class="col-xs-12">
+            <div class="form-wrap">
+              <h1>Create a new Account</h1>
+              <form role="form" action="/register" method="post" id="login-form" autocomplete="off">
+                <div class="form-group">
+                  <label for="email">Email</label>
+                  <input type="text" name="email" class="form-control" placeholder="Enter your username...">
+                </div>
+                <div class="form-group">
+                  <label for="fullName">Full Name</label>
+                  <input type="text" name="fullName" class="form-control" placeholder="Enter your full name...">
+                </div>
+                <div class="form-group">
+                  <label for="key">Password</label>
+                  <input type="password" name="password" class="form-control" placeholder="Password">
+                </div>
+                <input type="submit" name="register" id="btn-register" class="btn btn-custom btn-lg btn-block" value="Register">
+              </form>
+              <hr>
+            </div>
+          </div> <!-- /.col-xs-12 -->
+        </div> <!-- /.row -->
+      </div> <!-- /.container -->
+    </section>
+  </body>
+</html>

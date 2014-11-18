@@ -48,8 +48,6 @@ var fetchUsers = function(successCallback,errorCallback) {
 
         users.push({
           email:email,
-          firstName:firstName,
-          lastName:lastName,
           fullName:firstName + " " + lastName,
           username:username
         });
@@ -154,7 +152,7 @@ var getUsersAndGroups = function(success,failure) {
       for (var i=0;i<users.length;i++) {
         var user = users[i];
         user.groups = [];
-        //console.log(user.username + "\t" + user.email + "\t" + user.firstName + "\t" + user.lastName);
+        //console.log(user.username + "\t" + user.email + "\t" + user.fullName);
         uidMap[user.username] = user;
       }
 
@@ -187,21 +185,38 @@ db.once('open', function callback () {
     for (var a=0;a<groupList.length;a++) {
       groupNameMap[groupList[a]] = groupList[a];
     }
+    
+    var groupNameIdMap = {};
 
     // This runs after update groups (below)
     var updateUsers = function() {
+
+      // Replace the group names with group ids.
+      for (var key in userIdMap) {
+        var newUser = userIdMap[key];
+        var groupNames = newUser.groups;
+        newUser.groups = [];
+        for (var b=0;b<groupNames.length;b++) {
+          if (groupNames[b] in groupNameIdMap) {
+            newUser.groups.push(groupNameIdMap[groupNames[b]]);
+          } else {
+            console.log("MISSING GROUP ID: " + groupNames[b]);
+          }
+        }
+      }
+
       // Update users
       User
         .find({})
         .exec(function(err, results){
-          console.log("UPDATING USERS");
+          console.log("UPDATING USERS: " + results.length);
           for (var a=0;a<results.length;a++) {
             var user = results[a];
             if (userIdMap[user.username]) {
               var newUser = userIdMap[user.username];
+
               // See if anything has changed
-              if (user.firstName != newUser.firstName ||
-                  user.lastName != newUser.lastName ||
+              if (user.fullName != newUser.fullName ||
                   user.email != newUser.email ||
                   !_.isEqual(user.groups,newUser.groups)) {
                 // Update the user record from LDAP
@@ -222,27 +237,31 @@ db.once('open', function callback () {
           }
 
           var usersToSave = [];
+          var userCount=0;
           for (var userId in userIdMap) {
+            userCount++;
+            if (userCount%100==0) {
+              console.log(userCount + " / " + Object.keys(userIdMap).length);
+            }
             var ldapUser = userIdMap[userId];
             ldapUser.fromLdap = true;
-            var userRecord = new User(ldapUser);
-            usersToSave.push(userRecord);
+            usersToSave.push(ldapUser);
           }
 
           if (usersToSave.length) {
             var onUser = 0;
             var iterateUser = function(err, product, numberAffected) {
-              //console.log("Added user: " + JSON.stringify(product));
+              console.log("Added user: " + JSON.stringify(product));
               onUser++;
               if (usersToSave.length>onUser) {
-                usersToSave[onUser].save(iterateUser);
+                new User(usersToSave[onUser]).save(iterateUser);
               } else {
                 // Finished, now close the DB
                 console.log("FINISHED");
                 mongoose.disconnect();
               }
             };
-            usersToSave[onUser].save(iterateUser);
+            new User(usersToSave[onUser]).save(iterateUser);
           } else {
             // Nothing to do, close the DB
             mongoose.disconnect();
@@ -264,6 +283,7 @@ db.once('open', function callback () {
             var group = results[a];
             if (groupNameMap[group.name]) {
               // The group still exists
+              groupNameIdMap[group.name] = group._id;
               delete groupNameMap[group.name];
             } else if(group.fromLdap) {
               // The group is deleted
@@ -283,6 +303,7 @@ db.once('open', function callback () {
           var onGroup = 0;
           var iterateGroup = function(err, product, numberAffected) {
             console.log("Added group: " + JSON.stringify(product));
+            groupNameIdMap[product.name] = product._id;
             onGroup++;
             if (groupsToSave.length>onGroup) {
               groupsToSave[onGroup].save(iterateGroup);

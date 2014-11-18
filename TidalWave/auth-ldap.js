@@ -1,20 +1,13 @@
 var ldap = require('ldapjs');
 var assert = require('assert');
-
-var handleFailure = function(err) {
-  console.log(err);
-};
-
-var handleSuccess = function() {
-  console.log("SUCCESS");
-};
+var options = require('./options-handler').options;
 
 exports.login = function(uid,password,successCallback,errorCallback) {
   var client = ldap.createClient({
-    url: 'ldaps://nod.apple.com:636'
+    url: options.ldap.server
   });
   console.log("BINDING");
-  client.bind('uid='+uid+',cn=users,dc=apple,dc=com', password, function(err) {
+  client.bind(options.ldap.userField+'='+uid+','+options.ldap.bindDN, password, function(err) {
     console.log("RESULT");
     if (err) {
       errorCallback(err.message);

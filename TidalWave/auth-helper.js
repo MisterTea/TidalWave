@@ -15,11 +15,18 @@ exports.ensureAuthenticated = function(req, res, next) {
 };
 
 exports.queryPermissionWrapper = function(query, user) {
+  if (user.groups.length==0) {
+    return query.or(
+      [{isPublic: true},
+       {userPermissions: user._id},
+       {derivedUserPermissions: user._id}
+      ]);
+  }
   return query.or(
     [{isPublic: true},
-     {userPermissions: user.username},
+     {userPermissions: user._id},
      {groupPermissions: user.groups},
-     {derivedUserPermissions: user.username},
+     {derivedUserPermissions: user._id},
      {derivedGroupPermissions: user.groups}
     ]);
   //bypass security

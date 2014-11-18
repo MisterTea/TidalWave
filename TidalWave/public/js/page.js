@@ -488,7 +488,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
       delimiter: ',',
       allowEmptyOption:true,
       create:false,
-      valueField: 'name',
+      valueField: '_id',
       labelField: 'name',
       searchField: 'name',
       load: function(query, callback) {
@@ -574,18 +574,18 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree'])
           var user = pageDetails.userPermissions[i];
           console.log("ADDING USER PERMISSION ");
           console.log(user);
-          userPermissionList.addOption({_id:user.username, fullName:user.fullName});
-          userPermissionList.addItem(user.username);
+          userPermissionList.addOption({_id:user._id, fullName:user.fullName});
+          userPermissionList.addItem(user._id);
         }
         userPermissionList.refreshItems();
 
         groupPermissionList.clear();
-        for (var i=0;i<pageDetails.page.groupPermissions.length;i++) {
-          var group = pageDetails.page.groupPermissions[i];
+        for (var i=0;i<pageDetails.groupPermissions.length;i++) {
+          var group = pageDetails.groupPermissions[i];
           console.log("ADDING GROUP PERMISSION ");
           console.log(group);
-          groupPermissionList.addOption({name:group});
-          groupPermissionList.addItem(group);
+          groupPermissionList.addOption({_id:group._id, name:group.name});
+          groupPermissionList.addItem(group._id);
         }
         groupPermissionList.refreshItems();
       } else {

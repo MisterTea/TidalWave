@@ -18,6 +18,8 @@ try {
 sharejs = require('share');
 console.log(sharejs.scriptsDir);
 
+var options = require('./options-handler').options;
+
 var database = livedb.memory();
 backend = livedb.client(database);
 
@@ -44,6 +46,7 @@ var model = require('./model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
+var UserPassword = model.UserPassword;
 
 var diff = require('./routes/diff');
 
@@ -67,7 +70,12 @@ passport.deserializeUser(function(username, done) {
   });
 });
 
-var auth = require("./auth");
+var auth = null;
+if (options.auth == 'ldap') {
+  auth = require("./auth-ldap");
+} else if(options.auth == 'plain') {
+  auth = require('./auth-plain');
+}
 
 // Use the LocalStrategy within Passport.
 //   Strategies in passport require a `verify` function, which accept
@@ -75,6 +83,7 @@ var auth = require("./auth");
 //   with a user object.  In the real world, this would query a database;
 //   however, in this example we are using a baked-in set of users.
 passport.use(new LocalStrategy(function(username, password, done) {
+  console.log("LOGGING IN : " + username + " " + password);
   User.findOne({ username: username }, function(err, user) {
     if (err) { return done(err); }
     if (!user) { return done(null, false, { message: 'Unknown user ' + username }); }
@@ -134,7 +143,15 @@ app.get('/login', function(req, res){
   if (!redirect) {
     redirect = '';
   }
-  res.render('login', { user: req.user, message: req.session.messages, redirectUrl:redirect });
+  res.render(
+    'login',
+    {
+      user: req.user,
+      message: req.session.messages,
+      redirectUrl:redirect,
+      auth:options.auth
+    }
+  );
 });
 app.post('/login', function(req, res, next) {
   console.log("REDIRECT "+req.param('redirect'));
@@ -142,33 +159,73 @@ app.post('/login', function(req, res, next) {
   if (!redirect) {
     redirect = "/view";
   }
-  passport.authenticate('local', function(err, user, info) {
-    if (err) { 
-      next(err);
-      return;
-    }
-    if (!user) {
-      req.session.messages = [info.message];
-      res.redirect('/login');
-      return;
-    }
-    req.logIn(user, function(err) {
-      if (err) {
+
+  if ('register' in req.body) {
+    res.redirect('/register');
+    return;
+  }
+
+  if ('login' in req.body || 'register' in req.body) {
+    console.log("LOGGING IN");
+    passport.authenticate('local', function(err, user, info) {
+      if (err) { 
         next(err);
         return;
       }
-      res.redirect(redirect);
-      return;
-    });
-  })(req, res, next);
+      if (!user) {
+        req.session.messages = [info.message];
+        res.redirect('/login');
+        return;
+      }
+      req.logIn(user, function(err) {
+        if (err) {
+          next(err);
+          return;
+        }
+        res.redirect(redirect);
+        return;
+      });
+    })(req, res, next);
+  }
 });
 app.get('/logout', function(req, res){
   req.logout();
   res.redirect('/');
 });
+
+app.get('/register', function(req, res){
+  res.render(
+    'register'
+  );
+});
+app.post('/register', function(req, res, next) {
+  var email = req.body.email;
+  var fullName = req.body.fullName;
+  var password = req.body.password;
+  console.log(req.body);
+  var user = new User({username:email,email:email,fullName:fullName,fromLdap:false});
+  user.save(function(err, innerUser) {
+    if (err) {
+      console.log(err);
+      res.status(500).end();
+      return;
+    }
+    var userPassword = new UserPassword({userId:innerUser._id,password:password});
+    userPassword.save(function(err, innerUP) {
+      if (err) {
+        console.log(err);
+        res.status(500).end();
+        return;
+      }
+      res.redirect('/login');
+    });
+  });
+});
+
 app.get('/', function(req,res) {
   res.redirect('/view');
 });
+
 app.use('/view', require('./routes/index'));
 app.use('/page',require('./routes/page'));
 app.use('/diff',diff);

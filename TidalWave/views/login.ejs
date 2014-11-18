@@ -12,21 +12,32 @@
         <div class="row">
           <div class="col-xs-12">
             <div class="form-wrap">
+              <% if(auth=='ldap') { %>
               <h1>Log in with your OpenDirectory account</h1>
+              <% } else if(auth=='plain') { %>
+              <h1>Log in or <a href="/register" style="text-decoration: underline;">create a new account</a></h1>
+              <% } %>
               <form role="form" action="/login?redirect=<%= redirectUrl %>" method="post" id="login-form" autocomplete="off">
                 <div class="form-group">
-                  <label for="email" class="sr-only">Email</label>
+                  <% if(auth=='ldap') { %>
+                  <label for="username">Username</label>
+                  <% } else if(auth=='plain') { %>
+                  <label for="username">Email</label>
+                  <% } %>
                   <input type="text" name="username" class="form-control" placeholder="Enter your username...">
                 </div>
                 <div class="form-group">
-                  <label for="key" class="sr-only">Password</label>
+                  <label for="key">Password</label>
                   <input type="password" name="password" class="form-control" placeholder="Password">
                 </div>
                 <div class="form-group" style="text-align:center;">
                   <input type="checkbox" name="rememberme"/>
                   <span class="rememberme">Remember Me</span>
                 </div>
-                <input type="submit" id="btn-login" class="btn btn-custom btn-lg btn-block" value="Log in">
+                <input type="submit" name="login" id="btn-login" class="btn btn-custom btn-lg btn-block" value="Log in">
+                <% if(auth=='plain') { %>
+                <input type="submit" name="register" id="btn-login" class="btn btn-custom btn-lg btn-block" value="Create new account">
+                <% } %>
               </form>
               <a href="javascript:;" class="forget" data-toggle="modal" data-target=".forget-modal">Forgot your password?</a>
               <hr>
@@ -35,17 +46,5 @@
         </div> <!-- /.row -->
       </div> <!-- /.container -->
     </section>
-    <script type="text/javascript">
-      function showPassword() {
-      var key_attr = $('#key').attr('type');
-      if(key_attr != 'text') {
-      $('.checkbox').addClass('show');
-      $('#key').attr('type', 'text');
-      } else {
-      $('.checkbox').removeClass('show');
-      $('#key').attr('type', 'password');
-      }
-      }
-    </script>
   </body>
 </html>

@@ -7,6 +7,7 @@ var model = require('../model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
+var Group = model.Group;
 var Image = model.Image;
 
 var AuthHelper = require('../auth-helper');
@@ -31,12 +32,11 @@ var userCanAccessPage = function(user,page,callback) {
   }
 
   if (
-    !(_.contains(page.userPermissions,user.username)) &&
+    !(_.contains(page.userPermissions,user._id.toString())) &&
       !(_.intersection(page.groupPermissions,user.groups).length>0) &&
-      !(_.contains(page.derivedUserPermissions,user.username)) &&
+      !(_.contains(page.derivedUserPermissions,user._id.toString())) &&
       !(_.intersection(page.derivedGroupPermissions,user.groups).length>0)
   ) {
-    //console.log(JSON.stringify(user) + " CANNOT ACCESS " + JSON.stringify(page));
     callback(false);
     return;
   }
@@ -169,7 +169,7 @@ router.post(
         console.log(outerPage);
         userCanAccessPage(req.user,outerPage,function(outerSuccess) {
           if (!outerSuccess) {
-            console.log("TREID TO UPDATE PAGE WITHOUT ACCESS");
+            console.log("TRIED TO UPDATE PAGE WITHOUT ACCESS");
             // Tried to update a page without access
             res.status(403).end();
             return;
@@ -288,11 +288,12 @@ router.post(
               ancestry:ancestry,
               version:null,
               content:page.content,
-              userPermissions:[]
+              userPermissions:[],
+              groupPermissions:[]
             };
             // Get all users on the permissions list
             User.find(
-              {'username': { $in: page.userPermissions }},
+              {'_id': { $in: page.userPermissions }},
               function(err,users) {
                 if (err) {
                   console.log(err);
@@ -302,7 +303,21 @@ router.post(
                 for (var i=0;i<users.length;i++) {
                   pageDetails.userPermissions.push(users[i]);
                 }
-                res.status(200).type("application/json").send(JSON.stringify(pageDetails));
+
+                // Get all groups on the permissions list
+                Group.find(
+                  {'_id': { $in: page.groupPermissions }},
+                  function(err, groups) {
+                    if (err) {
+                      console.log(err);
+                      res.status(500).end();
+                      return;
+                    }
+                    for (var j=0;j<groups.length;j++) {
+                      pageDetails.groupPermissions.push(groups[j]);
+                    }
+                    res.status(200).type("application/json").send(JSON.stringify(pageDetails));
+                  });
               });
           });
         } else {
@@ -370,7 +385,7 @@ router.post(
       .exec(function(err, page){
         if (page == null) {
           // Page does not exist yet, create
-          var innerPage = new Page({name:pageName,content:'',userPermissions:[req.user.username]});
+          var innerPage = new Page({name:pageName,content:'',userPermissions:[req.user._id]});
           innerPage.save(function(err, innerInnerPage) {
             if (err) {
               console.log(err);
@@ -506,7 +521,7 @@ router.post(
               or: [
                 {
                   terms: {
-                    userPermissions: [req.user.username]
+                    userPermissions: [req.user._id]
                   }
                 },
                 {
@@ -516,7 +531,7 @@ router.post(
                 },
                 {
                   terms: {
-                    derivedUserPermissions: [req.user.username]
+                    derivedUserPermissions: [req.user._id]
                   }
                 },
                 {
