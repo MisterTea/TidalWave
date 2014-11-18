@@ -8,7 +8,7 @@ argv = require('optimist').argv;
 
 livedb = require('livedb');
 
-var _ = require('underscore');
+var _ = require('lodash');
 var readLine = require ("readline");
 
 try {
@@ -39,6 +39,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
+var MongoStore = require('connect-mongo')(session);
 
 var mongoose = require('mongoose');
 
@@ -123,7 +124,14 @@ app.use(cookieParser());
 //app.use(require('less-middleware')(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public'), {maxAge: 0}));
 app.use(express.static(sharejs.scriptsDir));
-app.use(session({ secret: 't1d4lw4ve', saveUninitialized:true, resave:true }));
+app.use(session({
+  secret: 't1d4lw4ve',
+  saveUninitialized:true,
+  resave:true,
+  store: new MongoStore({
+    db: "tidalwavesessions"
+  })
+}));
 // Remember Me middleware
 app.use( function (req, res, next) {
   if ( req.method == 'POST' && req.url == '/login' ) {
