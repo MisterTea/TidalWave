@@ -2,7 +2,6 @@ var Duplex = require('stream').Duplex;
 var browserChannel = require('browserchannel').server;
 var livedb = require('livedb');
 var sharejs = require('share');
-console.log(sharejs.scriptsDir);
 var database = livedb.memory();
 var backend = livedb.client(database);
 var express = require('express');
@@ -27,7 +26,7 @@ exports.init = function(app) {
   app.use(express.static(sharejs.scriptsDir));
   app.use(browserChannel({
     webserver: app,
-    sessionTimeoutInterval: 5000
+    sessionTimeoutInterval: 60*1000 // 60 second timeout
   }, function(client) {
     var stream;
     var document = null;
