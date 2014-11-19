@@ -66,7 +66,7 @@ exports.init = function(app) {
     if (!redirect) {
       redirect = '';
     }
-    res.render('login', { user: req.user, message: req.session.messages, redirectUrl:redirect });
+    res.render('login', { user: req.user, message: req.session.messages, redirectUrl:redirect, auth:options.auth });
   });
   app.post('/login', function(req, res, next) {
     console.log("REDIRECT "+req.param('redirect'));
