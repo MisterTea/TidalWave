@@ -136,7 +136,12 @@ var changePage = function($http,pageName,pageStateService,callback) {
   window.location = '/view/'+pageName;
 };
 
-angular.module('TidalWavePage', ['angularBootstrapNavTree'])
+angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
+  .service('myService', function (errorShipper) {
+    errorShipper.configure({
+      url: '/service/angularerror'
+    });
+  })
   .service('pageStateService', ['$rootScope', '$http', function($rootScope, $http) {
     var state = {
       settingsActive:false,
