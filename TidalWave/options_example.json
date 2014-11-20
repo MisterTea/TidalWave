@@ -6,6 +6,7 @@
     "userField":"uid",
     "bindDN":"cn=users,dc=com"
   },
+  "ssl":false,
   "credentials": { # For https
     "certificateFile":"mycert.pem",
     "privateKeyFile":"keystore.pem",
