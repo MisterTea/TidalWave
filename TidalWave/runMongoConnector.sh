@@ -1,1 +1,1 @@
-mongo-connector -m localhost:27017 -t localhost:9200 -d /opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/mongo_connector/doc_managers/elastic_doc_manager.py -n tidalwave.users,tidalwave.groups,tidalwave.pages
+mongo-connector -m localhost:27017 -t localhost:9200 -d elastic_doc_manager.py -n tidalwave.users,tidalwave.groups,tidalwave.pages
