@@ -3,7 +3,7 @@ var express = require('express');
 var compression = require('compression');
 var path = require('path');
 var favicon = require('serve-favicon');
-var logger = require('morgan');
+var morgan = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
@@ -11,6 +11,18 @@ var LiveSync = require('./livesync');
 var hierarchy = require('./hierarchy');
 var log = require('./logger').log;
 var options = require('./options-handler').options;
+
+var BunyanStream = {
+  buffer:'',
+  write:function(s) {
+    this.buffer += s;
+    var tokens = this.buffer.split("\n");
+    this.buffer = tokens[tokens.length-1];
+    for (var a=0;a<tokens.length-1;a++) {
+      log.debug(tokens[a]);
+    }
+  }
+};
 
 exports.init = function() {
   var app = express();
@@ -25,7 +37,9 @@ exports.init = function() {
 
   // uncomment after placing your favicon in /public
   //app.use(favicon(__dirname + '/public/favicon.ico'));
-  app.use(logger('dev'));
+  app.use(morgan('dev', {
+    stream:BunyanStream
+  }));
   app.use(bodyParser.json({limit: '128mb'}));
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
