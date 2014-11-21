@@ -13,6 +13,7 @@ var model = require('./model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
+var UserPassword = model.UserPassword;
 
 exports.init = function(app) {
 
@@ -73,6 +74,12 @@ exports.init = function(app) {
     if (!redirect) {
       redirect = "/view";
     }
+
+    if ('register' in req.body) {
+      res.redirect('/register');
+      return;
+    }
+
     passport.authenticate('local', function(err, user, info) {
       if (err) { 
         next(err);
@@ -96,5 +103,33 @@ exports.init = function(app) {
   app.get('/logout', function(req, res){
     req.logout();
     res.redirect('/');
+  });
+  app.get('/register', function(req, res){
+    res.render(
+      'register'
+    );
+  });
+  app.post('/register', function(req, res, next) {
+    var email = req.body.email;
+    var fullName = req.body.fullName;
+    var password = req.body.password;
+    console.log(req.body);
+    var user = new User({username:email,email:email,fullName:fullName,fromLdap:false});
+    user.save(function(err, innerUser) {
+      if (err) {
+        console.log(err);
+        res.status(500).end();
+        return;
+      }
+      var userPassword = new UserPassword({userId:innerUser._id,password:password});
+      userPassword.save(function(err, innerUP) {
+        if (err) {
+          console.log(err);
+          res.status(500).end();
+          return;
+        }
+        res.redirect('/login');
+      });
+    });
   });
 };

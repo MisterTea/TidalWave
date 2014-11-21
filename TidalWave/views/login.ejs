@@ -21,10 +21,11 @@
                 <div class="form-group">
                   <% if(auth=='ldap') { %>
                   <label for="username">Username</label>
+                  <input type="text" name="username" class="form-control" placeholder="Enter your username...">
                   <% } else if(auth=='plain') { %>
                   <label for="username">Email</label>
+                  <input type="text" name="username" class="form-control" placeholder="Enter your email...">
                   <% } %>
-                  <input type="text" name="username" class="form-control" placeholder="Enter your username...">
                 </div>
                 <div class="form-group">
                   <label for="key">Password</label>
