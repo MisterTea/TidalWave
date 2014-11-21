@@ -78,10 +78,12 @@ var enableEditMode = function(pageStateService, $http, $timeout) {
   connection = new window.sharejs.Connection(socket);
 
   var pageDetails = pageStateService.get('pageDetails');
+  console.log("SUBSCRIBING TO " + pageDetails.page._id);
   doc = connection.get('users', pageDetails.page._id);
   doc.subscribe();
 
   doc.whenReady(function () {
+    console.log("SHAREJS IS READY");
     editor.setReadOnly(false);
     console.log(doc);
     if (!doc.type) doc.create('text');

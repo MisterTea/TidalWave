@@ -1,3 +1,5 @@
+var log = require('./logger').log;
+
 var pageHierarchy = [];
 var pageAncestry = {};
 
@@ -11,6 +13,25 @@ var User = model.User;
 
 var AuthHelper = require('./auth-helper');
 
+var getAncestry = exports.getAncestry = function(page, callback) {
+  console.log("GETTING ANCESTRY");
+  console.log(page);
+  if (page.parentId) {
+    Page.findById(page.parentId,function(err, parentPage) {
+      if (err || !parentPage) {
+        callback(["Error"]);
+        return;
+      }
+      getAncestry(parentPage, function(parentAncestry) {
+        parentAncestry.push({_id:page._id,name:page.name});
+        callback(parentAncestry);
+      });
+    });
+  } else {
+    callback([{_id:page._id,name:page.name}]);
+  }
+};
+
 exports.rebuild = function() {
   pageHierarchy.length = 0;
   pageAncestry.length = 0;
@@ -18,6 +39,11 @@ exports.rebuild = function() {
   var completed = {};
   var pageIndexMap = {};
   Page.find({},function(err, pages) {
+    if (err) {
+      log.error({error:err});
+      return;
+    }
+
     for (var k=0;k<pages.length;k++) {
       pageIndexMap[pages[k]._id] = k;
     }
@@ -54,8 +80,6 @@ exports.rebuild = function() {
         break;
       }
     }
-
-    //console.log("FINAL HIERARCHY: " + JSON.stringify(pageHierarchy));
   });
 };
 
@@ -63,17 +87,15 @@ exports.fetch = function(user,filter,cb) {
   var completed = {};
   var pageIndexMap = {};
   var pageHierarchy = [];
-  console.log("Finding with filter: " + JSON.stringify(filter));
-  console.log(user);
+  log.debug("Finding with filter: " + JSON.stringify(filter));
   AuthHelper.queryPermissionWrapper(Page.find(filter),user)
     .exec(function(err, pages) {
       if (err) {
+        log.error({error:err});
         console.log(err.message);
       }
 
-      console.log("PAGES");
       for (var k=0;k<pages.length;k++) {
-        console.log(pages[k]);
         pageIndexMap[pages[k]._id] = k;
       }
 

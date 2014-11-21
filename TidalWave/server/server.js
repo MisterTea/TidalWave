@@ -31,7 +31,8 @@ if (options.ssl) {
     passphrase:options.credentials.passphrase
   };
 
-  app.set('port', options.port || 8443);
+  options.port = options.port || 8443;
+  app.set('port', options.port);
   exports.server = 
     https.createServer(credentials, app)
     .listen(
@@ -39,7 +40,8 @@ if (options.ssl) {
       launchServer
     );
 } else {
-  app.set('port', options.port || 3000);
+  options.port = options.port || 3000;
+  app.set('port', options.port);
   exports.server = 
     http.createServer(app)
     .listen(

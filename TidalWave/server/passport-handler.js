@@ -24,11 +24,11 @@ exports.init = function(app) {
   //
   //   Both serializer and deserializer edited for Remember Me functionality
   passport.serializeUser(function(user, done) {
-    done(null, user.username);
+    done(null, user._id);
   });
 
-  passport.deserializeUser(function(username, done) {
-    User.findOne( { username: username } , function (err, user) {
+  passport.deserializeUser(function(_id, done) {
+    User.findById(_id , function (err, user) {
       done(err, user);
     });
   });
@@ -69,7 +69,6 @@ exports.init = function(app) {
     res.render('login', { user: req.user, message: req.session.messages, redirectUrl:redirect, auth:options.auth });
   });
   app.post('/login', function(req, res, next) {
-    console.log("REDIRECT "+req.param('redirect'));
     var redirect = req.param('redirect');
     if (!redirect) {
       redirect = "/view";

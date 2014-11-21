@@ -1,4 +1,7 @@
 var _ = require('lodash');
+var EmailHandler = require('./email-handler');
+var options = require('./options-handler').options;
+var log = require('./logger').log;
 
 var model = require('./model');
 var Page = model.Page;
@@ -18,37 +21,43 @@ exports.init = function(driver_, database_) {
 };
 
 var dumpPageVersion = function(result, callback) {
-  console.log("IN DUMP PAGE VERSION");
+  log.debug("IN DUMP PAGE VERSION");
   Page.findOne({_id:result.docName}, function(err, page){
-    console.log("FOUND A PAGE");
+    log.debug("FOUND A PAGE");
     if (page == null) {
-      console.log("ERROR: UPDATING PAGE THAT DOES NOT EXIST");
+      log.debug("ERROR: UPDATING PAGE THAT DOES NOT EXIST");
       return;
     }
-    console.log(page);
     var newPageVersion = new PageVersion({pageId:page._id,version:page.nextVersion,content:result.data,editorIds:[]});
-    console.log("DUMPING " + page.name + " WITH VERSION " + page.nextVersion);
-    console.log(newPageVersion);
+    log.debug("DUMPING " + page.name + " WITH VERSION " + page.nextVersion);
     page.nextVersion++;
     page.content = result.data;
     page.save(function (err) {
-      console.log("SAVED PAGE");
+      log.debug("SAVED PAGE");
       if (err) {
         console.log(err);
         if (callback) {
           callback();
         }
       } else {
-        console.log("DUMPING PAGEVERSION");
+        log.debug("DUMPING PAGEVERSION");
         newPageVersion.save(function (err,innerPageVersion) {
           if (err) {
             console.log(err);
           }
           lastVersionDumped[result.docName] = result.v;
-          if (callback) {
-            console.log("EXECUTING CALLBACK");
-            callback();
-          }
+          User.find({watchedPageIds:page._id}, function(err, users) {
+            for (var i=0;i<users.length;i++) {
+              EmailHandler.sendMail(
+                users[i].email,
+                page.name+" has been updated.",
+                "A friendly reminder that the page you watched, "+page.name+", has been updated.  You can see the latest changes by going here: "+(options.ssl?"https":"http")+"://"+options.hostname+":"+options.port+"/view/"+page.name);
+            }
+            if (callback) {
+              log.debug("EXECUTING CALLBACK");
+              callback();
+            }
+          });
         });
       }
     });
@@ -57,9 +66,9 @@ var dumpPageVersion = function(result, callback) {
 
 exports.sync = function(docName, callback) {
   //console.log("Checking for new versions");
-  console.log("PERFORMING SYNC");
+  log.debug("PERFORMING SYNC");
   database.query(null, "users", null, null, function(dummy,results){
-    console.log("LOOKING FOR DOCUMENT");
+    log.debug("LOOKING FOR DOCUMENT");
     var foundDocument = false;
     for (var i=0;i<results.length;i++) {
       var result = results[i];
@@ -67,8 +76,8 @@ exports.sync = function(docName, callback) {
         continue;
       }
       if (!(lastVersionDumped[result.docName] == result.v)) {
-        console.log("DUMPING NEW VERSION");
-        console.log(result);
+        log.debug("DUMPING NEW VERSION");
+        log.debug(result);
         // Dump new PageVersion
         foundDocument = true;
         dumpPageVersion(result, callback);
@@ -84,7 +93,7 @@ exports.sync = function(docName, callback) {
 };
 
 exports.syncAndRemove = function(docName) {
-  console.log("Removing liveDB doc " + docName);
+  log.debug("Removing liveDB doc " + docName);
   exports.sync(docName, function() {
     delete database.collections['users'][docName];
     delete database.ops['users'][docName];

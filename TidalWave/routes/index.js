@@ -1,15 +1,17 @@
 var express = require('express');
-var router = express.Router();
-
 var Hierarchy = require('../server/hierarchy');
+var AuthHelper = require('../server/auth-helper');
+var options = require('../server/options-handler').options;
+
+var router = express.Router();
 
 router.get(
   '/',
-  require('../server/auth-helper').ensureAuthenticated,
+  AuthHelper.ensureAuthenticated,
   function(req, res) {
     res.render('page', {
       server:{
-        projectName:"Tidal Wave",
+        projectName:options.serverName,
         user:req.user
       }
     });
@@ -18,11 +20,11 @@ router.get(
 
 router.get(
   '/:page',
-  require('../server/auth-helper').ensureAuthenticated,
+  AuthHelper.ensureAuthenticated,
   function(req, res) {
     res.render('page', {
       server:{
-        projectName:"Tidal Wave",
+        projectName:options.serverName,
         user:req.user
       }
     });

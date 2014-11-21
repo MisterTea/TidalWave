@@ -54,3 +54,17 @@ var ImageSchema = mongoose.Schema({
   name: {type:String, required:true, unique:true, index:true}
 });
 exports.Image = mongoose.model("Image",ImageSchema);
+
+var saveAllDocuments = function(documents, callback) {
+  var onDocument = 0;
+  var iterate = function(err, product, numberAffected) {
+    onDocument++;
+    if (documents.length>onDocument) {
+      documents[onDocument].save(iterate);
+    } else {
+      callback();
+    }
+  };
+  documents[onDocument].save(iterate);
+};
+

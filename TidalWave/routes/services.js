@@ -1,7 +1,11 @@
 var express = require('express');
-var router = express.Router();
-
 var Hierarchy = require('../server/hierarchy');
+var AuthHelper = require('../server/auth-helper');
+var LiveSync = require('../server/livesync');
+var toc = require('marked-toc');
+var _ = require('lodash');
+var client = require('../server/search-handler').client;
+var log = require('../server/logger').log;
 
 var model = require('../server/model');
 var Page = model.Page;
@@ -10,83 +14,10 @@ var User = model.User;
 var Group = model.Group;
 var Image = model.Image;
 
-var AuthHelper = require('../server/auth-helper');
-var LiveSync = require('../server/livesync');
-
-var toc = require('marked-toc');
-
-var _ = require('lodash');
-
-var elasticsearch = require('elasticsearch');
-var client = new elasticsearch.Client({
-  host: 'localhost:9200',
-  log: 'warning'
-});
-
 var queryPermissionWrapper = AuthHelper.queryPermissionWrapper;
+var userCanAccessPage = AuthHelper.userCanAccessPage;
 
-var userCanAccessPage = function(user,page,callback) {
-  if (page.isPublic) {
-    callback(true);
-    return;
-  }
-
-  if (
-    !(_.contains(page.userPermissions,user._id.toString())) &&
-      !(_.intersection(page.groupPermissions,user.groups).length>0) &&
-      !(_.contains(page.derivedUserPermissions,user._id.toString())) &&
-      !(_.intersection(page.derivedGroupPermissions,user.groups).length>0)
-  ) {
-    callback(false);
-    return;
-  }
-  if (page.parentId) {
-    Page.findOne({_id:page.parentId},function(err, parentPage) {
-      if (err) {
-        // handle error
-        //console.log(JSON.stringify(user) + " CANNOT FIND PARENT " + JSON.stringify(page));
-        callback(false);
-        return;
-      }
-      userCanAccessPage(user,parentPage,callback);
-    });
-  } else {
-    //console.log(JSON.stringify(user) + " CAN ACCESS " + JSON.stringify(page));
-    callback(true);
-  }
-};
-
-var saveAllDocuments = function(documents, callback) {
-  var onDocument = 0;
-  var iterate = function(err, product, numberAffected) {
-    onDocument++;
-    if (documents.length>onDocument) {
-      documents[onDocument].save(iterate);
-    } else {
-      callback();
-    }
-  };
-  documents[onDocument].save(iterate);
-};
-
-var getAncestry = function(page, callback) {
-  console.log("GETTING ANCESTRY");
-  console.log(page);
-  if (page.parentId) {
-    Page.findById(page.parentId,function(err, parentPage) {
-      if (err || !parentPage) {
-        callback(["Error"]);
-        return;
-      }
-      getAncestry(parentPage, function(parentAncestry) {
-        parentAncestry.push({_id:page._id,name:page.name});
-        callback(parentAncestry);
-      });
-    });
-  } else {
-    callback([{_id:page._id,name:page.name}]);
-  }
-};
+var router = express.Router();
 
 var updateDerivedPermissions = function(page,callback) {
   // Store off the derived permission to propagate
@@ -106,7 +37,7 @@ var updateDerivedPermissions = function(page,callback) {
       }
 
       // Save all children
-      saveAllDocuments(pages,function() {
+      model.saveAllDocuments(pages,function() {
 
         // Recursively update derived permissions for grandchildren.
         var onUpdate=0;
@@ -147,7 +78,7 @@ router.post(
       newUser,
       function(err, dummyUser) {
         if (err) {
-          console.log("ERROR: " + JSON.stringify(err));
+          log.error({error:err});
           res.status(500).done();
         }
         res.status(200).done();
@@ -159,25 +90,20 @@ router.post(
   '/updatePage',
   AuthHelper.ensureAuthenticated,
   function(req, res) {
-    console.log("UPDATING PAGE");
-    console.log(req.body);
     var page = new Page(req.body);
+    log.debug("UPDATING PAGE: " + page.name + " " + page._id);
     Page.findById(
       page._id,
       function(err, outerPage) {
-        console.log("FOUND PAGE TO UPDATE");
-        console.log(outerPage);
         userCanAccessPage(req.user,outerPage,function(outerSuccess) {
           if (!outerSuccess) {
-            console.log("TRIED TO UPDATE PAGE WITHOUT ACCESS");
+            log.info("TRIED TO UPDATE PAGE WITHOUT ACCESS: " + req.user.email + " " + page.name);
             // Tried to update a page without access
             res.status(403).end();
             return;
           }
           userCanAccessPage(req.user,page,function(success) {
             if (success) {
-              console.log("UPDATING PAGE");
-              console.log(page);
               var updatePage = function(page) {
                 Page.findByIdAndUpdate(
                   page._id,
@@ -191,13 +117,11 @@ router.post(
                     isPublic:page.isPublic
                    }},function(err, page) {
                      if (err) {
-                       console.log("Error updating page");
-                       console.log(err);
+                       log.error({error:err});
                        res.status(500).end();
                        return;
                      }
-                     console.log("Updated successfully");
-                     console.log(page);
+                     log.debug("Updated successfully");
                      updateDerivedPermissions(page,function() {
                        res.status(200).end();
                      });
@@ -222,9 +146,9 @@ router.post(
                 updatePage(page);
               }
             } else {
-              console.log("UPDATE WOULD BAN USER FROM HIS OWN PAGE");
+              log.info("UPDATE WOULD BAN USER FROM HIS OWN PAGE");
               // Tried to change permissions in a way that would ban the user doing the update.
-              res.status(403).end();
+              res.status(400).end();
             }
           });
         });
@@ -238,9 +162,13 @@ router.post(
   function(req, res) {
     var pageId = req.param('pageId');
 
-    queryPermissionWrapper(Page.findOne({_id:pageId}), req.user)
+    queryPermissionWrapper(Page.findById(pageId), req.user)
       .exec(function(err, page) {
         if (err) {
+          log.error({error:err});
+          res.status(500).end();
+        } else if (!page) {
+          log.info("Tried to get table of contents for non-existant page: " + page._id);
           res.status(404).end();
         } else {
           userCanAccessPage(req.user,page,function(success) {
@@ -265,7 +193,7 @@ router.post(
       Page.find({name:new RegExp("^"+query, "i")}), req.user)
       .limit(10)
       .exec(function(err, pages) {
-        console.log("Result for " + query + ": " + JSON.stringify(pages));
+        log.debug("Result for " + query + ": " + JSON.stringify(pages));
         res.status(200).type("application/json").send(JSON.stringify(pages));
       });
   }
@@ -275,14 +203,13 @@ router.post(
   '/pageDetailsByName/:name',
   AuthHelper.ensureAuthenticated,
   function(req, res) {
-    console.log("Getting page details with name: " + req.param('name'));
+    log.debug("Getting page details with name: " + req.param('name'));
     queryPermissionWrapper(
       Page.findOne({name:req.param('name')}), req.user)
       .exec(function(err, page) {
-        console.log("Got page");
-        console.log(page);
+        log.debug("Got page: " + JSON.stringify(page));
         if (page) {
-          getAncestry(page, function(ancestry) {
+          Hierarchy.getAncestry(page, function(ancestry) {
             var pageDetails = {
               page:page,
               ancestry:ancestry,
@@ -296,7 +223,7 @@ router.post(
               {'_id': { $in: page.userPermissions }},
               function(err,users) {
                 if (err) {
-                  console.log(err);
+                  log.error({error:err});
                   res.status(500).end();
                   return;
                 }
@@ -331,7 +258,7 @@ router.post(
   '/pageHistory/:pageId',
   AuthHelper.ensureAuthenticated,
   function(req, res) {
-    console.log("Getting history");
+    log.debug("Getting history");
     var pageId = req.param('pageId');
 
     queryPermissionWrapper(
@@ -406,10 +333,10 @@ router.post(
   '/savePageDynamicContent/:pageName',
   AuthHelper.ensureAuthenticated,
   function(req, res) {
-    console.log("SAVING DYNAMIC CONTENT");
+    log.debug("SAVING DYNAMIC CONTENT");
     var pageName = req.param('pageName');
     LiveSync.sync(pageName, function() {
-      console.log("PAGE SAVED.  RETURNING 200");
+      log.debug("PAGE SAVED.  RETURNING 200");
       res.status(200).end();
     });
   }

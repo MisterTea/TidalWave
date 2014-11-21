@@ -1,4 +1,5 @@
 var options = require('./options-handler').options;
+var log = require('./logger').log;
 
 var model = require('./model');
 var Page = model.Page;
@@ -9,7 +10,7 @@ var UserPassword = model.UserPassword;
 exports.login = function(username,password,successCallback,errorCallback) {
   User.findOne({username:username}, function(err, user) {
     if (err) {
-      //todo: handle error
+      log.error({error:err});
       errorCallback(err.message);
       return;
     }
@@ -17,7 +18,7 @@ exports.login = function(username,password,successCallback,errorCallback) {
     UserPassword.findOne({userId:uid})
       .exec(function(err, userPassword) {
         if (err) {
-          // todo: handle error
+          log.error({error:err});
           errorCallback(err.message);
         } else if (!userPassword) {
           errorCallback("No password for user " + uid);

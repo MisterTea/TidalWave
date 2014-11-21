@@ -39,7 +39,7 @@ exports.init = function(app) {
     stream._write = function(chunk, encoding, callback) {
       log.debug('s->c ', JSON.stringify(chunk));
       if (client.state !== 'closed') {
-        log.debug(chunk);
+        client.send(chunk);
       } else {
         log.debug("CLIENT IS CLOSED");
       }
@@ -66,7 +66,6 @@ exports.init = function(app) {
           Page.findOne({_id:data['d']},function(err,page){
             if (page) {
               log.debug("Fetch page from DB");
-              log.debug(page);
               // Inject document from database
               database.writeSnapshot(data['c'],data['d'],{
                 v:0,
