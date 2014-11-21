@@ -7,7 +7,7 @@
     "bindDN":"cn=users,dc=com"
   },
   "ssl":false,
-  "sessionSecret":"t1d4lw4ve"
+  "sessionSecret":"t1d4lw4ve",
   "credentials": { # For https
     "certificateFile":"mycert.pem",
     "privateKeyFile":"keystore.pem",
