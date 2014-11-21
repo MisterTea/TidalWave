@@ -7,6 +7,7 @@ var morgan = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
+var MongoStore = require('connect-mongo')(session);
 var LiveSync = require('./livesync');
 var hierarchy = require('./hierarchy');
 var log = require('./logger').log;
@@ -45,7 +46,14 @@ exports.init = function() {
   app.use(cookieParser());
   app.use(require('less-middleware')(path.join(__dirname, '../public')));
   app.use(express.static(path.join(__dirname, '../public'), {maxAge: 0}));
-  app.use(session({ secret: options.sessionSecret, saveUninitialized:true, resave:true }));
+  app.use(session({
+    secret: options.sessionSecret,
+    saveUninitialized:true,
+    resave:true,
+    store: new MongoStore({
+      db: "tidalwavesessions"
+    })
+  }));
   // Remember Me middleware
   app.use( function (req, res, next) {
     if ( req.method == 'POST' && req.url == '/login' ) {

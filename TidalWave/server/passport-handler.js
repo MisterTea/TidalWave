@@ -2,18 +2,20 @@ var passport = require('passport')
 , LocalStrategy = require('passport-local').Strategy;
 
 var options = require('./options-handler').options;
-var auth = null;
-if (options.auth == 'ldap') {
-  auth = require("./auth-ldap");
-} else if(options.auth == 'plain') {
-  auth = require('./auth-plain');
-}
+var log = require('./logger').log;
 
 var model = require('./model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
 var UserPassword = model.UserPassword;
+
+var auth = null;
+if (options.auth == 'ldap') {
+  auth = require("./auth-ldap");
+} else if(options.auth == 'plain') {
+  auth = require('./auth-plain');
+}
 
 exports.init = function(app) {
 
@@ -67,7 +69,15 @@ exports.init = function(app) {
     if (!redirect) {
       redirect = '';
     }
-    res.render('login', { user: req.user, message: req.session.messages, redirectUrl:redirect, auth:options.auth });
+    res.render(
+      'login',
+      {
+        user: req.user,
+        message: req.session.messages,
+        redirectUrl:redirect,
+        auth:options.auth
+      }
+    );
   });
   app.post('/login', function(req, res, next) {
     var redirect = req.param('redirect');
@@ -113,7 +123,7 @@ exports.init = function(app) {
     var email = req.body.email;
     var fullName = req.body.fullName;
     var password = req.body.password;
-    console.log(req.body);
+    log.debug(req.body);
     var user = new User({username:email,email:email,fullName:fullName,fromLdap:false});
     user.save(function(err, innerUser) {
       if (err) {
