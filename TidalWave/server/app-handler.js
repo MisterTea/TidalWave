@@ -9,6 +9,8 @@ var bodyParser = require('body-parser');
 var session = require('express-session');
 var LiveSync = require('./livesync');
 var hierarchy = require('./hierarchy');
+var log = require('./logger').log;
+var options = require('./options-handler').options;
 
 exports.init = function() {
   var app = express();
@@ -18,18 +20,18 @@ exports.init = function() {
   }));
 
   // view engine setup
-  app.set('views', path.join(__dirname, 'views'));
+  app.set('views', path.join(__dirname, '../views'));
   app.set('view engine', 'ejs');
 
   // uncomment after placing your favicon in /public
   //app.use(favicon(__dirname + '/public/favicon.ico'));
   app.use(logger('dev'));
-  app.use(bodyParser.json({limit: '50mb'}));
+  app.use(bodyParser.json({limit: '128mb'}));
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
-  app.use(require('less-middleware')(path.join(__dirname, 'public')));
-  app.use(express.static(path.join(__dirname, 'public'), {maxAge: 0}));
-  app.use(session({ secret: 't1d4lw4ve', saveUninitialized:true, resave:true }));
+  app.use(require('less-middleware')(path.join(__dirname, '../public')));
+  app.use(express.static(path.join(__dirname, '../public'), {maxAge: 0}));
+  app.use(session({ secret: options.sessionSecret, saveUninitialized:true, resave:true }));
   // Remember Me middleware
   app.use( function (req, res, next) {
     if ( req.method == 'POST' && req.url == '/login' ) {
@@ -47,15 +49,13 @@ exports.init = function() {
   app.get('/', function(req,res) {
     res.redirect('/view');
   });
-  app.use('/view', require('./routes/index'));
-  app.use('/page',require('./routes/page'));
-  app.use('/diff',require('./routes/diff'));
-  app.use('/history',require('./routes/history'));
-  app.use('/pagesettings',require('./routes/pagesettings'));
-  app.use('/profile',require('./routes/profile'));
+  app.use('/view', require('../routes/index'));
+  app.use('/diff',require('../routes/diff'));
+  app.use('/history',require('../routes/history'));
+  app.use('/profile',require('../routes/profile'));
 
-  app.use('/service',require('./routes/hierarchy'));
-  app.use('/service',require('./routes/services'));
+  app.use('/service',require('../routes/hierarchy'));
+  app.use('/service',require('../routes/services'));
 
   require('./sharejs-handler').init(app);
 
@@ -110,7 +110,7 @@ exports.launch = function() {
   }
   
   process.on ("SIGINT", function(){
-    console.log("CAUGHT CTRL-C");
+    log.info("CAUGHT CTRL-C");
     // Do one last sync before we go away
     LiveSync.syncAll();
     

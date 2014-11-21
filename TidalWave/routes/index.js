@@ -1,11 +1,11 @@
 var express = require('express');
 var router = express.Router();
 
-var Hierarchy = require('../hierarchy');
+var Hierarchy = require('../server/hierarchy');
 
 router.get(
   '/',
-  require('../auth-helper').ensureAuthenticated,
+  require('../server/auth-helper').ensureAuthenticated,
   function(req, res) {
     res.render('page', {
       server:{
@@ -18,7 +18,7 @@ router.get(
 
 router.get(
   '/:page',
-  require('../auth-helper').ensureAuthenticated,
+  require('../server/auth-helper').ensureAuthenticated,
   function(req, res) {
     res.render('page', {
       server:{

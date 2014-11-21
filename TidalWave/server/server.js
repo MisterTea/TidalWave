@@ -2,21 +2,20 @@ try {
   require('heapdump');
 } catch (_error) {}
 
+var log = require('./logger').log;
 var fs = require('fs');
 var https = require('https');
 var http = require('http');
 var AppHandler = require('./app-handler');
 var app = AppHandler.init();
 
-var debug = require('debug')('TidalWave');
-
 var options = require('./options-handler').options;
 
 var launchServer = function() {
   var server = exports.server;
-  debug('TidalWave server listening on port ' + server.address().port);
+  log.debug('TidalWave server listening on port ' + server.address().port);
   require('./mongoose-handler').init(function() {
-    debug("Connected to MongoDB database");
+    log.debug("Connected to MongoDB database");
     AppHandler.launch();
   });
 };

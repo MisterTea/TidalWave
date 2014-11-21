@@ -1,11 +1,11 @@
 var express = require('express');
 var router = express.Router();
 
-var pageHierarchy = require('../hierarchy').pageHierarchy;
+var pageHierarchy = require('../server/hierarchy').pageHierarchy;
 
 router.get(
   '/:profile',
-  require('../auth-helper').ensureAuthenticated,
+  require('../server/auth-helper').ensureAuthenticated,
   function(req, res) {
     console.log("PROFILE ID: " + req.param('profile'));
     res.render('profile', {

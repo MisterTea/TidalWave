@@ -1,11 +1,11 @@
 var express = require('express');
 var router = express.Router();
 
-var pageHierarchy = require('../hierarchy').pageHierarchy;
+var pageHierarchy = require('../server/hierarchy').pageHierarchy;
 
 router.get(
   '/:pagename',
-  require('../auth-helper').ensureAuthenticated,
+  require('../server/auth-helper').ensureAuthenticated,
   function(req, res) {
     res.render('history', {
       pagename: req.param('pagename'),

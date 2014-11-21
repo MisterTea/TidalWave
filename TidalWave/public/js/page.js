@@ -177,15 +177,11 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
   }])
   .controller('PageMenuController', ['$scope', '$http', '$timeout', 'pageStateService', function($scope, $http, $timeout, pageStateService) {
     $scope.query = "";
-    var apple_selected, tree;
+    var tree;
     $scope.my_tree_handler = function(branch) {
       console.log("CLICKED ON");
       console.log(branch);
       changePage($http,branch.label,pageStateService,null);
-    };
-    apple_selected = function(branch) {
-      console.log("SELECTED APPLE");
-      return $scope.output = "APPLE! : " + branch.label;
     };
     $scope.my_data = [];
     $scope.my_tree = tree = {};
@@ -210,15 +206,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
     };
 
     $scope.$on('pageStateServiceUpdate', function(response) {
-      var pageDetails = pageStateService.get('pageDetails');
-      if (pageDetails) {
-        console.log("Selecting branch: " + pageDetails.page.name);
-        console.log($scope.my_tree);
-        $timeout(function() {
-          $scope.my_tree.select_branch_by_name(pageDetails.page.name);
-          $scope.my_tree.expand_all();
-        });
-      }
+      console.log("GOT PAGE STATE UPDATE");
       var user = pageStateService.get('user');
       if (user) {
         $http.post('/service/hierarchy/'+user.username)
@@ -230,6 +218,16 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
             $scope.doing_async = false;
             $timeout(function() {
               $scope.my_tree.expand_all();
+              var pageDetails = pageStateService.get('pageDetails');
+              if (pageDetails && pageDetails.page) {
+                console.log("Selecting branch: " + pageDetails.page.name);
+                console.log($scope.my_tree);
+                $timeout(function() {
+                  console.log("Selecting branch by name");
+                  $scope.my_tree.select_branch_by_name(pageDetails.page.name);
+                  $scope.my_tree.expand_all();
+                });
+              }
             });
           })
           .error(function(data, status, headers, config) {

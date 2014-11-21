@@ -61,6 +61,8 @@
                   _results.push(do_f(child, level + 1));
                 }
                 return _results;
+              } else {
+                return [];
               }
             };
             _ref = scope.treeData;
@@ -280,11 +282,8 @@
                 return b;
               };
               tree.select_branch_by_name = function(name) {
-                console.log("Selecting branch by name: " + name);
                 for_each_branch(function(b) {
-                  console.log(b.label);
                   if (b.label == name) {
-                    console.log("Found branch");
                     select_branch(b);
                     b.expanded=true;
                   }

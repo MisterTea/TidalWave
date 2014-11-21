@@ -1,4 +1,4 @@
-var _ = require('underscore');
+var _ = require('lodash');
 
 var model = require('./model');
 var Page = model.Page;
@@ -6,6 +6,7 @@ var PageVersion = model.PageVersion;
 var User = model.User;
 
 var debug = require('debug')('Sync');
+var util = require('../node_modules/livedb/lib/util');
 
 var lastVersionDumped = {};
 var driver = null;
@@ -81,8 +82,6 @@ exports.sync = function(docName, callback) {
     return;
   });
 };
-
-var util = require('./node_modules/livedb/lib/util');
 
 exports.syncAndRemove = function(docName) {
   console.log("Removing liveDB doc " + docName);

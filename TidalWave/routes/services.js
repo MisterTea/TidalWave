@@ -1,17 +1,17 @@
 var express = require('express');
 var router = express.Router();
 
-var Hierarchy = require('../hierarchy');
+var Hierarchy = require('../server/hierarchy');
 
-var model = require('../model');
+var model = require('../server/model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
 var Group = model.Group;
 var Image = model.Image;
 
-var AuthHelper = require('../auth-helper');
-var LiveSync = require('../livesync');
+var AuthHelper = require('../server/auth-helper');
+var LiveSync = require('../server/livesync');
 
 var toc = require('marked-toc');
 
