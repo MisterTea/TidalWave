@@ -1,12 +1,14 @@
-<div class="well col-xs-4 col-lg-2" ng-controller="PageMenuController" id="PageMenuController">
-  <div class="input-group input-group-sm">
-    <input type="text" class="form-control" ng-model="query">
-    <span class="input-group-addon" style="padding: 0px;">
-      <button class="btn btn-default" style="margin: 0px; padding: 0px;" ng-click="createPage()">
-        <span class="glyphicon glyphicon-pencil" style="font-size: 18px;"></span>
-      </button>
-    </span>
+<div ng-controller="PageMenuController">
+  <div class="well col-xs-4 col-lg-2" ng-show="showMenu" id="PageMenuController">
+    <div class="input-group input-group-sm">
+      <input type="text" class="form-control" ng-model="query">
+      <span class="input-group-addon" style="padding: 0px;">
+        <button class="btn btn-default" style="margin: 0px; padding: 0px;" ng-click="createPage()">
+          <span class="glyphicon glyphicon-pencil" style="font-size: 18px;"></span>
+        </button>
+      </span>
+    </div>
+    <br />
+    <abn-tree tree-data="my_data" tree-control="my_tree" on-select="my_tree_handler(branch)" expand-level="1000" initial-selection=""></abn-tree>
   </div>
-  <br />
-  <abn-tree tree-data="my_data" tree-control="my_tree" on-select="my_tree_handler(branch)" expand-level="1000" initial-selection=""></abn-tree>
 </div>

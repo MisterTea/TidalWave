@@ -12,21 +12,26 @@
     
     <div class="main-row col-lg-12">
       <% include sidebar %>
+      
       <div ng-controller="PageContentController">
         
-        <div ng-show="page && history">
+        <div ng-show="pageMode=='diff'">
+          <% include page-diff %>
+        </div>
+
+        <div ng-show="pageMode=='history'">
           <% include page-history %>
         </div>
 
-        <div ng-show="searchContentResults && !history">
+        <div ng-show="pageMode=='searchResults'">
           <% include search-results %>
         </div>
 
-        <div ng-show="!page && !searchContentResults">
+        <div ng-show="pageMode=='recentChanges'">
           <% include recent-changes %>
         </div>
 
-        <div ng-show="page && !searchContentResults && !history">
+        <div ng-show="pageMode=='content'">
           <% include page-contents %>
         </div>
       </div>

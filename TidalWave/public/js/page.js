@@ -112,6 +112,106 @@ var disableEditMode = function($timeout) {
   }
 };
 
+var preprocessDiff = function(allDiffs) {
+  var sourceLines = [{text:'',style:'equal'}];
+  var destLines = [{text:'',style:'equal'}];
+
+  for (var i=0;i<allDiffs.length;i++) {
+    var diff = allDiffs[i];
+
+    if (diff[0] == 0) {
+      // Add to both
+      var tokens = diff[1].split("\n");
+
+      var styleToSet = 'equal';
+      if (sourceLines[sourceLines.length-1].style!='equal') {
+        styleToSet = 'difference';
+      }
+
+      sourceLines[sourceLines.length-1] = {
+        text:sourceLines[sourceLines.length-1].text.concat(tokens[0]),
+        style:styleToSet
+      };
+      destLines[destLines.length-1] = {
+        text:destLines[destLines.length-1].text.concat(tokens[0]),
+        style:styleToSet
+      };
+
+      for (var j=1;j<tokens.length;j++) {
+        sourceLines.push({
+          text:tokens[j],
+          style:'equal'});
+        destLines.push({
+          text:tokens[j],
+          style:'equal'});
+      }
+    } else {
+      var bufferWithAdds = null;
+      var otherBuffer = null;
+
+      if (diff[0]==-1) {
+        bufferWithAdds = sourceLines;
+        otherBuffer = destLines;
+      } else {
+        bufferWithAdds = destLines;
+        otherBuffer = sourceLines;
+      }
+
+      // add to source
+      var tokens = diff[1].split("\n");
+
+      // Inline change, this is a difference
+      if (tokens[0].length>0) {
+        bufferWithAdds[bufferWithAdds.length-1] = {
+          text:bufferWithAdds[bufferWithAdds.length-1].text
+            .concat("<span style=\"color:red;\">"+tokens[0]+"</span>"),
+          style:'difference'};
+        otherBuffer[otherBuffer.length-1].style = 'difference';
+      }
+
+      if (tokens.length>1) {
+        // The remaining lines should be added as new lines
+        for (var j=1;j<tokens.length;j++) {
+          bufferWithAdds.push({
+            text:"<span style=\"color:red;\">"+tokens[j]+"</span>",
+            style:'difference'});
+          otherBuffer.push({
+            text:'',
+            style:'difference'});
+        }
+      }
+    }
+  }
+
+  // Cleanup: set add/remove and put spaces
+  for (var i=0;i<sourceLines.length;i++) {
+    if (sourceLines[i].text.length==0 && destLines[i].text.length>0) {
+      sourceLines[i].style = 'remove';
+      destLines[i].style = 'add';
+    }
+    if (sourceLines[i].text.length>0 && destLines[i].text.length==0) {
+      sourceLines[i].style = 'add';
+      destLines[i].style = 'remove';
+    }
+    if (sourceLines[i].text.length==0) {
+      sourceLines[i].text = ' ';
+    }
+    if (destLines[i].text.length==0) {
+      destLines[i].text = ' ';
+    }
+  }
+
+  // Add line numbers
+  for (var i=0;i<sourceLines.length;i++) {
+    sourceLines[i].lineNumber = i+1;
+  }
+  for (var i=0;i<destLines.length;i++) {
+    destLines[i].lineNumber = i+1;
+  }
+
+  return [sourceLines,destLines];
+};
+
 var parentList = null;
 var userPermissionList = null;
 var groupPermissionList = null;
@@ -152,7 +252,9 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
       searchContentResults:null,
       query:null,
       user:null,
-      history:null
+      history:null,
+      diff:null,
+      pageMode:null
     };
     var get = function(key){
       return state[key];
@@ -189,6 +291,8 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
     $scope.my_tree = tree = {};
     $scope.doing_async = true;
 
+    $scope.showMenu = true;
+
     $scope.createPage = function() {
       //console.log("Creating page");
       $http.post('/service/createPage/'+$scope.query)
@@ -209,6 +313,14 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
 
     $scope.$on('pageStateServiceUpdate', function(response) {
       console.log("GOT PAGE STATE UPDATE");
+
+      $scope.showMenu = true;
+      var editMode = pageStateService.get('editMode');
+      var pageMode = pageStateService.get('pageMode');
+      if (editMode || pageMode=='diff') {
+        $scope.showMenu = false;
+      }
+
       var user = pageStateService.get('user');
       if (user) {
         $http.post('/service/hierarchy/'+user.username)
@@ -342,6 +454,9 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
       } else {
         $scope.isWatchingPage = false;
       }
+
+      var pageMode = pageStateService.get('pageMode');
+      $scope.history = pageMode=='history' || pageMode=='diff';
     });
     $scope.toggleHistory = function() {
       console.log("Toggling history");
@@ -349,6 +464,8 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
       if (history) {
         console.log("Clearing history");
         pageStateService.set('history',null);
+        pageStateService.set('diff',null);
+        pageStateService.set('pageMode','content');
       } else {
         console.log("Fetching history");
         $http.post('/service/pageHistory/'+pageStateService.get('pageDetails').page._id)
@@ -542,10 +659,72 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
     console.log("IN PAGE CONTENT CONTROLLER");
     $scope.editMode = false;
 
+    $scope.pageMode = null;
+
+    $scope.restorePageVersion = function(version) {
+      var pageDetails = pageStateService.get('pageDetails');
+      $http.post('/service/restorePageVersion', {
+        _id:pageDetails.page._id,
+        version:version
+      })
+        .success(function(data, status, headers, config) {
+          //TODO: Say success
+        })
+        .error(function(data, status, headers, config) {
+          //TODO: Alert with an error
+          //NOTE: Can error if someone is editing the page you are trying to restore.
+        });
+    };
+
+    $scope.viewDiff = function(version) {
+      var history = pageStateService.get('history');
+      for (var i=0;i<history.length-1;i++) {
+        var pageVersion = history[i];
+        if (pageVersion.version == version) {
+          var prevPageVersion = history[i+1];
+          var dmp = new diff_match_patch();
+          console.log(dmp);
+          var diff = dmp.diff_main(prevPageVersion.content, pageVersion.content);
+          dmp.diff_cleanupSemantic(diff);
+          console.log(diff);
+          var processedDiff = preprocessDiff(diff);
+          console.log(processedDiff);
+          pageStateService.set('diff',processedDiff);
+        }
+      }
+    };
+    
     var updateState = function() {
       $scope.searchContentResults = pageStateService.get('searchContentResults');
       $scope.query = pageStateService.get('query');
       var pageDetails = pageStateService.get('pageDetails');
+      var history = pageStateService.get('history');
+      $scope.history = history;
+
+      var diff = pageStateService.get('diff');
+      if (diff) {
+        $scope.diffSourceLines = diff[0];
+        $scope.diffDestLines = diff[1];
+      } else {
+        $scope.diffSourceLines = null;
+        $scope.diffDestLines = null;
+      }
+        
+      if (!pageDetails) {
+        $scope.pageMode = 'recentChanges';
+      } else if($scope.diffSourceLines) {
+        $scope.pageMode = 'diff';
+      } else if(history) {
+        $scope.pageMode = 'history';
+      } else if($scope.searchContentResults) {
+        $scope.pageMode = 'searchResults';
+      } else {
+        $scope.pageMode = 'content';
+      }
+      if ($scope.pageMode != pageStateService.get('pageMode')) {
+        pageStateService.set('pageMode',$scope.pageMode);
+      }
+      
       if (pageDetails) {
         $scope.page = pageDetails?pageDetails.page:null;
         $scope.newName = pageDetails.page.name;
@@ -598,9 +777,6 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
           pageStateService.set('editMode',false);
         }
       }
-
-      var history = pageStateService.get('history');
-      $scope.history = history;
 
       if ($scope.editMode && !pageStateService.get('editMode')) {
         // Leave edit mode
