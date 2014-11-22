@@ -1,0 +1,71 @@
+<div ng-show="settingsActive" id="settings" class="col-xs-12 col-lg-12">
+  <div class="col-md-12">
+    <div class="well well-lg", style="padding-top:0px; padding-bottom:300px">
+      <form class="form-horizontal" role="form" ng-submit="updateSettings()">
+        <div class="form-group col-md-6">
+          <h3>Details</h3>
+          <label for="inputTitle" class="col-md-2 control-label">Title</label>
+          <div class="col-md-10">
+            <input type="text" class="form-control" id="inputTitle" ng-model="newName">
+          </div>
+          <label for="inputParent" class="col-md-2 control-label">Parent</label>
+          <div class="col-md-10">
+            <select id="select-parent" class="demo-default" placeholder="Pick a parent...">
+            </select>
+          </div>
+        </div>
+        <div class="form-group col-md-6">
+          <h3>Permissions</h3>
+          <label for="userPermissionList" class="col-md-2 control-label">Users</label>
+          <div class="col-md-10">
+            <p class="form-control-static" ng-if="derivedUserPermissions.join(',').length>0">From Parent: {{derivedUserPermissions.join(',')}}</p>
+            <input type="text" class="demo-default" id="userPermissionList" ng-model="userPermissionList">
+          </div>
+
+          <label for="groupPermissionList" class="col-md-2 control-label">Groups</label>
+          <div class="col-md-10">
+            <p class="form-control-static" ng-if="derivedGroupPermissions.join(',').length>0">From Parent: {{derivedGroupPermissions.join(',')}}</p>
+            <input type="text" class="form-control" id="groupPermissionList" ng-model="groupPermissionList">
+          </div>
+
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" ng-model="isPublic"> Public
+            </label>
+          </div>
+
+        </div>
+        <div class="col-md-12">
+          <div class="col-md-2 col-md-offset-5">
+            <button class="btn btn-default" type="submit">Update</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="ancestry" ng-show="!editMode" class="col-lg-10">
+  <ol class="breadcrumb">
+    <li ng-repeat="ancestor in ancestry"><a href="" ng-click="changePage(ancestor.name);">{{ancestor.name}}</a></li>
+    <li class="active">{{page.name}}</li>
+  </ol>
+</div>
+
+<div id="editor" class="col-xs-7 col-lg-6" ng-show="editMode">Loading...</div>
+<div id="content" class="col-xs-7 col-lg-6">
+  <div ng-show="version" class="alert alert-warning" style="text-align: center;">
+    <strong>You are viewing an old version of this page.</strong><br />
+    <a class="alert-link" href="#">View Current version</a>&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
+    <a class="alert-link" href="#">Show Differences</a>&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
+    <a class="alert-link" href="#">Restore this version</a>&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
+    <a class="alert-link" href="#">View Page History</a>
+    <ul class="pager" style="margin-top:5px;">
+      <li class="disabled"><a href="#">&larr; Older</a></li>
+      <li>Version {{version}}</li>
+      <li><a href="#">Newer &rarr;</a></li>
+    </ul>
+  </div>
+  <div id="content-markdown">
+  </div>
+</div>

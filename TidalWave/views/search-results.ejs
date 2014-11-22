@@ -1,0 +1,27 @@
+<div class="col-xs-8 col-lg-10">
+  <h2>Search Results for '{{query}}'</h2>
+  <ol ng-show="searchContentResults.length<=10">
+    <li ng-repeat="result in searchContentResults">
+      <h4><a ng-href="/view/{{result.name}}">{{result.name}}</a></h4>
+    </li>
+    <hr ng-if="!$last" />
+  </ol>
+  <ul class="pagination" ng-show="searchContentResults.length>10">
+    <li class="disabled" ng-show="activePage==0"><a href="#">&laquo;</a></li>
+    <li ng-show="activePage!=0"><a href="#">&laquo;</a></li>
+    <!--
+        {{#eachPage searchContentResults activePage}}
+        {{#if activePage}}
+        <li class="active"><a href="#">{{page}}</a></li>
+        {{else}}
+        <li><a href="#">{{page}}</a></li>
+        {{/if}}
+        {{/eachPage}}
+        {{#ifGreaterThan numPages activePage}}
+        <li><a href="#">&raquo;</a></li>
+        {{else}}
+        <li class="disabled"><a href="#">&raquo;</a></li>
+        {{/ifGreaterThan}}
+        -->
+  </ul>
+</div>
