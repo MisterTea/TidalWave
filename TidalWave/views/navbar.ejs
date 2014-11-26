@@ -15,16 +15,19 @@
   <div class="collapse navbar-collapse navbar-right">
     <ul class="nav navbar-nav">
       <li><a href="">{{username}}</a></li>
-      <li style="padding-right:50px"><a href="/logout">Log Out</a></li>
+      <li style="padding-right:50px">
+        <a href="/logout" ng-if="username">Log Out</a>
+        <a href="/login" ng-if="!username">Log In</a>
+      </li>
     </ul>
   </div>
   <div class="collapse navbar-collapse">
     <div ng-show="page.name">
       <ul class="nav navbar-nav">
-        <li ng-class="history?'active':''">
+        <li ng-class="history?'active':''" ng-show="username">
           <a href="" ng-click="toggleHistory()">Page History</a>
         </li>
-        <li ng-class="isWatchingPage?'active':''">
+        <li ng-class="isWatchingPage?'active':''" ng-show="username">
           <a href="" ng-click="toggleWatch()">{{isWatchingPage?"Unwatch":"Watch"}}</a>
         </li>
         <li class="dropdown">
@@ -35,7 +38,7 @@
           </ul>
         </li>
         <li ng-show="editMode"><a href="" ng-click="toggleEditMode()">Finish Editing</a></li>
-        <li ng-show="!editMode"><a href="" ng-click="toggleEditMode()">Edit</a></li>
+        <li ng-show="!editMode && username"><a href="" ng-click="toggleEditMode()">Edit</a></li>
         <li ng-show="editMode" ng-class="settingsActive?'active':''">
           <a href="" ng-click="toggleSettings()">Settings</a>
         </li>

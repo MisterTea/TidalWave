@@ -56,18 +56,65 @@ var updateDerivedPermissions = function(page,callback) {
   });
 };
 
+var userPermissionFilter = function(user) {
+  if (user) {
+    return {
+      or: [
+        {
+          terms: {
+            userPermissions: [user._id]
+          }
+        },
+        {
+          terms: {
+            groupPermissions: user.groups
+          }
+        },
+        {
+          terms: {
+            derivedUserPermissions: [user._id]
+          }
+        },
+        {
+          terms: {
+            derivedGroupPermissions: user.groups
+          }
+        },
+        {
+          term: {
+            isPublic: true
+          }
+        }
+      ]
+    };
+  } else {
+    return {
+      term: {
+        isPublic: true
+      }
+    };
+  }
+};
+
 router.post(
   '/me',
-  AuthHelper.ensureAuthenticated,
   function(req, res) {
-    res.status(200).type('application/json').send(req.user);
+    if (req.isAuthenticated()) {
+      res.status(200).type('application/json').send(req.user);
+    } else {
+      res.status(200).type('application/json').send(null);
+    }
   }
 );
 
 router.post(
   '/updateMe',
-  AuthHelper.ensureAuthenticated,
   function(req, res) {
+    if (!req.isAuthenticated()) {
+      res.status(403).done();
+      return;
+    }
+
     var newUser = req.body;
     if (newUser._id != req.user._id) {
       res.status(403).done();
@@ -88,8 +135,12 @@ router.post(
 
 router.post(
   '/updatePage',
-  AuthHelper.ensureAuthenticated,
   function(req, res) {
+    if (!req.isAuthenticated()) {
+      res.status(403).done();
+      return;
+    }
+
     var page = new Page(req.body);
     log.debug("UPDATING PAGE: " + page.name + " " + page._id);
     Page.findById(
@@ -158,7 +209,6 @@ router.post(
 
 router.post(
   '/getTOC/:pageId',
-  AuthHelper.ensureAuthenticated,
   function(req, res) {
     var pageId = req.param('pageId');
 
@@ -185,7 +235,6 @@ router.post(
 
 router.post(
   '/pageStartsWith/:query',
-  AuthHelper.ensureAuthenticated,
   function(req, res) {
     var query = req.param('query');
 
@@ -201,7 +250,6 @@ router.post(
 
 router.post(
   '/pageDetailsByName/:name',
-  AuthHelper.ensureAuthenticated,
   function(req, res) {
     log.debug("Getting page details with name: " + req.param('name'));
     queryPermissionWrapper(
@@ -256,7 +304,6 @@ router.post(
 
 router.post(
   '/pageHistory/:pageId',
-  AuthHelper.ensureAuthenticated,
   function(req, res) {
     log.debug("Getting history");
     var pageId = req.param('pageId');
@@ -286,7 +333,6 @@ router.post(
 
 router.post(
   '/setPageParent/:pageId/:parentId',
-  AuthHelper.ensureAuthenticated,
   function(req, res) {
     var newParent = req.param('parentId');
     if (newParent == '___null___') {
@@ -295,10 +341,14 @@ router.post(
     queryPermissionWrapper(
       Page.findOne({_id:req.param('pageId')}), req.user)
       .exec(function(err, page) {
-        page.parentId = newParent;
-        page.save(function(err, innerPage) {
-          res.status(200).end();
-        });
+        if (page) {
+          page.parentId = newParent;
+          page.save(function(err, innerPage) {
+            res.status(200).end();
+          });
+        } else {
+          res.status(403).end();
+        }
       });
   });
 
@@ -344,7 +394,6 @@ router.post(
 
 router.post(
   '/findUserFullName/:fullName',
-  AuthHelper.ensureAuthenticated,
   function(req, res) {
     var fullName = req.param('fullName');
     client.search({
@@ -394,7 +443,6 @@ router.post(
 
 router.post(
   '/findGroupName/:name',
-  AuthHelper.ensureAuthenticated,
   function(req, res) {
     var name = req.param('name');
     client.search({
@@ -434,7 +482,6 @@ router.post(
 
 router.post(
   '/findPageContent/:content',
-  AuthHelper.ensureAuthenticated,
   function(req, res) {
     var content = req.param('content');
     client.search({
@@ -444,30 +491,7 @@ router.post(
         size:10,
         query: {
           filtered: {
-            filter: {
-              or: [
-                {
-                  terms: {
-                    userPermissions: [req.user._id]
-                  }
-                },
-                {
-                  terms: {
-                    groupPermissions: req.user.groups
-                  }
-                },
-                {
-                  terms: {
-                    derivedUserPermissions: [req.user._id]
-                  }
-                },
-                {
-                  terms: {
-                    derivedGroupPermissions: req.user.groups
-                  }
-                }
-              ]
-            },
+            filter: userPermissionFilter(req.user),
             query: {
               match_phrase_prefix: {        
                 content: {
@@ -491,7 +515,7 @@ router.post(
       }
       res.status(200).type("application/json").send(JSON.stringify(results));
     }, function (error) {
-      console.log(error.message);
+      log.error(error);
       res.status(500).end();
     });
   }
@@ -499,7 +523,6 @@ router.post(
 
 router.post(
   '/recentChangesVisible',
-  AuthHelper.ensureAuthenticated,
   function(req,res) {
     console.log("RECENT CHANGES VISIBLE");
     res.status(200).type("application/json").send("\"asdf\"");
@@ -515,7 +538,7 @@ router.post(
     var imageData = req.body;
 
     var uniqueName =
-          imageData.pageName + "_" +
+          imageData.pageId + "_" +
           chance.string({length: 8, pool:"1234567890abcdef"}) + "_" +
           imageData.name;
 
@@ -535,20 +558,32 @@ router.post(
 
 router.get(
   '/getImage/:name',
-  AuthHelper.ensureAuthenticated,
   function(req,res) {
     var name = req.param('name');
     console.log("Getting image with name " + name);
 
-    Image.find({name:name}, function(err,results) {
-      if (results.length>1) {
-        res.status(500).end();
-      } else if(results.length==0) {
-        res.status(404).end();
-      }
-      var image = results[0];
-      res.status(200).type(image.mime).send(image.data);
-    });
+    var pageId = name.split('_')[0];
+    queryPermissionWrapper(
+      Page.findById(pageId), req.user)
+      .exec(function(err, page) {
+        if (err) {
+          res.status(500).end();
+          return;
+        }
+        if (!page) {
+          res.status(403).end();
+        }
+
+        Image.find({name:name}, function(err,results) {
+          if (results.length>1) {
+            res.status(500).end();
+          } else if(results.length==0) {
+            res.status(404).end();
+          }
+          var image = results[0];
+          res.status(200).type(image.mime).send(image.data);
+        });
+      });
   });
 
 module.exports = router;

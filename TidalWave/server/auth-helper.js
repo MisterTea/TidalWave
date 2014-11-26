@@ -21,20 +21,25 @@ exports.ensureAuthenticated = function(req, res, next) {
 };
 
 exports.queryPermissionWrapper = function(query, user) {
-  if (user.groups.length==0) {
-    return query.or(
-      [{isPublic: true},
-       {userPermissions: user._id},
-       {derivedUserPermissions: user._id}
-      ]);
+  if (user) {
+    if (user.groups.length==0) {
+      return query.or(
+        [{isPublic: true},
+         {userPermissions: user._id},
+         {derivedUserPermissions: user._id}
+        ]);
+    } else {
+      return query.or(
+        [{isPublic: true},
+         {userPermissions: user._id},
+         {groupPermissions: user.groups},
+         {derivedUserPermissions: user._id},
+         {derivedGroupPermissions: user.groups}
+        ]);
+    }
+  } else {
+    return query.where({isPublic:true});
   }
-  return query.or(
-    [{isPublic: true},
-     {userPermissions: user._id},
-     {groupPermissions: user.groups},
-     {derivedUserPermissions: user._id},
-     {derivedGroupPermissions: user.groups}
-    ]);
   //bypass security
   //return query;
 };

@@ -47,7 +47,7 @@ var enableEditMode = function(pageStateService, $http, $timeout) {
           var mime = e.target.result.split(',')[0].substring(5);
           var data = e.target.result.split(',')[1];
           var pageDetails = pageStateService.get('pageDetails');
-          $http.post('/service/saveImage', {mime:mime,base64:data,pageName:pageDetails.page._id,name:file.name})
+          $http.post('/service/saveImage', {mime:mime,base64:data,pageId:pageDetails.page._id,name:file.name})
             .success(function(data, status, headers, config) {
               console.log("INJECTING IMAGE");
               editor.insert("<img src=\"/service/getImage/"+data+"\"></img>");
@@ -294,21 +294,26 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
     $scope.showMenu = true;
 
     $scope.createPage = function() {
-      //console.log("Creating page");
-      $http.post('/service/createPage/'+$scope.query)
-        .success(function(data, status, headers, config) {
-          //TODO: Say success
-          console.log("Created page");
-          var newPage = $scope.query;
-          $scope.query = '';
-          changePage($http,newPage,pageStateService, function() {
-            pageStateService.set('settingsActive', true);
-            pageStateService.set('editMode',true);
+      var user = pageStateService.get('user');
+      if (user) {
+        //console.log("Creating page");
+        $http.post('/service/createPage/'+$scope.query)
+          .success(function(data, status, headers, config) {
+            //TODO: Say success
+            console.log("Created page");
+            var newPage = $scope.query;
+            $scope.query = '';
+            changePage($http,newPage,pageStateService, function() {
+              pageStateService.set('settingsActive', true);
+              pageStateService.set('editMode',true);
+            });
+          })
+          .error(function(data, status, headers, config) {
+            //TODO: Alert with an error
           });
-        })
-        .error(function(data, status, headers, config) {
-          //TODO: Alert with an error
-        });
+      } else {
+        window.location = "/login";
+      }
     };
 
     $scope.$on('pageStateServiceUpdate', function(response) {
@@ -321,9 +326,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
         $scope.showMenu = false;
       }
 
-      var user = pageStateService.get('user');
-      if (user) {
-        $http.post('/service/hierarchy/'+user.username)
+        $http.post('/service/hierarchy')
           .success(function(data, status, headers, config) {
             $scope.my_data = [];
             for (var i=0;i<data.length;i++) {
@@ -347,7 +350,6 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
           .error(function(data, status, headers, config) {
             //TODO: Alert with an error
           });
-      }
     });
 
     $scope.$watch('query',function(newValue,oldValue) {
@@ -430,7 +432,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
     };
   }])
   .controller('NavbarController', ['$scope', '$http', 'pageStateService', function($scope, $http, pageStateService) {
-    $scope.username = "(Loading)";
+    $scope.username = "";
     $scope.editMode = pageStateService.get('editMode');
     $scope.projectName = "Tidal Wave";
     $scope.settingsActive = pageStateService.get('settingsActive');
@@ -635,8 +637,12 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
 
     $http.post('/service/me')
       .success(function(data, status, headers, config) {
-        //TODO: Say success
-        pageStateService.set('user',data);
+        if (data) {
+          //TODO: Say success
+          pageStateService.set('user',data);
+        } else {
+          console.log("NO USER FOUND.  ASSUMING ANONYMOUS");
+        }
       })
       .error(function(data, status, headers, config) {
         //TODO: Alert with an error
@@ -883,6 +889,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
               .success(function(data, status, headers, config) {
                 //TODO: Say success
                 pageStateService.set('pageDetails',data);
+                pageStateService.set('settingsActive',false);
               })
               .error(function(data, status, headers, config) {
                 //TODO: Alert with an error
