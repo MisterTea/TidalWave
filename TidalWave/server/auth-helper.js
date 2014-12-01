@@ -6,6 +6,7 @@ var PageVersion = model.PageVersion;
 var User = model.User;
 var Group = model.Group;
 var Image = model.Image;
+var log = require('./logger').log;
 
 // Simple route middleware to ensure user is authenticated.
 //   Use this route middleware on any resource that needs to be protected.  If
@@ -17,23 +18,28 @@ exports.ensureAuthenticated = function(req, res, next) {
     next();
     return;
   }
-  res.redirect('/login?redirect='+req.baseUrl + req.url);
+  var totalUrl = req.baseUrl + req.url;
+  log.warn({invalidAuthentication:true,user:req.user,url:totalUrl});
+  res.redirect('/login?redirect='+totalUrl);
 };
 
 exports.queryPermissionWrapper = function(query, user) {
   if (user) {
     if (user.groups.length==0) {
+      console.log("CHECKING PERMISSIONS");
+      console.dir(user);
+      console.log(user._id.toString());
       return query.or(
         [{isPublic: true},
-         {userPermissions: user._id},
-         {derivedUserPermissions: user._id}
+         {userPermissions: user._id.toString() },
+         {derivedUserPermissions: user._id.toString() }
         ]);
     } else {
       return query.or(
         [{isPublic: true},
-         {userPermissions: user._id},
+         {userPermissions: user._id.toString()},
          {groupPermissions: user.groups},
-         {derivedUserPermissions: user._id},
+         {derivedUserPermissions: user._id.toString()},
          {derivedGroupPermissions: user.groups}
         ]);
     }

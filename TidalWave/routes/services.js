@@ -142,7 +142,8 @@ router.post(
     }
 
     var page = new Page(req.body);
-    log.debug("UPDATING PAGE: " + page.name + " " + page._id);
+    log.debug({text:"UPDATING PAGE:", page:page});
+    
     Page.findById(
       page._id,
       function(err, outerPage) {
@@ -396,48 +397,21 @@ router.post(
   '/findUserFullName/:fullName',
   function(req, res) {
     var fullName = req.param('fullName');
-    client.search({
-      index: 'tidalwave.users',
-      body: {
-        from:0,
-        size:5,
-        query: {
-          filtered: {
-            filter: {
-              not: {
-                filter: {
-                  term: {
-                    lastLoginTime: "none"
-                  }
-                }
-              }
-            },
-            query: {
-              match_phrase_prefix: {        
-                fullName: {
-                  query:'"'+fullName+'"',
-                  prefix_length:3,
-                  max_expansions : 1024
-                }
-              }
-            }
-          }
+    User
+      .find({fullName:new RegExp("^"+fullName, "i")})
+      .where('lastLoginTime').ne(null)
+      .limit(5)
+      .sort('-fullName')
+      .exec(function(err, users) {
+        if (err) {
+          log.error(err);
+          res.status(500).done();
+          return;
         }
-      }
-    }).then(function (body) {
-      var hits = body.hits.hits;
-      console.log(hits);
-      var results = [];
-      for (var i=0;i<hits.length;i++) {
-        var result = hits[i]._source;
-        result._id = hits[i]._id;
-        results.push(result);
-      }
-      res.status(200).type("application/json").send(JSON.stringify(results));
-    }, function (error) {
-      console.log(error.message);
-      res.status(500).done();
-    });
+
+        log.debug({results:users});
+        res.status(200).type("application/json").send(JSON.stringify(users));
+      });
   }
 );
 
@@ -445,38 +419,20 @@ router.post(
   '/findGroupName/:name',
   function(req, res) {
     var name = req.param('name');
-    client.search({
-      index: 'tidalwave.groups',
-      body: {
-        from:0,
-        size:10,
-        query: {
-          match_phrase_prefix: {        
-            name: {
-              query:'"'+name+'"',
-              prefix_length:3,
-              max_expansions : 1024
-            }
-          }
+    Group
+      .find({fullName:new RegExp("^"+name, "i")})
+      .limit(5)
+      .sort('-name')
+      .exec(function(err, groups) {
+        if (err) {
+          log.error(err);
+          res.status(500).done();
+          return;
         }
-      }
-    }).then(function (body) {
-      var hits = body.hits.hits;
-      console.log(hits);
-      var results = [];
-      for (var i=0;i<hits.length;i++) {
-        var result = hits[i]._source;
-        result._id = hits[i]._id;
-        results.push(result);
-        if (results.length==5) {
-          break;
-        }
-      }
-      res.status(200).type("application/json").send(JSON.stringify(results));
-    }, function (error) {
-      console.log(error.message);
-      res.status(500).done();
-    });
+
+        log.debug({results:groups});
+        res.status(200).type("application/json").send(JSON.stringify(groups));
+      });
   }
 );
 
@@ -484,40 +440,57 @@ router.post(
   '/findPageContent/:content',
   function(req, res) {
     var content = req.param('content');
-    client.search({
-      index: 'tidalwave.pages',
-      body: {
-        from:0,
-        size:10,
-        query: {
-          filtered: {
-            filter: userPermissionFilter(req.user),
-            query: {
-              match_phrase_prefix: {        
-                content: {
-                  query:'"'+content+'"',
-                  prefix_length:3,
-                  max_expansions : 100000
+    if (client) {
+      client.search({
+        index: 'tidalwave.pages',
+        body: {
+          from:0,
+          size:10,
+          query: {
+            filtered: {
+              filter: userPermissionFilter(req.user),
+              query: {
+                match_phrase_prefix: {        
+                  content: {
+                    query:'"'+content+'"',
+                    prefix_length:3,
+                    max_expansions : 100000
+                  }
                 }
               }
             }
           }
         }
-      }
-    }).then(function (body) {
-      var hits = body.hits.hits;
-      console.log(hits);
-      var results = [];
-      for (var i=0;i<hits.length;i++) {
-        var result = hits[i]._source;
-        result._id = hits[i]._id;
-        results.push(result);
-      }
-      res.status(200).type("application/json").send(JSON.stringify(results));
-    }, function (error) {
-      log.error(error);
-      res.status(500).end();
-    });
+      }).then(function (body) {
+        var hits = body.hits.hits;
+        console.log(hits);
+        var results = [];
+        for (var i=0;i<hits.length;i++) {
+          var result = hits[i]._source;
+          result._id = hits[i]._id;
+          results.push(result);
+        }
+        res.status(200).type("application/json").send(JSON.stringify(results));
+      }, function (error) {
+        log.error(error);
+        res.status(500).end();
+      });
+    } else {
+      queryPermissionWrapper(Page
+        .find({content:new RegExp(content, "i")}), req.user)
+        .limit(10)
+        .sort('-name')
+        .exec(function(err, pages) {
+          if (err) {
+            log.error(err);
+            res.status(500).done();
+            return;
+          }
+
+          log.debug({results:pages});
+          res.status(200).type("application/json").send(JSON.stringify(pages));
+        });
+    }
   }
 );
 

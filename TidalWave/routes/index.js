@@ -2,6 +2,7 @@ var express = require('express');
 var Hierarchy = require('../server/hierarchy');
 var AuthHelper = require('../server/auth-helper');
 var options = require('../server/options-handler').options;
+var log = require('../server/logger').log;
 
 var router = express.Router();
 
@@ -32,12 +33,11 @@ router.get(
     Page.findOne({name:pageName})
       .exec(function(err, page) {
         var pageIsPublic = (page && page.isPublic);
-        console.log("FETCHING PAGE");
-        console.log(page);
-        console.log(err);
     
         if (!req.isAuthenticated() && !pageIsPublic) { 
-          res.redirect('/login?redirect='+req.baseUrl + req.url);
+          var totalUrl = req.baseUrl + req.url;
+          log.warn({invalidAuthentication:true,user:req.user,url:totalUrl});
+          res.redirect('/login?redirect='+totalUrl);
           return;
         }
     
