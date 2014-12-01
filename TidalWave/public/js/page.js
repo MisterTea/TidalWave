@@ -387,7 +387,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
         var user = pageStateService.get('user');
         if (user) {
           console.log("UPDATING HIERARCHY");
-          $http.post('/service/hierarchy/'+user.username)
+          $http.post('/service/hierarchy')
             .success(function(data, status, headers, config) {
               $scope.my_data = [];
               for (var i=0;i<data.length;i++) {
