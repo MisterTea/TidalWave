@@ -2,13 +2,19 @@ var mongoose = require('mongoose');
 
 mongoose.set('debug', true);
 
+var ObjectId = mongoose.Schema.ObjectId;
+
 var isObjectId = function(n) {
   if (!n) {
     // Allow null/undefined
     return true;
   }
-  
-  return mongoose.Types.ObjectId.isValid(n);
+
+  if (typeof n.toString === 'function') {
+    return mongoose.Types.ObjectId.isValid(n.toString());
+  } else {
+    return false;
+  }
 };
 
 var isObjectIdArray = function(n) {
@@ -30,22 +36,22 @@ var isObjectIdArray = function(n) {
 
 var PageSchema = new mongoose.Schema({
   name: {type:String, index:true, unique:true, required:true},
-  parentId: {type:String, index:true, validate:isObjectId},
+  parentId: {type:ObjectId, index:true, validate:isObjectId},
   nextVersion: {type:Number, default:1},
   publish: {type:Boolean, default:false},
-  userPermissions: {type:[String], default:[], validate:isObjectIdArray},
-  groupPermissions: {type:[String], default:[], validate:isObjectIdArray},
-  derivedUserPermissions: {type:[String], default:[], validate:isObjectIdArray},
-  derivedGroupPermissions: {type:[String], default:[], validate:isObjectIdArray},
+  userPermissions: {type:[ObjectId], default:[], validate:isObjectIdArray},
+  groupPermissions: {type:[ObjectId], default:[], validate:isObjectIdArray},
+  derivedUserPermissions: {type:[ObjectId], default:[], validate:isObjectIdArray},
+  derivedGroupPermissions: {type:[ObjectId], default:[], validate:isObjectIdArray},
   content: String,
   isPublic: {type: Boolean, default: false}
 });
 exports.Page = mongoose.model("Page",PageSchema);
 
 var PageVersionSchema = mongoose.Schema({
-  pageId: {type:String, index:true, required:true, validate:isObjectId},
+  pageId: {type:ObjectId, index:true, required:true, validate:isObjectId},
   version: {type: Number, index:true, required:true},
-  editorIds:{type:[String], index:true, validate:isObjectIdArray},
+  editorIds:{type:[ObjectId], index:true, validate:isObjectIdArray},
   content:{type:String},
   timestamp: {type: Date, default: Date.now, index:true}
 });
@@ -58,13 +64,13 @@ var UserSchema = mongoose.Schema({
   groups: {type:[String], default: [], validate:isObjectIdArray},
   lastLoginTime: {type:Date, default:null},
   fromLdap: {type:Boolean, required:true},
-  watchedPageIds: {type:[String], default:[]}
+  watchedPageIds: {type:[ObjectId], default:[]}
 });
 UserSchema.index({firstName:1, lastName:1});
 exports.User = mongoose.model("User",UserSchema);
 
 var UserPasswordSchema = mongoose.Schema({
-  userId: {type: String, required:true, index:true, validate:isObjectId},
+  userId: {type: ObjectId, required:true, index:true, validate:isObjectId},
   password: { type: String, required:true }
 });
 exports.UserPassword = mongoose.model("UserPassword",UserPasswordSchema);

@@ -57,26 +57,36 @@ exports.userCanAccessPage = userCanAccessPage = function(user,page,callback) {
     return;
   }
 
-  if (
-    !(_.contains(page.userPermissions,user._id.toString())) &&
-      !(_.intersection(page.groupPermissions,user.groups).length>0) &&
-      !(_.contains(page.derivedUserPermissions,user._id.toString())) &&
-      !(_.intersection(page.derivedGroupPermissions,user.groups).length>0)
-  ) {
-    callback(false);
-    return;
+  for (var a=0;a<page.userPermissions.length;a++) {
+    if (user._id.equals(page.userPermissions[a])) {
+      callback(true);
+      return;
+    }
   }
-  if (page.parentId) {
-    Page.findOne({_id:page.parentId},function(err, parentPage) {
-      if (err) {
-        // handle error
-        callback(false);
+  for (var a=0;a<page.derivedUserPermissions.length;a++) {
+    if (user._id.equals(page.derivedUserPermissions[a])) {
+      callback(true);
+      return;
+    }
+  }
+  for (var a=0;a<page.groupPermissions.length;a++) {
+    for (var b=0;b<user.groups.length;b++) {
+      if (page.groupPermissions[a].equals(user.groups[b])) {
+        callback(true);
         return;
       }
-      userCanAccessPage(user,parentPage,callback);
-    });
-  } else {
-    callback(true);
+    }
   }
+  for (var a=0;a<page.derivedGroupPermissions.length;a++) {
+    for (var b=0;b<user.groups.length;b++) {
+      if (page.derivedGroupPermissions[a].equals(user.groups[b])) {
+        callback(true);
+        return;
+      }
+    }
+  }
+
+  callback(false);
+  return;
 };
 
