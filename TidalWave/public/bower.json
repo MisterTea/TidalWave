@@ -40,6 +40,8 @@
     "jspdf": "~1.0.272",
     "lodash": "~2.4.1",
     "angular-bootstrap-show-errors": "~2.0.0",
-    "angular-error-shipper": "~0.1.3"
+    "angular-error-shipper": "~0.1.3",
+    "shepherd.js": "~0.5.1",
+    "intro.js": "~1.0.0"
   }
 }

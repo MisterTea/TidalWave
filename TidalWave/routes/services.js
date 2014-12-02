@@ -4,7 +4,7 @@ var AuthHelper = require('../server/auth-helper');
 var LiveSync = require('../server/livesync');
 var toc = require('marked-toc');
 var _ = require('lodash');
-var client = require('../server/search-handler').client;
+var SearchHandler = require('../server/search-handler');
 var log = require('../server/logger').log;
 
 var model = require('../server/model');
@@ -440,7 +440,9 @@ router.post(
   '/findPageContent/:content',
   function(req, res) {
     var content = req.param('content');
+    var client = SearchHandler.client;
     if (client) {
+      log.info("Searching with elasticsearch");
       client.search({
         index: 'tidalwave.pages',
         body: {
@@ -476,6 +478,7 @@ router.post(
         res.status(500).end();
       });
     } else {
+      log.info("Searching with mongoose");
       queryPermissionWrapper(Page
         .find({content:new RegExp(content, "i")}), req.user)
         .limit(10)

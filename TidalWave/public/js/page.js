@@ -261,9 +261,13 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
     };
     var set = function(key,value) {
       //console.log("SETTING " + key + " " + JSON.stringify(value));
-      if (key == 'user' && state.user != null && !_.isEqual(state.user,value)) {
+      state[key] = value;
+      $rootScope.$broadcast('pageStateServiceUpdate', {key:key,value:value});
+    };
+    var push = function(key) {
+      if (key == 'user') {
         // Push the new user
-        $http.post('/service/updateMe', value)
+        $http.post('/service/updateMe', state[key])
           .success(function(data, status, headers, config) {
             //TODO: Say success
           })
@@ -271,12 +275,16 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
             //TODO: Alert with an error
           });
       }
-      state[key] = value;
-      $rootScope.$broadcast('pageStateServiceUpdate', {key:key,value:value});
+    };
+    var setAndPush = function(key,value) {
+      set(key,value);
+      push(key);
     };
     return {
       get:get,
-      set:set
+      set:set,
+      push:push,
+      setAndPush:setAndPush
     };
   }])
   .controller('PageMenuController', ['$scope', '$http', '$timeout', 'pageStateService', function($scope, $http, $timeout, pageStateService) {
@@ -502,7 +510,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
         user.watchedPageIds.push($scope.page._id);
       }
       console.log("USER CHANGED");
-      pageStateService.set('user',user);
+      pageStateService.push('user');
     };
     $scope.toggleEditMode = function() {
       console.log("Toggling setting");

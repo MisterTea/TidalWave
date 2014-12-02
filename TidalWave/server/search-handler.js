@@ -10,6 +10,7 @@ client.cluster.health(function (err, resp) {
     log.error({error:err});
     exports.client = null;
   } else {
+    log.info("ElasticSearch client found");
     exports.client = client;
   }
 });
