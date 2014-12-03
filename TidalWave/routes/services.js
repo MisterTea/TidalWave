@@ -111,13 +111,13 @@ router.post(
   '/updateMe',
   function(req, res) {
     if (!req.isAuthenticated()) {
-      res.status(403).done();
+      res.status(403).end();
       return;
     }
 
     var newUser = req.body;
     if (newUser._id != req.user._id) {
-      res.status(403).done();
+      res.status(403).end();
       return;
     }
     User.findByIdAndUpdate(
@@ -126,9 +126,9 @@ router.post(
       function(err, dummyUser) {
         if (err) {
           log.error({error:err});
-          res.status(500).done();
+          res.status(500).end();
         }
-        res.status(200).done();
+        res.status(200).end();
       });
   }
 );
@@ -137,7 +137,7 @@ router.post(
   '/updatePage',
   function(req, res) {
     if (!req.isAuthenticated()) {
-      res.status(403).done();
+      res.status(403).end();
       return;
     }
 
@@ -405,7 +405,7 @@ router.post(
       .exec(function(err, users) {
         if (err) {
           log.error(err);
-          res.status(500).done();
+          res.status(500).end();
           return;
         }
 
@@ -426,7 +426,7 @@ router.post(
       .exec(function(err, groups) {
         if (err) {
           log.error(err);
-          res.status(500).done();
+          res.status(500).end();
           return;
         }
 
@@ -486,7 +486,7 @@ router.post(
         .exec(function(err, pages) {
           if (err) {
             log.error(err);
-            res.status(500).done();
+            res.status(500).end();
             return;
           }
 

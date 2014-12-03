@@ -888,6 +888,9 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
       console.log(pageCopy);
       $http.post('/service/updatePage',pageCopy)
         .success(function(data, status, headers, config) {
+          // Close the settings menu
+          pageStateService.set('settingsActive', false);
+
           if (nameChanged) {
             console.log("Name changed, redirecting");
             changePage($http,$scope.newName,pageStateService,null);
