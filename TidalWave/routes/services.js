@@ -111,12 +111,14 @@ router.post(
   '/updateMe',
   function(req, res) {
     if (!req.isAuthenticated()) {
+      log.warn("Tried to update user but not authenticated");
       res.status(403).end();
       return;
     }
 
     var newUser = req.body;
-    if (newUser._id != req.user._id) {
+    if (newUser._id != req.user._id.toString()) {
+      log.warn({message:"Tried to update user but wrong user id",requestedUser:newUser,actualId:req.user._id});
       res.status(403).end();
       return;
     }

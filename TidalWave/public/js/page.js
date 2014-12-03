@@ -510,7 +510,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
         user.watchedPageIds.push($scope.page._id);
       }
       console.log("USER CHANGED");
-      pageStateService.push('user');
+      pageStateService.setAndPush('user',user);
     };
     $scope.toggleEditMode = function() {
       console.log("Toggling setting");
