@@ -333,6 +333,14 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
       if (editMode || pageMode=='diff') {
         $scope.showMenu = false;
       }
+      var query = pageStateService.get('query');
+      if (editMode && query) {
+        query = null;
+        pageStateService.set('query',null);
+      }
+      if ($scope.query != query) {
+        $scope.query = query;
+      }
 
         $http.post('/service/hierarchy')
           .success(function(data, status, headers, config) {
@@ -540,6 +548,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
     };
   }])
   .controller('PageContentController', ['$scope', '$http', '$timeout', 'pageStateService', function($scope, $http, $timeout, pageStateService) {
+    $scope.query = null;
     $http.post('/service/recentChangesVisible')
       .success(function(data, status, headers, config) {
         // TODO: Implement this url
@@ -709,8 +718,12 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
     };
     
     var updateState = function() {
-      $scope.searchContentResults = pageStateService.get('searchContentResults');
+      if (pageStateService.get('editMode') && pageStateService.get('searchContentResults')) {
+        pageStateService.set('searchContentResults',null);
+      }
       $scope.query = pageStateService.get('query');
+
+      $scope.searchContentResults = pageStateService.get('searchContentResults');
       var pageDetails = pageStateService.get('pageDetails');
       var history = pageStateService.get('history');
       $scope.history = history;

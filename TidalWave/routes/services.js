@@ -403,7 +403,7 @@ router.post(
       .find({fullName:new RegExp("^"+fullName, "i")})
       .where('lastLoginTime').ne(null)
       .limit(5)
-      .sort('-fullName')
+      .sort('fullName')
       .exec(function(err, users) {
         if (err) {
           log.error(err);
@@ -424,7 +424,7 @@ router.post(
     Group
       .find({fullName:new RegExp("^"+name, "i")})
       .limit(5)
-      .sort('-name')
+      .sort('name')
       .exec(function(err, groups) {
         if (err) {
           log.error(err);
@@ -463,7 +463,10 @@ router.post(
                 }
               }
             }
-          }
+          },
+          sort: [
+            { name: 'desc' }
+          ]
         }
       }).then(function (body) {
         var hits = body.hits.hits;
@@ -484,7 +487,7 @@ router.post(
       queryPermissionWrapper(Page
         .find({content:new RegExp(content, "i")}), req.user)
         .limit(10)
-        .sort('-name')
+        .sort('name')
         .exec(function(err, pages) {
           if (err) {
             log.error(err);
