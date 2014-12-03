@@ -44,6 +44,7 @@ var PageSchema = new mongoose.Schema({
   derivedUserPermissions: {type:[ObjectId], default:[], validate:isObjectIdArray},
   derivedGroupPermissions: {type:[ObjectId], default:[], validate:isObjectIdArray},
   content: String,
+  lastModifiedTime: {type: Date, default: Date.now, index:true},
   isPublic: {type: Boolean, default: false}
 });
 exports.Page = mongoose.model("Page",PageSchema);

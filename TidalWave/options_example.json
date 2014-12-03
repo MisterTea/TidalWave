@@ -1,7 +1,8 @@
 {
   "serverName":"Tidal Wave",
-  "serverEmailAddress":"tidalwave-mailer@mywebsite.com",
+  "serverEmailAddress":"tidalwave-mailer@tidalwave.com",
   "auth":"plain", # Choices are plain or ldap
+  "hostname":"tidalwave.com",
   "port":null, # Override the default port (3000 for http, 8443 for https)
   "ldap":{
     "server":"ldaps://myldapserver:636",

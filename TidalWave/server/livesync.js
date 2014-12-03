@@ -32,6 +32,8 @@ var dumpPageVersion = function(result, callback) {
     log.debug("DUMPING " + page.name + " WITH VERSION " + page.nextVersion);
     page.nextVersion++;
     page.content = result.data;
+    page.lastModifiedTime = newPageVersion.timestamp;
+    console.log("TIMESTAMP: " + page.lastModifiedTime);
     page.save(function (err) {
       log.debug("SAVED PAGE");
       if (err) {
@@ -47,6 +49,9 @@ var dumpPageVersion = function(result, callback) {
           }
           lastVersionDumped[result.docName] = result.v;
           User.find({watchedPageIds:page._id}, function(err, users) {
+            if (users.length>0) {
+              log.info({message:"Notifying watchers",watchers:users});
+            }
             for (var i=0;i<users.length;i++) {
               EmailHandler.sendMail(
                 users[i].email,
