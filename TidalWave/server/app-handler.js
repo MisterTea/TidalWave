@@ -116,10 +116,7 @@ exports.init = function() {
 };
 
 exports.launch = function() {
-  setInterval(function() {
-    LiveSync.syncAll();
-    hierarchy.rebuild();
-  }, 1000*60*60);
+  hierarchy.rebuild();
 
   if (process.platform === "win32"){
     var rl = readLine.createInterface ({
