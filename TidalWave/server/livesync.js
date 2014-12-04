@@ -28,6 +28,12 @@ var dumpPageVersion = function(result, callback) {
       log.debug("ERROR: UPDATING PAGE THAT DOES NOT EXIST");
       return;
     }
+    if (page.content == result.data) {
+      // The page hasn't changed between versions, don't make a new pageversion
+      lastVersionDumped[result.docName] = result.v;
+      return;
+    }
+
     var newPageVersion = new PageVersion({pageId:page._id,version:page.nextVersion,content:result.data,editorIds:[]});
     log.debug("DUMPING " + page.name + " WITH VERSION " + page.nextVersion);
     page.nextVersion++;

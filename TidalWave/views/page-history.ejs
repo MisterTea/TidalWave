@@ -1,4 +1,4 @@
-<div class="col-xs-8 col-lg-10">
+<div class="col-xs-12 col-sm-10">
   <table class="table table-bordered table-responsive">
     <tr>
       <th>Version</th>
@@ -12,10 +12,10 @@
       <td>{{prettyDate(pageVersion.timestamp)}}</td>
       <td>{{pageVersion.editors}}</td>
       <td>
-        <a href="" ng-click="viewDiff(pageVersion.version)"><span class="glyphicon glyphicon-repeat"></span></a>
+        <a ng-if="!$last" href="" ng-click="viewDiff(pageVersion.version)"><span class="glyphicon glyphicon-repeat"></span></a>
       </td>
-      <td ng-if="!$first">
-        <a href="" ng-click="restorePageVersion(pageVersion.version)"><span class="glyphicon glyphicon-repeat"></span></a>
+      <td>
+        <a ng-if="!$first" href="" ng-click="restorePageVersion(pageVersion.version)"><span class="glyphicon glyphicon-repeat"></span></a>
       </td>
     </tr>
   </table>
