@@ -804,8 +804,14 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
       if (pageDetails) {
         $scope.page = pageDetails?pageDetails.page:null;
         $scope.newName = pageDetails.page.name;
-        $scope.derivedUserPermissions = pageDetails.page.derivedUserPermissions;
-        $scope.derivedGroupPermissions = pageDetails.page.derivedGroupPermissions;
+        $scope.derivedUserPermissions = [];
+        for (var a=0;a<pageDetails.derivedUserPermissions.length;a++) {
+          $scope.derivedUserPermissions.push(pageDetails.derivedUserPermissions[a].fullName);
+        }
+        $scope.derivedGroupPermissions = [];
+        for (var a=0;a<pageDetails.derivedGroupPermissions.length;a++) {
+          $scope.derivedGroupPermissions.push(pageDetails.derivedGroupPermissions[a].name);
+        }
         $scope.version = pageDetails?pageDetails.version:null;
         $scope.lastAncestorName = '';
         var ancestry = $scope.ancestry = pageDetails.ancestry.slice();
@@ -822,7 +828,7 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
           var parent = ancestry[ancestry.length-1];
           parentList.clearOptions();
           parentList.addOption({_id:parent._id, name:parent.name});
-          parentList.setValue(parent.id);
+          parentList.setValue(parent._id);
         } else {
           console.log("CLEARING PARENT");
           parentList.clearOptions();

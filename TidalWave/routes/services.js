@@ -301,7 +301,9 @@ router.post(
               version:null,
               content:page.content,
               userPermissions:[],
-              groupPermissions:[]
+              groupPermissions:[],
+              derivedUserPermissions:[],
+              derivedGroupPermissions:[]
             };
             // Get all users on the permissions list
             User.find(
@@ -328,7 +330,34 @@ router.post(
                     for (var j=0;j<groups.length;j++) {
                       pageDetails.groupPermissions.push(groups[j]);
                     }
-                    res.status(200).type("application/json").send(JSON.stringify(pageDetails));
+
+                    // Get all derived user permissions
+                    User.find(
+                      {'_id': { $in: page.derivedUserPermissions }},
+                      function(err,users) {
+                        if (err) {
+                          log.error({error:err});
+                          res.status(500).end();
+                          return;
+                        }
+                        for (var i=0;i<users.length;i++) {
+                          pageDetails.derivedUserPermissions.push(users[i]);
+                        }
+
+                        Group.find(
+                          {'_id': { $in: page.derivedGroupPermissions }},
+                          function(err, groups) {
+                            if (err) {
+                              console.log(err);
+                              res.status(500).end();
+                              return;
+                            }
+                            for (var j=0;j<groups.length;j++) {
+                              pageDetails.derivedGroupPermissions.push(groups[j]);
+                            }
+                            res.status(200).type("application/json").send(JSON.stringify(pageDetails));
+                          });
+                      });
                   });
               });
           });
