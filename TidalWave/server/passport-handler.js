@@ -157,8 +157,30 @@ exports.init = function(app) {
           res.status(500).end();
           return;
         }
-        //TODO: Auto-login after registering
-        res.status(200).end();
+
+        req.body.username = req.body.email;
+
+        passport.authenticate('local', function(err, user, info) {
+          if (err) { 
+            log.error({message:"DB error"});
+            res.status(500).end();
+            return;
+          }
+          if (!user) {
+            log.error({message:"invalid user"});
+            req.session.messages = [info.message];
+            res.status(500).end();
+            return;
+          }
+          req.logIn(user, function(err) {
+            if (err) {
+              res.status(500).end();
+              return;
+            }
+            res.status(200).end();
+            return;
+          });
+        })(req, res, next);
       });
     });
   });

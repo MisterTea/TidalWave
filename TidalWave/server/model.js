@@ -2,7 +2,8 @@ var mongoose = require('mongoose');
 
 mongoose.set('debug', true);
 
-var ObjectId = mongoose.Schema.ObjectId;
+var ObjectId = mongoose.Schema.Types.ObjectId;
+var Mixed = mongoose.Schema.Types.Mixed;
 
 var isObjectId = function(n) {
   if (!n) {
@@ -97,6 +98,15 @@ var FileDataSchema = mongoose.Schema({
   name: {type:String, required:true, unique:true, index:true}
 });
 exports.FileData = mongoose.model("FileData",FileDataSchema);
+
+var AngularErrorSchema = mongoose.Schema({
+  message: String,
+  stack: String,
+  location: Mixed,
+  cause: String,
+  performance: Mixed
+});
+exports.AngularError = mongoose.model("AngularError",AngularErrorSchema);
 
 var saveAllDocuments = function(documents, callback) {
   var onDocument = 0;

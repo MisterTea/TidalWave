@@ -14,6 +14,7 @@ var User = model.User;
 var Group = model.Group;
 var Image = model.Image;
 var FileData = model.FileData;
+var AngularError = model.AngularError;
 
 var queryPermissionWrapper = AuthHelper.queryPermissionWrapper;
 var userCanAccessPage = AuthHelper.userCanAccessPage;
@@ -709,5 +710,22 @@ router.get(
         });
       });
   });
+
+router.post(
+  '/angularerror',
+  function(req, res) {
+    var errorDetails = req.body;
+    console.log("ERROR DETAILS");
+    console.dir(errorDetails);
+    new AngularError(errorDetails).save(function(err) {
+      if (err) {
+        log.error({error:err});
+        res.status(500).end();
+      } else {
+        res.status(200).end();
+      }
+    });
+  }
+);
 
 module.exports = router;

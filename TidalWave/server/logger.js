@@ -2,6 +2,7 @@ var bunyan = require('bunyan');
 var log = bunyan.createLogger(
   {
     name: "TidalWave",
+    src: true,
     streams: [
       {
         level: 'debug',
