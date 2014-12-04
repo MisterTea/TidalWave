@@ -1,28 +1,21 @@
+var options = require('./options-handler').options;
+var log = require('./logger').log;
 var nodemailer = require('nodemailer');
 var directTransport = require('nodemailer-direct-transport');
 var smtpTransport = require('nodemailer-smtp-transport');
 
-var transporter = nodemailer.createTransport(directTransport({
-  debug:true
-}));
-/*
-var transporter = nodemailer.createTransport(smtpTransport({
-  host:"mail.apple.com",
-  port:587,
-  authMethod:"PLAIN",
-  auth: {
-    user:'jgauci',
-    pass:'Naaf9264!'
-  }
-}));
-*/
-var options = require('./options-handler').options;
-var log = require('./logger').log;
+var transporter;
+
+if (options.email.transport == 'direct') {
+  transporter = nodemailer.createTransport(directTransport(options.email.options));
+} else if(options.email.transport == 'smtp') {
+  transporter = nodemailer.createTransport(smtpTransport(options.email.options));
+}
 
 exports.sendMail = function(to,subject,html) {
   log.info({
     message:"Sending email",
-    from:options.serverEmailAddress,
+    from:options.email.serverEmailAddress,
     to:to,
     subject:subject,
     html:html});

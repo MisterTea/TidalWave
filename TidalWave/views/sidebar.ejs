@@ -1,9 +1,9 @@
 <div ng-controller="PageMenuController">
   <div class="well col-xs-4 col-lg-2" ng-show="showMenu" id="PageMenuController">
     <div class="input-group input-group-sm" style="width:100%">
-      <input type="text" class="form-control" ng-model="query">
+      <input type="text" class="form-control" ng-model="query" ng-keyup="$event.keyCode == 13 && submit()">
       <span class="input-group-addon" style="padding: 0px 3px; background-color:white;" ng-show="query.length>0">
-        <a href="" ng-click="createPage()"><span class="glyphicon glyphicon-pencil" style="font-size: 18px; color:black;"></span></a>
+        <a href="" ng-click="submit()"><span ng-class="queryPageExists?'glyphicon glyphicon-chevron-right':'glyphicon glyphicon-pencil'" style="font-size: 18px; color:black;"></span></a>
       </span>
     </div>
     <br />

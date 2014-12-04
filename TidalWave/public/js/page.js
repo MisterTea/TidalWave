@@ -238,7 +238,7 @@ var changePage = function($http,pageName,pageStateService,callback) {
   window.location = '/view/'+pageName;
 };
 
-angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
+app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper', 'ui.bootstrap'])
   .service('myService', function (errorShipper) {
     errorShipper.configure({
       url: '/service/angularerror'
@@ -298,10 +298,14 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
     $scope.my_data = [];
     $scope.my_tree = tree = {};
     $scope.doing_async = true;
+    $scope.queryPageExists = false;
 
     $scope.showMenu = true;
 
-    $scope.createPage = function() {
+    $scope.submit = function() {
+      if ($scope.queryPageExists) {
+        window.location = "/view/"+$scope.query;
+      } else {
       var user = pageStateService.get('user');
       if (user) {
         //console.log("Creating page");
@@ -321,6 +325,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
           });
       } else {
         window.location = "/login";
+      }
       }
     };
 
@@ -371,7 +376,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
     $scope.$watch('query',function(newValue,oldValue) {
       $scope.doing_async = true;
       console.log(oldValue + " TO " + newValue);
-      if (newValue.length>0) {
+      if (newValue && newValue.length>0) {
         $http.post('/service/findPageContent/'+newValue)
           .success(function(data, status, headers, config) {
             pageStateService.set('searchContentResults',data);
@@ -386,7 +391,13 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
         $http.post('/service/pageStartsWith/'+newValue)
           .success(function(data, status, headers, config) {
             $scope.my_data = [];
+            $scope.queryPageExists = false;
             for (var i=0;i<data.length;i++) {
+              if (data[i].name == newValue) {
+                // Page already exists with the query, change the
+                // create behavior to goto.
+                $scope.queryPageExists = true;
+              }
               $scope.my_data.push({id:data[i]._id, label:data[i].name});
             }
             $scope.doing_async = false;
@@ -447,7 +458,7 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
       });
     };
   }])
-  .controller('NavbarController', ['$scope', '$http', 'pageStateService', function($scope, $http, pageStateService) {
+  .controller('NavbarController', ['$scope', '$http', '$modal', 'pageStateService', function($scope, $http, $modal, pageStateService) {
     $scope.username = "";
     $scope.editMode = pageStateService.get('editMode');
     $scope.projectName = "Tidal Wave";
@@ -546,7 +557,45 @@ angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper'])
 
       doc.save(pageDetails.page.name + ".pdf");
     };
+
+    $scope.deletePage = function() {
+      var pageDetails = pageStateService.get('pageDetails');
+      var modalInstance = $modal.open({
+        templateUrl: 'deletePageModalContent.html',
+        controller: 'DeletePageModalInstanceCtrl',
+        resolve: {
+          pagename: function() {
+            return pageDetails.page.name;
+          }
+        }
+      });
+
+      modalInstance.result.then(function () {
+        $http.post('/service/deletePage/'+pageDetails.page._id)
+          .success(function(data, status, headers, config) {
+            window.location='/view/';
+          })
+          .error(function(data, status, headers, config) {
+            //TODO: Alert with an error
+            console.log("ERROR");
+            console.log(data);
+          });
+      }, function () {
+        console.log('Modal dismissed at: ' + new Date());
+      });
+    };
   }])
+  .controller('DeletePageModalInstanceCtrl', function ($scope, $modalInstance, pagename) {
+    $scope.pagename = pagename;
+
+    $scope.ok = function () {
+      $modalInstance.close();
+    };
+
+    $scope.cancel = function () {
+      $modalInstance.dismiss('cancel');
+    };
+  })
   .controller('PageContentController', ['$scope', '$http', '$timeout', 'pageStateService', function($scope, $http, $timeout, pageStateService) {
     $scope.query = null;
     $http.post('/service/recentChangesVisible')

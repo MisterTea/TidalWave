@@ -211,6 +211,40 @@ router.post(
 );
 
 router.post(
+  '/deletePage/:pageId',
+  function(req, res) {
+    if (!req.isAuthenticated()) {
+      res.status(403).end();
+      return;
+    }
+
+    var pageId = req.param('pageId');
+    log.debug({text:"DELETING PAGE", pageId:pageId});
+    
+    Page.findById(
+      pageId,
+      function(err, page) {
+        userCanAccessPage(req.user,page,function(outerSuccess) {
+          if (!outerSuccess) {
+            log.info("TRIED TO DELETE PAGE WITHOUT ACCESS: " + req.user.email + " " + page.name);
+            // Tried to update a page without access
+            res.status(403).end();
+            return;
+          }
+          page.remove(function(err) {
+            if (err) {
+              log.error({message:"Error deleting page",error:err});
+              res.status(500).end();
+              return;
+            }
+            res.status(200).end();
+          });
+        });
+      });
+  }
+);
+
+router.post(
   '/getTOC/:pageId',
   function(req, res) {
     var pageId = req.param('pageId');
@@ -413,6 +447,27 @@ router.post(
 
         log.debug({results:users});
         res.status(200).type("application/json").send(JSON.stringify(users));
+      });
+  }
+);
+
+router.post(
+  '/getUserByEmail/:email',
+  function(req, res) {
+    User
+      .findOne({email:req.param('email')})
+      .exec(function(err, user) {
+        if (err) {
+          log.error(err);
+          res.status(500).end();
+          return;
+        }
+
+        if (user) {
+          res.status(200).type("application/json").send(JSON.stringify(user));
+        } else {
+          res.status(200).type("application/json").send(JSON.stringify(null));
+        }
       });
   }
 );

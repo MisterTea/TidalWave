@@ -1,6 +1,7 @@
 var passport = require('passport')
 , LocalStrategy = require('passport-local').Strategy;
 
+var validator = require('validator');
 var options = require('./options-handler').options;
 var log = require('./logger').log;
 
@@ -75,7 +76,11 @@ exports.init = function(app) {
         user: req.user,
         message: req.session.messages,
         redirectUrl:redirect,
-        auth:options.auth
+        auth:options.auth,
+        server:{
+          projectName:options.serverName,
+          user:req.user
+        }
       }
     );
   });
@@ -116,13 +121,27 @@ exports.init = function(app) {
   });
   app.get('/register', function(req, res){
     res.render(
-      'register'
+      'register', {
+        server:{
+          projectName:options.serverName,
+          user:req.user
+        }
+      }
     );
   });
   app.post('/register', function(req, res, next) {
+    console.dir(req.body);
     var email = req.body.email;
     var fullName = req.body.fullName;
     var password = req.body.password;
+    if (fullName.length<5 ||
+        fullName.length>40 ||
+        password.length<5 ||
+        password.length>40 ||
+        !validator.isEmail(email)) {
+      res.status(400).end();
+      return;
+    }
     log.debug(req.body);
     var user = new User({username:email,email:email,fullName:fullName,fromLdap:false});
     user.save(function(err, innerUser) {
@@ -138,7 +157,8 @@ exports.init = function(app) {
           res.status(500).end();
           return;
         }
-        res.redirect('/login');
+        //TODO: Auto-login after registering
+        res.status(200).end();
       });
     });
   });

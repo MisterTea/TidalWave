@@ -3,6 +3,21 @@
    class="navbar navbar-default navbar-fixed-top"
    role="navigation"
    ng-controller="NavbarController">
+
+  <script type="text/ng-template" id="deletePageModalContent.html">
+    <div class="modal-header">
+      <h3 class="modal-title">Are you sure you want to delete {{pagename}}?</h3>
+    </div>
+    <div class="modal-body">
+      Click 'OK' to delete {{pagename}}.
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" ng-click="ok()">OK</button>
+      <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
+    </div>
+  </script>
+
+
   <div class="navbar-header">
     <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
       <span class="sr-only">Toggle navigation</span>
@@ -42,6 +57,7 @@
         <li ng-show="editMode" ng-class="settingsActive?'active':''">
           <a href="" ng-click="toggleSettings()">Settings</a>
         </li>
+        <li ng-show="editMode"><a href="" ng-click="deletePage()" style="color:#a94442;">Delete</a></li>
       </ul>
     </div>
   </div>

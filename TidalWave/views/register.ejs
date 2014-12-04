@@ -1,38 +1,82 @@
 <!DOCTYPE html>
-<html>
+<html ng-app="TidalWavePage">
   <head>
-    <title>TidalWave Log In</title>
-    <link href="/bower_components/bootstrap/dist/css/bootstrap.css" rel="stylesheet">
+    <title>TidalWave Registration</title>
+
+    <% include header %>
     <link href="/css/login.css" rel="stylesheet">
     
   </head>
   <body>
-    <section id="login">
-      <div class="container">
+    <script type="text/javascript">
+      // Server-side variables
+      server = <%- JSON.stringify(server) %>
+    </script>
+
+    <% include navbar %>
+
+    <div class="login" ng-controller="RegisterController">
+      <div class="container-fluid">
         <div class="row">
-          <div class="col-xs-12">
+          <div class="col-xs-1 col-sm-4"></div>
+          <div class="col-xs-10 col-sm-4">
             <div class="form-wrap">
-              <h1>Create a new Account</h1>
-              <form role="form" action="/register" method="post" id="login-form" autocomplete="off">
-                <div class="form-group">
-                  <label for="email">Email</label>
-                  <input type="text" name="email" class="form-control" placeholder="Enter your email...">
+              <h1>Create a new account</h1>
+              <form name="form" class="css-form" novalidate autocomplete="off">
+
+                <!-- fake fields are a workaround for chrome autofill getting the wrong fields -->
+                <input style="display:none" type="text" name="fakeusernameremembered"/>
+                <input style="display:none" type="password" name="fakepasswordremembered"/>
+
+                <div ng-class="getEmailFormClass('email')" id="email-group">
+                  <label for="email" class="control-label">Email</label>
+                  <input
+                     type="email"
+                     name="email"
+                     ng-model="user.email"
+                     ng-model-options="{ debounce: 500 }"
+                     required
+                     class="form-control"
+                     placeholder="Enter your email..."
+                     validateemail
+                     registeremail>
+                  <span class="control-label" ng-if="form.email.$error.validateemail || form.email.$error.email">The email address entered is invalid.</span>
+                  <span
+                     class="control-label"
+                     ng-if="form.email.$pending.registeremail">Checking if this email is available...</span>
+                  <span
+                     class="control-label"
+                     ng-if="form.email.$error.registeremail">This email address already exists.  Did you <a ng-href="/forgotpassword?email={{form.email.$viewValue}}">forget your password?</a></span>
                 </div>
-                <div class="form-group">
-                  <label for="fullName">Full Name</label>
-                  <input type="text" name="fullName" class="form-control" placeholder="Enter your full name...">
+                <div ng-class="getFormClass('fullName')">
+                  <label for="fullName" class="control-label">Full Name</label>
+                  <input type="text" name="fullName" ng-model="user.fullName" ng-model-options="{ debounce: 500 }" required ng-minlength=5 ng-maxlength=40 class="form-control" placeholder="Enter your full name...">
+                  <span class="control-label" ng-show="form.fullName.$error.minlength || form.fullName.$error.maxlength">Your name must be between 5 and 40 characters</span>
                 </div>
-                <div class="form-group">
-                  <label for="key">Password</label>
-                  <input type="password" name="password" class="form-control" placeholder="Password">
+                <div ng-class="getFormClass('password')">
+                  <label for="key" class="control-label">Password</label>
+                  <input type="password" name="password" ng-model="user.password" ng-model-options="{ debounce: 500 }" required ng-minlength=5 ng-maxlength=40 class="form-control" placeholder="Enter a Password...">
+                  <span class="control-label" ng-show="form.password.$error.minlength || form.password.$error.maxlength">Your password must be between 5 and 40 characters</span>
                 </div>
-                <input type="submit" name="register" id="btn-register" class="btn btn-custom btn-lg btn-block" value="Register">
+                <div class="col-xs-3"></div>
+                <div class="col-xs-6">
+                  <button
+                     ng-disabled="form.$invalid || form.email.$pending.registeremail"
+                     name="register"
+                     id="btn-register"
+                     class="btn btn-custom btn-lg btn-block"
+                     ng-style="(form.$invalid || form.email.$pending.registeremail)?{}:{'background-color': '#3c763d'}"
+                     ng-click="register()">Register</button>
+                </div>
               </form>
               <hr>
             </div>
-          </div> <!-- /.col-xs-12 -->
-        </div> <!-- /.row -->
-      </div> <!-- /.container -->
-    </section>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br />
+
+    <% include footer %>
   </body>
 </html>

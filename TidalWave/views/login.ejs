@@ -1,16 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html ng-app="TidalWavePage">
   <head>
     <title>TidalWave Log In</title>
-    <link href="/bower_components/bootstrap/dist/css/bootstrap.css" rel="stylesheet">
+
+    <% include header %>
     <link href="/css/login.css" rel="stylesheet">
     
   </head>
   <body>
-    <section id="login">
-      <div class="container">
+    <script type="text/javascript">
+      // Server-side variables
+      server = <%- JSON.stringify(server) %>
+    </script>
+
+    <% include navbar %>
+
+    <div class="login" ng-controller="LoginController">
+      <div class="container-fluid">
         <div class="row">
-          <div class="col-xs-12">
+          <div class="col-xs-1 col-sm-4"></div>
+          <div class="col-xs-10 col-sm-4">
             <div class="form-wrap">
               <% if(auth=='ldap') { %>
               <h1>Log in with your OpenDirectory account</h1>
@@ -35,17 +44,37 @@
                   <input type="checkbox" name="rememberme"/>
                   <span class="rememberme">Remember Me</span>
                 </div>
-                <input type="submit" name="login" id="btn-login" class="btn btn-custom btn-lg btn-block" value="Log in">
-                <% if(auth=='plain') { %>
-                <input type="submit" name="register" id="btn-login" class="btn btn-custom btn-lg btn-block" value="Create new account">
+                <div class="row">
+                  <div class="col-xs-3"></div>
+                  <div class="col-xs-6">
+                    <input
+                       type="submit"
+                       name="login"
+                       id="btn-login"
+                       class="btn btn-custom btn-lg btn-block"
+                       value="Log in">
+                  </div>
+                  <% if(auth=='plain') { %>
+                    <div class="col-xs-3">
+                      <a href="/forgotpassword" class="forget" data-toggle="modal" data-target=".forget-modal">Forgot your password?</a>
+                    </div>
+                </div>
+                <div class="row">
+                  <div class="col-xs-3"></div>
+                  <div class="col-xs-6">
+                    <input type="submit" name="register" id="btn-login" class="btn btn-custom btn-lg btn-block" value="Create new account">
+                  </div>
+                  <div class="col-xs-3"></div>
+                  <% } else { %>
+                  <div class="col-xs-3"></div>
                 <% } %>
+                </div>
               </form>
-              <a href="javascript:;" class="forget" data-toggle="modal" data-target=".forget-modal">Forgot your password?</a>
               <hr>
             </div>
-          </div> <!-- /.col-xs-12 -->
-        </div> <!-- /.row -->
-      </div> <!-- /.container -->
-    </section>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
