@@ -62,7 +62,7 @@ var UserSchema = mongoose.Schema({
   username: {type:String, index:true, unique:true, required:true},
   fullName: {type:String, index:true},
   email: {type:String, index:true, required:true},
-  groups: {type:[String], default: [], validate:isObjectIdArray},
+  groups: {type:[ObjectId], default: [], validate:isObjectIdArray},
   lastLoginTime: {type:Date, default:null},
   fromLdap: {type:Boolean, required:true},
   watchedPageIds: {type:[ObjectId], default:[]}
@@ -89,6 +89,14 @@ var ImageSchema = mongoose.Schema({
   name: {type:String, required:true, unique:true, index:true}
 });
 exports.Image = mongoose.model("Image",ImageSchema);
+
+var FileDataSchema = mongoose.Schema({
+  data: {type:Buffer, required:true},
+  base64: {type:String, required:true},
+  mime: {type:String, required:true, index:true},
+  name: {type:String, required:true, unique:true, index:true}
+});
+exports.FileData = mongoose.model("FileData",FileDataSchema);
 
 var saveAllDocuments = function(documents, callback) {
   var onDocument = 0;

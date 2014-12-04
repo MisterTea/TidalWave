@@ -13,6 +13,7 @@ var PageVersion = model.PageVersion;
 var User = model.User;
 var Group = model.Group;
 var Image = model.Image;
+var FileData = model.FileData;
 
 var queryPermissionWrapper = AuthHelper.queryPermissionWrapper;
 var userCanAccessPage = AuthHelper.userCanAccessPage;
@@ -647,6 +648,64 @@ router.get(
           }
           var image = results[0];
           res.status(200).type(image.mime).send(image.data);
+        });
+      });
+  });
+
+router.post(
+  '/saveFile',
+  AuthHelper.ensureAuthenticated,
+  function(req,res) {
+    console.log("SAVING FILE");
+    var fileDataJson = req.body;
+    console.dir(fileDataJson);
+
+    var uniqueName =
+          fileDataJson.pageId + "_" +
+          chance.string({length: 8, pool:"1234567890abcdef"}) + "_" +
+          fileDataJson.name;
+
+    var fileData = new FileData({
+      base64:fileDataJson.base64,
+      data:new Buffer(fileDataJson.base64, 'base64'),
+      mime:fileDataJson.mime,
+      name:uniqueName});
+
+    fileData.save(function (err) {
+      if (err) {
+        log.error({error:err});
+        res.status(500).end();
+      }
+      res.status(200).type("text/plain").send(uniqueName);
+    });
+  });
+
+router.get(
+  '/getFile/:name',
+  function(req,res) {
+    var name = req.param('name');
+    console.log("Getting file with name " + name);
+
+    var pageId = name.split('_')[0];
+    queryPermissionWrapper(
+      Page.findById(pageId), req.user)
+      .exec(function(err, page) {
+        if (err) {
+          res.status(500).end();
+          return;
+        }
+        if (!page) {
+          res.status(403).end();
+        }
+
+        FileData.find({name:name}, function(err,results) {
+          if (results.length>1) {
+            res.status(500).end();
+          } else if(results.length==0) {
+            res.status(404).end();
+          }
+          var file = results[0];
+          res.status(200).type(file.mime).send(file.data);
         });
       });
   });

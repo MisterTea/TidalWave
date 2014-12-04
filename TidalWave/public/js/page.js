@@ -33,35 +33,42 @@ var enableEditMode = function(pageStateService, $http, $timeout) {
   zone.event('send', function (files) {
     // Depending on browser support files (FileList) might contain multiple items.
     files.each(function (file) {
-      if(file.type.match(/image.*/)){
-        console.log(file);
-        //alert(file.name + ' ' + file.type + ' (' + file.size + ') bytes');
-        var fr = new FileReader();
+      console.log(file);
+      //alert(file.name + ' ' + file.type + ' (' + file.size + ') bytes');
+      var fr = new FileReader();
 
-        // For some reason onload is being called 2x.
-        var called=false;
-        fr.onload = function(e) {
-          if (called) return;
-          called = true;
-          // Render thumbnail.
-          var mime = e.target.result.split(',')[0].substring(5);
-          var data = e.target.result.split(',')[1];
-          var pageDetails = pageStateService.get('pageDetails');
+      // For some reason onload is being called 2x.
+      var called=false;
+      fr.onload = function(e) {
+        if (called) return;
+        called = true;
+        var pageDetails = pageStateService.get('pageDetails');
+        var mime = e.target.result.split(',')[0].substring(5);
+        var data = e.target.result.split(',')[1];
+        if(file.type.match(/image.*/)){
           $http.post('/service/saveImage', {mime:mime,base64:data,pageId:pageDetails.page._id,name:file.name})
-            .success(function(data, status, headers, config) {
+            .success(function(filename, status, headers, config) {
               console.log("INJECTING IMAGE");
-              editor.insert("<img src=\"/service/getImage/"+data+"\"></img>");
+              editor.insert("<img src=\"/service/getImage/"+filename+"\"></img>");
               //TODO: Say success
             })
             .error(function(data, status, headers, config) {
               //TODO: Alert with an error
             });
-          
-        };
-        fr.readAsDataURL(file.nativeFile);
-        // Send the file:
-        //file.sendTo('upload.php');
-      }
+        } else {
+          // Regular attachment
+          $http.post('/service/saveFile', {mime:mime,base64:data,pageId:pageDetails.page._id,name:file.name})
+            .success(function(filename, status, headers, config) {
+              console.log("INJECTING FILE");
+              editor.insert("<a href=\"/service/getFile/"+filename+"\" target=\"_blank\">Download "+file.name+"</a>");
+              //TODO: Say success
+            })
+            .error(function(data, status, headers, config) {
+              //TODO: Alert with an error
+            });
+        }
+      };
+      fr.readAsDataURL(file.nativeFile);
     });
   });
   editor = ace.edit("editor");
