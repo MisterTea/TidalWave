@@ -3,7 +3,7 @@
     <li ng-repeat="sourceLine in diffSourceLines">{{sourceLine.lineNumber}}</li>
   </ul>
   <ul class="diff">
-    <li ng-repeat="sourceLine in diffSourceLines" class="{{sourceLine.style}}">{{sourceLine.text}}</li>
+    <li ng-repeat="sourceLine in diffSourceLines" class="{{sourceLine.style}}"><span ng-bind-html="sourceLine.text"></span></li>
   </ul>
 </div>
 <div class="col-xs-6" style="padding: 0px;">
@@ -11,6 +11,6 @@
     <li ng-repeat="destLine in diffDestLines">{{destLine.lineNumber}}</li>
   </ul>
   <ul class="diff">
-    <li ng-repeat="destLine in diffDestLines" class="{{destLine.style}}">{{destLine.text}}</li>
+    <li ng-repeat="destLine in diffDestLines" class="{{destLine.style}}"><span ng-bind-html="destLine.text"></span></li>
   </ul>
 </div>

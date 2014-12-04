@@ -172,8 +172,12 @@ var preprocessDiff = function(allDiffs) {
       if (tokens.length>1) {
         // The remaining lines should be added as new lines
         for (var j=1;j<tokens.length;j++) {
+          var t = tokens[j];
+          if (t.length==0) {
+            t = '&nbsp;';
+          }
           bufferWithAdds.push({
-            text:"<span style=\"color:red;\">"+tokens[j]+"</span>",
+            text:"<span style=\"color:red;\">"+t+"</span>",
             style:'difference'});
           otherBuffer.push({
             text:'',
@@ -596,7 +600,7 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
       $modalInstance.dismiss('cancel');
     };
   })
-  .controller('PageContentController', ['$scope', '$http', '$timeout', 'pageStateService', function($scope, $http, $timeout, pageStateService) {
+  .controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 'pageStateService', function($scope, $http, $timeout, $sce, pageStateService) {
     $scope.query = null;
     $http.post('/service/recentChangesVisible')
       .success(function(data, status, headers, config) {
@@ -779,8 +783,20 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
 
       var diff = pageStateService.get('diff');
       if (diff) {
-        $scope.diffSourceLines = diff[0];
-        $scope.diffDestLines = diff[1];
+        $scope.diffSourceLines = [];
+        $scope.diffDestLines = [];
+        for (var a=0;a<diff[0].length;a++) {
+          $scope.diffSourceLines.push({
+            lineNumber:diff[0][a].lineNumber,
+            style:diff[0][a].style,
+            text:$sce.trustAsHtml(diff[0][a].text)});
+        }
+        for (var a=0;a<diff[1].length;a++) {
+          $scope.diffDestLines.push({
+            lineNumber:diff[1][a].lineNumber,
+            style:diff[1][a].style,
+            text:$sce.trustAsHtml(diff[1][a].text)});
+        }
       } else {
         $scope.diffSourceLines = null;
         $scope.diffDestLines = null;
