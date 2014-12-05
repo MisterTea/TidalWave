@@ -69,7 +69,11 @@ exports.init = function() {
   require('./passport-handler').init(app);
 
   app.get('/', function(req,res) {
-    res.redirect('/view');
+    if (req.isAuthenticated()) {
+      res.redirect('/view');
+    } else {
+      res.redirect('/login');
+    }
   });
   app.use('/view', require('../routes/index'));
   app.use('/diff',require('../routes/diff'));

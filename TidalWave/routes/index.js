@@ -16,12 +16,16 @@ var Image = model.Image;
 router.get(
   '/',
   function(req, res) {
-    res.render('page', {
-      server:{
-        projectName:options.serverName,
-        user:req.user
-      }
-    });
+    if (req.isAuthenticated()) {
+      res.render('page', {
+        server:{
+          projectName:options.serverName,
+          user:req.user
+        }
+      });
+    } else {
+      res.redirect('/login');
+    }
   }
 );
 
