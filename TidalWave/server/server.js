@@ -30,7 +30,8 @@ var launchServer = function() {
         new Page({
           name:'Welcome',
           isPublic:true,
-          content:welcomePage
+          content:welcomePage,
+          nextVersion:2
           }).save(function (err, savedPage) {
             if (err) {
               log.error({error:err});
