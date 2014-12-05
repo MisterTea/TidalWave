@@ -652,8 +652,7 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
             title: "Welcome to TidalWave!",
             content: "To view a page, select it in the list.  To create a new page, type the name in this box and click the pencil.",
             target: "page-query",
-            placement: "right",
-            yOffset: -15
+            placement: "bottom"
           },
           {
             title: "Editing a page",
