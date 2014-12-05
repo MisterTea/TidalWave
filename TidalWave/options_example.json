@@ -1,9 +1,13 @@
 {
   "serverName":"Tidal Wave",
-  "serverEmailAddress":"tidalwave-mailer@tidalwave.com",
-  "auth":"plain", # Choices are plain or ldap
+  "auth":"plain",
   "hostname":"tidalwave.com",
-  "port":null, # Override the default port (3000 for http, 8443 for https)
+  "port":null,
+  "email" : {
+    "serverEmailAddress":"tidalwave-mailer@tidalwave.com",
+    "transport":"direct",
+    "options":{}
+  },
   "ldap":{
     "server":"ldaps://myldapserver:636",
     "userField":"uid",
@@ -11,7 +15,7 @@
   },
   "ssl":false,
   "sessionSecret":"t1d4lw4ve",
-  "credentials": { # For https
+  "credentials": {
     "certificateFile":"mycert.pem",
     "privateKeyFile":"keystore.pem",
     "passphrase":"myPassphrase"
