@@ -249,6 +249,11 @@ var changePage = function($http,pageName,pageStateService,callback) {
   window.location = '/view/'+pageName;
 };
 
+var getParameterByName = function(name) {
+    var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+};
+
 app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper', 'ui.bootstrap'])
   .factory('$exceptionHandler', function($log) {
     return function(exception, cause) {
@@ -338,6 +343,10 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
     $scope.showMenu = true;
 
     $scope.submit = function() {
+      if ($scope.query.length==0) {
+        return;
+      }
+
       if ($scope.queryPageExists) {
         window.location = "/view/"+$scope.query;
       } else {
@@ -412,10 +421,10 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
       $scope.doing_async = true;
       console.log(oldValue + " TO " + newValue);
       if (newValue && newValue.length>0) {
+        pageStateService.set('query',newValue);
         $http.post('/service/findPageContent/'+newValue)
           .success(function(data, status, headers, config) {
             pageStateService.set('searchContentResults',data);
-            pageStateService.set('query',newValue);
             console.log("PAGE CONTENT DATA");
             console.log(JSON.stringify($scope.searchContentResults));
           })
@@ -632,6 +641,40 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
     };
   })
   .controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 'pageStateService', function($scope, $http, $timeout, $sce, pageStateService) {
+
+    if (getParameterByName('tour')) {
+    $timeout(function(){
+      // Define the tour!
+      var tour = {
+        id: "hello-hopscotch",
+        steps: [
+          {
+            title: "Welcome to TidalWave!",
+            content: "To view a page, select it in the list.  To create a new page, type the name in this box and click the pencil.",
+            target: "page-query",
+            placement: "right",
+            yOffset: -15
+          },
+          {
+            title: "Editing a page",
+            content: "To edit a page or change the settings (name, visibility), click here.  Multiple people can edit the same page simultaneously.",
+            target: "edit-list-item",
+            placement: "bottom"
+          },
+          {
+            title: "Thank you!",
+            content: "That\'s it!  Thanks for trying Tidal Wave, please send feedback to jgmath2000@gmail.com",
+            target: "ancestry",
+            placement: "bottom"
+          }
+        ]
+      };
+
+      // Start the tour!
+      hopscotch.startTour(tour);
+    }, 1000);
+    }
+
     $scope.query = null;
     $http.post('/service/recentChangesVisible')
       .success(function(data, status, headers, config) {

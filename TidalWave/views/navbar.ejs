@@ -42,10 +42,10 @@
         <li ng-class="history?'active':''" ng-show="username && !editMode">
           <a href="" ng-click="toggleHistory()">Page History</a>
         </li>
-        <li ng-class="isWatchingPage?'active':''" ng-show="username && !editMode">
+        <li id="watch-list-item" ng-class="isWatchingPage?'active':''" ng-show="username && !editMode">
           <a href="" ng-click="toggleWatch()">{{isWatchingPage?"Unwatch":"Watch"}}</a>
         </li>
-        <li class="dropdown" ng-show="!editMode">
+        <li id="export-list-item" class="dropdown" ng-show="!editMode">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown">Export <b class="caret"></b></a>
           <ul class="dropdown-menu">
             <li><a ng-click="savePDF()">PDF</a></li>
@@ -53,7 +53,7 @@
           </ul>
         </li>
         <li ng-show="editMode"><a href="" ng-click="toggleEditMode()">Finish Editing</a></li>
-        <li ng-show="!editMode && username"><a href="" ng-click="toggleEditMode()">Edit</a></li>
+        <li id="edit-list-item" ng-show="!editMode && username"><a href="" ng-click="toggleEditMode()">Edit</a></li>
         <li ng-show="editMode" ng-class="settingsActive?'active':''">
           <a href="" ng-click="toggleSettings()">Settings</a>
         </li>

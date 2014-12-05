@@ -73,7 +73,7 @@ app.controller('RegisterController', ['$scope', '$http', '$timeout', 'pageStateS
   $scope.register = function() {
     $http.post('/register', $scope.user)
       .success(function(data, status, headers, config) {
-        window.location.href = "/view";
+        window.location.href = "/view/Welcome?tour=yes";
       })
       .error(function(data, status, headers, config) {
       });
