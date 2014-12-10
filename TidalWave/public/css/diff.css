@@ -1,5 +1,4 @@
 .diff {
-    display: table-cell;
     border-color: #999;
     color: #333;
     text-align: left;
@@ -10,15 +9,12 @@
     font-weight: normal;
 }
 
-ul.diff {
-    display: table-cell;
-    width: 100%;
-}
-
 .count {
     text-align: right;
 
-    display: table-cell;
+    width: 50px;
+    float: left;
+
     border-color: #999;
     color: #333;
     font-family: 'Courier New',Courier,'Lucida Console',monospace;
@@ -49,6 +45,7 @@ ul.diff {
 .diff li {
     padding-left: .5em;
     white-space: pre;
+    overflow:hidden;
     padding-top: .5em;
     border-style: none none solid;
     border-width: 0 0 .1em;

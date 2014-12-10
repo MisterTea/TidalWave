@@ -1,16 +1,13 @@
-<div class="col-xs-6" style="padding: 0px;">
   <ul class="count">
     <li ng-repeat="sourceLine in diffSourceLines">{{sourceLine.lineNumber}}</li>
   </ul>
-  <ul class="diff">
+  <ul class="col-xs-5 diff">
     <li ng-repeat="sourceLine in diffSourceLines" class="{{sourceLine.style}}"><span ng-bind-html="sourceLine.text"></span></li>
   </ul>
-</div>
-<div class="col-xs-6" style="padding: 0px;">
   <ul class="count">
     <li ng-repeat="destLine in diffDestLines">{{destLine.lineNumber}}</li>
   </ul>
-  <ul class="diff">
+  <ul class="col-xs-5 diff">
     <li ng-repeat="destLine in diffDestLines" class="{{destLine.style}}"><span ng-bind-html="destLine.text"></span></li>
   </ul>
-</div>
+
