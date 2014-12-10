@@ -300,7 +300,7 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
       return state[key];
     };
     var set = function(key,value) {
-      //console.log("SETTING " + key + " " + JSON.stringify(value));
+      console.log("SETTING " + key + " " + JSON.stringify(value));
       state[key] = value;
       $rootScope.$broadcast('pageStateServiceUpdate', {key:key,value:value});
     };
@@ -337,7 +337,6 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
     };
     $scope.my_data = [];
     $scope.my_tree = tree = {};
-    $scope.doing_async = true;
     $scope.queryPageExists = false;
 
     $scope.showMenu = true;
@@ -373,53 +372,48 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
       }
     };
 
-    $scope.$on('pageStateServiceUpdate', function(response) {
+    $scope.$on('pageStateServiceUpdate', function(event, response) {
       console.log("GOT PAGE STATE UPDATE");
+      console.dir(response);
 
-      $scope.showMenu = true;
-      var editMode = pageStateService.get('editMode');
-      var pageMode = pageStateService.get('pageMode');
-      if (editMode || pageMode=='diff') {
-        $scope.showMenu = false;
-      }
-      var query = pageStateService.get('query');
-      if (editMode && query) {
-        query = null;
-        pageStateService.set('query',null);
-      }
-      if ($scope.query != query) {
-        $scope.query = query;
+      if (response.key == 'editMode' || response.key == 'pageMode') {
+        // editmode/pagemode changed.  Maybe remove the query or hide
+        // the whole menu.
+        $scope.showMenu = true;
+        var editMode = pageStateService.get('editMode');
+        var pageMode = pageStateService.get('pageMode');
+        if (editMode || pageMode=='diff') {
+          $scope.showMenu = false;
+        }
+        var query = pageStateService.get('query');
+        if (editMode && query) {
+          query = null;
+          pageStateService.set('query',null);
+        }
       }
 
-        $http.post('/service/hierarchy')
-          .success(function(data, status, headers, config) {
-            $scope.my_data = [];
-            for (var i=0;i<data.length;i++) {
-              $scope.my_data.push(convertToNav(data[i]));
-            }
-            $scope.doing_async = false;
-            $timeout(function() {
-              $scope.my_tree.expand_all();
-              var pageDetails = pageStateService.get('pageDetails');
-              if (pageDetails && pageDetails.page) {
-                console.log("Selecting branch: " + pageDetails.page.name);
-                console.log($scope.my_tree);
-                $timeout(function() {
-                  console.log("Selecting branch by name");
-                  $scope.my_tree.select_branch_by_name(pageDetails.page.name);
-                  $scope.my_tree.expand_all();
-                });
-              }
-            });
-          })
-          .error(function(data, status, headers, config) {
-            //TODO: Alert with an error
-          });
+      if (response.key == 'query') {
+        // query changed, refresh sidebar menu
+        var query = pageStateService.get('query');
+        if ($scope.query != query) {
+          $scope.query = query;
+          $scope.updateSidebarMenu($scope.query);
+        }
+      }
+
+      if (response.key == 'user') {
+        console.log("USER CHANGED");
+        // User changed, refresh sidebar menu
+        $scope.updateSidebarMenu($scope.query);
+      }
     });
 
     $scope.$watch('query',function(newValue,oldValue) {
-      $scope.doing_async = true;
       console.log(oldValue + " TO " + newValue);
+      $scope.updateSidebarMenu(newValue);
+    });
+
+    $scope.updateSidebarMenu = function(newValue) {
       if (newValue && newValue.length>0) {
         pageStateService.set('query',newValue);
         $http.post('/service/findPageContent/'+newValue)
@@ -434,7 +428,7 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
 
         $http.post('/service/pageStartsWith/'+newValue)
           .success(function(data, status, headers, config) {
-            $scope.my_data = [];
+            var nextData = [];
             $scope.queryPageExists = false;
             for (var i=0;i<data.length;i++) {
               if (data[i].name == newValue) {
@@ -442,12 +436,26 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
                 // create behavior to goto.
                 $scope.queryPageExists = true;
               }
-              $scope.my_data.push({id:data[i]._id, label:data[i].name});
+              nextData.push({id:data[i]._id, label:data[i].name, children:[]});
             }
-            $scope.doing_async = false;
-            $timeout(function() {
-              $scope.my_tree.expand_all();
-            });
+            console.log("COMPARING DATA");
+            console.dir($scope.lastData);
+            console.dir(nextData);
+            if (!_.isEqual($scope.lastData,nextData)) {
+              console.log("Menu has changed");
+              $scope.lastData = _.cloneDeep(nextData);
+              $scope.my_data = nextData;
+              $timeout(function() {
+                $scope.my_tree.expand_all();
+                var pageDetails = pageStateService.get('pageDetails');
+                if (pageDetails) {
+                  console.log("Selecting branch " + pageDetails.page.name);
+                  $scope.my_tree.select_branch_by_name(pageDetails.page.name);
+                }
+              });
+            } else {
+              console.log("menu hasn't changed");
+            }
           })
           .error(function(data, status, headers, config) {
             //TODO: Alert with an error
@@ -460,14 +468,28 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
           console.log("UPDATING HIERARCHY");
           $http.post('/service/hierarchy')
             .success(function(data, status, headers, config) {
-              $scope.my_data = [];
+              var nextData = [];
               for (var i=0;i<data.length;i++) {
-                $scope.my_data.push(convertToNav(data[i]));
+                nextData.push(convertToNav(data[i]));
               }
-              $scope.doing_async = false;
-              $timeout(function() {
-                $scope.my_tree.expand_all();
-              });
+              console.log("COMPARING DATA");
+              console.dir($scope.lastData);
+              console.dir(nextData);
+              if (!_.isEqual($scope.lastData,nextData)) {
+                console.log("Menu has changed");
+                $scope.lastData = _.cloneDeep(nextData);
+                $scope.my_data = nextData;
+                $timeout(function() {
+                  $scope.my_tree.expand_all();
+                  var pageDetails = pageStateService.get('pageDetails');
+                  if (pageDetails) {
+                    console.log("Selecting branch " + pageDetails.page.name);
+                    $scope.my_tree.select_branch_by_name(pageDetails.page.name);
+                  }
+                });
+              } else {
+                console.log("menu hasn't changed");
+              }
             })
             .error(function(data, status, headers, config) {
               //TODO: Alert with an error
@@ -476,31 +498,9 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
           console.log("NO USER");
         }
       }
-      $timeout(function() {
-        var pageDetails = pageStateService.get('pageDetails');
-        if (pageDetails) {
-          $scope.my_tree.select_branch_by_name(pageDetails.page.name);
-        }
-      }, 10);
-    });
-    
-    $scope.try_async_load = function() {
-      return $timeout(function() {
-        $scope.doing_async = false;
-        return tree.expand_all();
-      }, 1000);
     };
-    return $scope.try_adding_a_branch = function() {
-      var b;
-      b = tree.get_selected_branch();
-      return tree.add_branch(b, {
-        label: 'New Branch',
-        data: {
-          something: 42,
-          "else": 43
-        }
-      });
-    };
+
+    $scope.updateSidebarMenu($scope.query);
   }])
   .controller('NavbarController', ['$scope', '$http', '$modal', 'pageStateService', function($scope, $http, $modal, pageStateService) {
     $scope.username = "";
