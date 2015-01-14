@@ -1,10 +1,13 @@
 var mongoose = require('mongoose');
+var options = require('./options-handler').options;
 
-mongoose.set('debug', false);
+// Logs to debug every database query
+mongoose.set('debug', options['database']['debug']);
 
 var ObjectId = mongoose.Schema.Types.ObjectId;
 var Mixed = mongoose.Schema.Types.Mixed;
 
+// Ensures that the entry is a valid object ID
 var isObjectId = function(n) {
   if (!n) {
     // Allow null/undefined
@@ -18,6 +21,7 @@ var isObjectId = function(n) {
   }
 };
 
+// Ensures that the entry is an array of valid object IDs
 var isObjectIdArray = function(n) {
   if (!n) {
     // Allow null/undefined
@@ -121,6 +125,7 @@ var saveAllDocuments = exports.saveAllDocuments = function(documents, callback) 
   documents[onDocument].save(iterate);
 };
 
+// Sanitize the database.
 exports.sanitize = function() {
   var AuthHelper = require('./auth-helper');
   Page.find({}, function(err, pages) {

@@ -2,8 +2,8 @@ try {
   require('heapdump');
 } catch (_error) {}
 
-var log = require('./logger').log;
 var fs = require('fs');
+var path = require('path');
 var https = require('https');
 var http = require('http');
 var AppHandler = require('./app-handler');
@@ -16,6 +16,8 @@ var Page = model.Page;
 var PageVersion = model.PageVersion;
 
 var hierarchy = require('./hierarchy');
+
+var log = require('./logger').log;
 
 var launchServer = function() {
   var server = exports.server;
@@ -30,7 +32,7 @@ var launchServer = function() {
     Page.count({}, function(err, c) {
       if (c==0) {
         log.warn("No pages found.  Creating welcome page");
-        var welcomePage = fs.readFileSync('../README.md', "utf8");
+        var welcomePage = fs.readFileSync(path.resolve(__dirname,'../README.md'), "utf8");
         new Page({
           name:'Welcome',
           isPublic:true,
@@ -59,7 +61,7 @@ var launchServer = function() {
 };
 
 if (options.ssl) {
-  console.log("Loading credentials...");
+  log.info("Loading credentials...");
   var certificate  = fs.readFileSync(options.credentials.certificateFile, 'utf8');
   var privateKey = fs.readFileSync(options.credentials.privateKeyFile, 'utf8');
 

@@ -1,3 +1,5 @@
+var options = require('./options-handler').options;
+
 var bunyan = require('bunyan');
 var log = bunyan.createLogger(
   {
@@ -5,13 +7,13 @@ var log = bunyan.createLogger(
     src: true,
     streams: [
       {
-        level: 'debug',
+        level: options['logging']['level'],
         stream: process.stdout
       },
       {
-        level: 'debug',
+        level: options['logging']['level'],
         type: 'rotating-file',
-        path: './outputlog.json',
+        path: options['logging']['file'],
         period: '1d',   // daily rotation
         count: 7        // keep <n> back copies
       }

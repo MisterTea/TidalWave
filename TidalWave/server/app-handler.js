@@ -75,11 +75,8 @@ exports.init = function() {
     }
   });
   app.use('/view', require('../routes/index'));
-  app.use('/diff',require('../routes/diff'));
-  app.use('/history',require('../routes/history'));
   app.use('/profile',require('../routes/profile'));
 
-  app.use('/service',require('../routes/hierarchy'));
   app.use('/service',require('../routes/services'));
 
   require('./sharejs-handler').init(app);

@@ -44,7 +44,7 @@ var dumpPageVersion = function(result, callback) {
     page.save(function (err) {
       log.debug("SAVED PAGE");
       if (err) {
-        console.log(err);
+        log.error(err);
         if (callback) {
           callback();
         }
@@ -52,7 +52,7 @@ var dumpPageVersion = function(result, callback) {
         log.debug("DUMPING PAGEVERSION");
         newPageVersion.save(function (err,innerPageVersion) {
           if (err) {
-            console.log(err);
+            log.error(err);
           }
           lastVersionDumped[result.docName] = result.v;
           User.find({watchedPageIds:page._id}, function(err, users) {

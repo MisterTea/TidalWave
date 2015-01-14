@@ -7,7 +7,8 @@ var client = new elasticsearch.Client({
 
 client.cluster.health(function (err, resp) {
   if (err) {
-    log.error({error:err});
+    // Log and disable ElasticSearch
+    log.warn({error:err});
     exports.client = null;
   } else {
     log.info("ElasticSearch client found");

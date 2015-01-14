@@ -1,4 +1,11 @@
 {
+  "logging":{
+    "level":"debug",
+    "file":"./outputlog.json"
+  },
+  "database":{
+    "debug":false
+  },
   "serverName":"Tidal Wave",
   "auth":"plain",
   "hostname":"tidalwave.com",
