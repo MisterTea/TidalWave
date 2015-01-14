@@ -15,4 +15,6 @@ window.onerror = function (errorMsg, url, lineNumber, column, errorObj) {
     location : window.location,
     performance : window.performance
   });
+  alert("Sorry, there was an error. Reloading the page");
+  window.location.reload();
 };
