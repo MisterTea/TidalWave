@@ -12,6 +12,7 @@ pids
 logs
 results
 outputlog*
+tools/LDAPExtractor.js
 
 npm-debug.log
 node_modules
