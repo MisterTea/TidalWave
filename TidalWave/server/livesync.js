@@ -31,6 +31,7 @@ var dumpPageVersion = function(result, callback) {
     if (page.content == result.data) {
       // The page hasn't changed between versions, don't make a new pageversion
       lastVersionDumped[result.docName] = result.v;
+      callback();
       return;
     }
 
