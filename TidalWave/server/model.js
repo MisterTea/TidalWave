@@ -1,6 +1,6 @@
 var mongoose = require('mongoose');
 
-mongoose.set('debug', true);
+mongoose.set('debug', false);
 
 var ObjectId = mongoose.Schema.Types.ObjectId;
 var Mixed = mongoose.Schema.Types.Mixed;
@@ -48,7 +48,7 @@ var PageSchema = new mongoose.Schema({
   lastModifiedTime: {type: Date, default: Date.now, index:true},
   isPublic: {type: Boolean, default: false}
 });
-exports.Page = mongoose.model("Page",PageSchema);
+var Page = exports.Page = mongoose.model("Page",PageSchema);
 
 var PageVersionSchema = mongoose.Schema({
   pageId: {type:ObjectId, index:true, required:true, validate:isObjectId},
@@ -108,7 +108,7 @@ var AngularErrorSchema = mongoose.Schema({
 });
 exports.AngularError = mongoose.model("AngularError",AngularErrorSchema);
 
-var saveAllDocuments = function(documents, callback) {
+var saveAllDocuments = exports.saveAllDocuments = function(documents, callback) {
   var onDocument = 0;
   var iterate = function(err, product, numberAffected) {
     onDocument++;
@@ -121,3 +121,22 @@ var saveAllDocuments = function(documents, callback) {
   documents[onDocument].save(iterate);
 };
 
+exports.sanitize = function() {
+  var AuthHelper = require('./auth-helper');
+  Page.find({}, function(err, pages) {
+    var onPage = 0;
+    var iterate = function() {
+      onPage++;
+      if (onPage == pages.length) {
+        return;
+      }
+      if (pages[onPage].parentId) {
+        // Updating permissions is recursive: only call for root pages.
+        iterate();
+        return;
+      }
+      AuthHelper.updateDerivedPermissions(pages[onPage], iterate);
+    };
+    AuthHelper.updateDerivedPermissions(pages[onPage], iterate);
+  });
+};
