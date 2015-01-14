@@ -38,9 +38,9 @@ exports.queryPermissionWrapper = function(query, user) {
       return query.or(
         [{isPublic: true},
          {userPermissions: user._id.toString()},
-         {groupPermissions: user.groups},
+         {groupPermissions: { $in: user.groups }},
          {derivedUserPermissions: user._id.toString()},
-         {derivedGroupPermissions: user.groups}
+         {derivedGroupPermissions: { $in: user.groups} }
         ]);
     }
   } else {
@@ -89,4 +89,52 @@ exports.userCanAccessPage = userCanAccessPage = function(user,page,callback) {
   callback(false);
   return;
 };
+
+var updateDerivedPermissions = exports.updateDerivedPermissions = function(page, callback) {
+  if (page.parentId) {
+    Page.findOne(page.parentId, function(err, parentPage) {
+      updateChildrenDerivedPermissions(parentPage, callback);
+    });
+  } else {
+    updateChildrenDerivedPermissions(page, callback);
+  }
+};
+
+var updateChildrenDerivedPermissions = exports.updateChildrenDerivedPermissions = function(page,callback) {
+  // Store off the derived permission to propagate
+  var baseUserPermissions = _.union(page.derivedUserPermissions,page.userPermissions);
+  var baseGroupPermissions = _.union(page.derivedGroupPermissions,page.groupPermissions);
+
+  // Find all children pages
+  Page.find({parentId:page._id}, function(err, pages) {
+    if (pages.length==0) {
+      // No children to update, return
+      callback();
+    } else {
+      // Update all children's derived permissions
+      for (var i=0;i<pages.length;i++) {
+        pages[i].derivedUserPermissions = baseUserPermissions;
+        pages[i].derivedGroupPermissions = baseGroupPermissions;
+      }
+
+      // Save all children
+      model.saveAllDocuments(pages,function() {
+
+        // Recursively update derived permissions for grandchildren.
+        var onUpdate=0;
+        var iterate = function() {
+          onUpdate++;
+          if (onUpdate>=pages.length) {
+            // We are done
+            callback();
+          } else {
+            updateChildrenDerivedPermissions(pages[onUpdate],iterate);
+          }
+        };
+        updateChildrenDerivedPermissions(pages[onUpdate],iterate);
+      });
+    }
+  });
+};
+
 

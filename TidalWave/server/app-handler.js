@@ -9,7 +9,6 @@ var bodyParser = require('body-parser');
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
 var LiveSync = require('./livesync');
-var hierarchy = require('./hierarchy');
 var log = require('./logger').log;
 var options = require('./options-handler').options;
 
@@ -120,8 +119,6 @@ exports.init = function() {
 };
 
 exports.launch = function() {
-  hierarchy.rebuild();
-
   if (process.platform === "win32"){
     var rl = readLine.createInterface ({
       input: process.stdin,

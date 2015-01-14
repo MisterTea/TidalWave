@@ -18,45 +18,9 @@ var AngularError = model.AngularError;
 
 var queryPermissionWrapper = AuthHelper.queryPermissionWrapper;
 var userCanAccessPage = AuthHelper.userCanAccessPage;
+var updateDerivedPermissions = AuthHelper.updateDerivedPermissions;
 
 var router = express.Router();
-
-var updateDerivedPermissions = function(page,callback) {
-  // Store off the derived permission to propagate
-  var baseUserPermissions = page.userPermissions;
-  var baseGroupPermissions = page.groupPermissions;
-
-  // Find all children pages
-  Page.find({parentId:page._id}, function(err, pages) {
-    if (pages.length==0) {
-      // No children to update, return
-      callback();
-    } else {
-      // Update all children's derived permissions
-      for (var i=0;i<pages.length;i++) {
-        pages[i].derivedUserPermissions = baseUserPermissions;
-        pages[i].derviedGroupPermissions = baseGroupPermissions;
-      }
-
-      // Save all children
-      model.saveAllDocuments(pages,function() {
-
-        // Recursively update derived permissions for grandchildren.
-        var onUpdate=0;
-        var iterate = function() {
-          onUpdate++;
-          if (onUpdate>=pages.length) {
-            // We are done
-            callback();
-          } else {
-            updateDerivedPermissions(pages[onUpdate],iterate);
-          }
-        };
-        updateDerivedPermissions(pages[onUpdate],iterate);
-      });
-    }
-  });
-};
 
 var userPermissionFilter = function(user) {
   if (user) {
@@ -257,12 +221,14 @@ router.post(
           log.error({error:err});
           res.status(500).end();
         } else if (!page) {
-          log.info("Tried to get table of contents for non-existant page: " + page._id);
+          log.info("Tried to get table of contents for non-existant page: " + page);
           res.status(404).end();
         } else {
           userCanAccessPage(req.user,page,function(success) {
             if (success) {
-              res.status(200).type("text/x-markdown").send(toc(page.content));
+              var contentWithHeader = "\n\n" + page.content;
+              log.trace({message:"TOC generated",md:page.content,toc:toc(contentWithHeader)});
+              res.status(200).type("text/x-markdown").send(toc(contentWithHeader));
             } else {
               res.status(403).end();
             }
@@ -421,23 +387,29 @@ router.post(
   });
 
 router.post(
-  '/createPage/:pageName',
+  '/createPage',
   AuthHelper.ensureAuthenticated,
   function(req, res) {
-    var pageName = req.param('pageName');
+    var newPageInfo = req.body;
+    console.log("NEW PAGE INFO: ");
+    console.log(newPageInfo);
+    var pageName = newPageInfo.name;
+    var parentId = newPageInfo.parentId;
     queryPermissionWrapper(
       Page.findOne({name:pageName}), req.user)
       .exec(function(err, page){
         if (page == null) {
           // Page does not exist yet, create
-          var innerPage = new Page({name:pageName,content:'',userPermissions:[req.user._id]});
+          var innerPage = new Page({name:pageName,parentId:parentId,content:'',userPermissions:[req.user._id]});
           innerPage.save(function(err, innerInnerPage) {
             if (err) {
               console.log(err);
             } else {
               console.log("Rebuilding hierarchy");
               Hierarchy.rebuild();
-              res.status(200).end();
+              updateDerivedPermissions(innerPage,function() {
+                res.status(200).end();
+              });
             }
           });
         } else {
@@ -508,7 +480,7 @@ router.post(
   function(req, res) {
     var name = req.param('name');
     Group
-      .find({fullName:new RegExp("^"+name, "i")})
+      .find({name:new RegExp("^"+name, "i")})
       .limit(5)
       .sort('name')
       .exec(function(err, groups) {

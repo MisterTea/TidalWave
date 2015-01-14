@@ -21,7 +21,7 @@ $(window).resize(resizeAce);
 var enableEditMode = function(pageStateService, $http, $timeout) {
   console.log("Enabling edit mode");
   $("#editor").show();
-  $("#PageMenuController").hide();
+  //$("#PageMenuController").hide();
   console.log($("#editor")[0]);
   // Tell FileDrop we can deal with iframe uploads using this URL:
   var options = {input:false};
@@ -103,20 +103,6 @@ var enableEditMode = function(pageStateService, $http, $timeout) {
       editor.focus();
     }
   });
-};
-
-var disableEditMode = function($timeout) {
-  editor = null;
-  $("#editor").hide();
-  $timeout(function() {
-    resizeAce();
-  },1);
-  $("#PageMenuController").show();
-  if (doc) {
-    doc.destroy();
-    connection.disconnect();
-    doc = socket = connection = null;
-  }
 };
 
 var preprocessDiff = function(allDiffs) {
@@ -327,7 +313,7 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
       setAndPush:setAndPush
     };
   }])
-  .controller('PageMenuController', ['$scope', '$http', '$timeout', 'pageStateService', function($scope, $http, $timeout, pageStateService) {
+  .controller('PageMenuController', ['$scope', '$http', '$timeout', '$rootScope', 'pageStateService', function($scope, $http, $timeout, $rootScope, pageStateService) {
     $scope.query = "";
     var tree;
     $scope.my_tree_handler = function(branch) {
@@ -351,8 +337,14 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
       } else {
       var user = pageStateService.get('user');
       if (user) {
+        var pageDetails = pageStateService.get('pageDetails');
+        var newParentId = null;
+        if (pageDetails) {
+          newParentId = pageDetails.page._id;
+        }
         //console.log("Creating page");
-        $http.post('/service/createPage/'+$scope.query)
+        $http.post('/service/createPage',
+                   {name:$scope.query, parentId:newParentId})
           .success(function(data, status, headers, config) {
             //TODO: Say success
             console.log("Created page");
@@ -375,16 +367,23 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
     $scope.$on('pageStateServiceUpdate', function(event, response) {
       console.log("GOT PAGE STATE UPDATE");
       console.dir(response);
-
+      console.log(response.key);
+      
       if (response.key == 'editMode' || response.key == 'pageMode') {
         // editmode/pagemode changed.  Maybe remove the query or hide
         // the whole menu.
-        $scope.showMenu = true;
+        var newShowMenuValue = true;
+        console.log("DEFAULT SHOWMENU TO TRUE");
         var editMode = pageStateService.get('editMode');
         var pageMode = pageStateService.get('pageMode');
         if (editMode || pageMode=='diff') {
-          $scope.showMenu = false;
+          console.log("NOT SHOWING MENU: " + editMode + " " + pageMode);
+          newShowMenuValue = false;
         }
+
+        console.log("SETTING SHOWMENU FROM " + $scope.showMenu + " TO " + newShowMenuValue);
+        $scope.showMenu = newShowMenuValue;
+        
         var query = pageStateService.get('query');
         if (editMode && query) {
           query = null;
@@ -951,7 +950,6 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
 
       if ($scope.editMode && !pageStateService.get('editMode')) {
         // Leave edit mode
-        $scope.editMode = pageStateService.get('editMode');
         console.log("LEAVING EDIT MODE");
         $http.post('/service/savePageDynamicContent/'+$scope.page._id)
           .success(function(data, status, headers, config) {
@@ -962,8 +960,19 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
                 console.log("GOT PAGE DETAILS FROM HTTP");
                 console.log(data);
                 pageStateService.set('pageDetails',data);
-                disableEditMode($timeout);
+                editor = null;
+                $("#editor").hide();
+                $timeout(function() {
+                  resizeAce();
+                },1);
+                //$("#PageMenuController").show();
+                if (doc) {
+                  doc.destroy();
+                  connection.disconnect();
+                  doc = socket = connection = null;
+                }
                 pageStateService.set('settingsActive',false);
+                $scope.editMode = pageStateService.get('editMode');
               })
               .error(function(data, status, headers, config) {
                 //TODO: Alert with an error
@@ -1021,12 +1030,6 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
 
       console.log(userPermissionList.getValue());
       console.log(groupPermissionList.getValue());
-
-      if (userPermissionList.getValue().length==0
-          && groupPermissionList.getValue().length==0) {
-        // TODO: Alert with error, someone needs to own this page
-        return;
-      }
 
       console.log("PERMISSIONS");
       console.log(userPermissionList.getValue());

@@ -53,7 +53,7 @@
 </div>
 
 <div id="editor" class="col-xs-12 col-sm-6" ng-show="editMode && !settingsActive">Loading...</div>
-<div id="content" class="col-xs-12 col-sm-6" ng-show="!settingsActive">
+<div id="content" ng-class="editMode ? 'col-xs-12 col-sm-6' : 'col-xs-12 col-sm-10'" ng-show="!settingsActive">
   <div ng-show="version" class="alert alert-warning" style="text-align: center;">
     <strong>You are viewing an old version of this page.</strong><br />
     <a class="alert-link" href="#">View Current version</a>&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;

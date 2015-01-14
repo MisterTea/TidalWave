@@ -15,11 +15,15 @@ var model = require('./model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 
+var hierarchy = require('./hierarchy');
+
 var launchServer = function() {
   var server = exports.server;
   log.debug('TidalWave server listening on port ' + server.address().port);
   require('./mongoose-handler').init(function() {
     log.debug("Connected to MongoDB database");
+    model.sanitize();
+    hierarchy.rebuild();
     AppHandler.launch();
 
     // Check if we have any documents.  If not, create welcome page.
