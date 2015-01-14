@@ -15,22 +15,6 @@ a, a:visited {
 a:hover {
 	color: #008af5;
 }
-h1 {
-	margin: 0;
-	font-weight: 300;
-	font-size: 35px;
-	letter-spacing: -1px;
-}
-h2 {
-	font-size: 15px;
-	color: #a0a0a0;
-	margin: 30px 0;
-}
-label {
-	display: block;
-	font-weight: bold;
-	margin-bottom: 10px;
-}
 p, .control-group {
 	margin: 0 0 20px 0;
 }

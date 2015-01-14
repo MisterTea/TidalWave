@@ -1,5 +1,5 @@
 pushd public
-cleancss -o all.css bower_components/bootstrap/dist/css/bootstrap.css bower_components/bootstrap-select/bootstrap-select.css bower_components/selectize/dist/css/selectize.bootstrap3.css bower_components/hopscotch/dist/css/hopscotch.css bower_components/highlightjs/styles/default.css css/*.css
+cleancss -o all.css css/normalize.css bower_components/bootstrap/dist/css/bootstrap.css bower_components/bootstrap-select/bootstrap-select.css bower_components/selectize/dist/css/selectize.bootstrap3.css bower_components/hopscotch/dist/css/hopscotch.css bower_components/highlightjs/styles/default.css css/bootstrap-paper.css css/abn_tree.css css/diff.css css/footer.css css/innerIcons.css css/login.css css/stylesheet.css css/userList.css
 uglifyjs \
     bower_components/jquery/dist/jquery.js \
     bower_components/angular/angular.js \
