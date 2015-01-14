@@ -1,18 +1,25 @@
 var ldap = require('ldapjs');
 var assert = require('assert');
-var _ = require('underscore');
+var _ = require('lodash');
 
 var mongoose = require('mongoose');
 
-var model = require('./model');
+var model = require('../server/model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
 var Group = model.Group;
 
+var options = require('../server/options-handler').options;
+
+var extractor = require('./LDAPExtractor');
+
+var LDAPEntryToUser = extractor.LDAPEntryToUser;
+var LDAPEntryToGroup = extractor.LDAPEntryToGroup;
+
 var fetchUsers = function(successCallback,errorCallback) {
   var client = ldap.createClient({
-    url: 'ldaps://nod.apple.com:636'
+    url: options['ldap']['server']
   });
 
   client.bind('', '', function(err) {
@@ -25,10 +32,9 @@ var fetchUsers = function(successCallback,errorCallback) {
     }
     var count=0;
     var users = [];
-    client.search('cn=users,dc=apple,dc=com',{
+    client.search(options['ldap']['bindDN'],{
       scope:"one",
-      timeLimit:60*60,
-      attributes:["dn","mail","givenName","sn"]
+      timeLimit:60*60
     },function(err, res) {
       if (err) {
         errorCallback(err);
@@ -36,21 +42,11 @@ var fetchUsers = function(successCallback,errorCallback) {
       }
 
       res.on('searchEntry', function(entry) {
-        //console.error('entry: ' + JSON.stringify(entry.object));
-        var email = entry.object['mail'];
-        var firstName = entry.object['givenName'];
-        var lastName = entry.object['sn'];
-        var username = entry.object['dn'].match(new RegExp(/uid\=([^,]+)/))[1];
-        if(!email || !firstName || !lastName || !username) {
-          //console.error("INVALID ENTRY: " + JSON.stringify(entry.object));
+        var user = LDAPEntryToUser(entry);
+        if (!user) {
           return;
         }
-
-        users.push({
-          email:email,
-          fullName:firstName + " " + lastName,
-          username:username
-        });
+        users.push(user);
 
         count++;
         if(count%1000==0) {
@@ -79,7 +75,7 @@ var fetchUsers = function(successCallback,errorCallback) {
 
 var fetchGroups = function(successCallback,errorCallback) {
   var client = ldap.createClient({
-    url: 'ldaps://nod.apple.com:636'
+    url: options['ldap']['server']
   });
 
   client.bind('', '', function(err) {
@@ -93,10 +89,9 @@ var fetchGroups = function(successCallback,errorCallback) {
     var count=0;
     var userGroupMap = {};
     var groupNames = [];
-    client.search('cn=groups,dc=apple,dc=com',{
+    client.search(options['ldap']['bindDN'],{
       scope:"one",
-      timeLimit:60*60,
-      attributes:["cn","gidNumber","memberUid"]
+      timeLimit:60*60
     },function(err, res) {
       if (err) {
         errorCallback(err);
@@ -105,11 +100,13 @@ var fetchGroups = function(successCallback,errorCallback) {
 
       res.on('searchEntry', function(entry) {
         //console.error('entry: ' + JSON.stringify(entry.object));
-        var userlist = entry.object['memberUid'];
-        var groupName = entry.object['cn'];
-        if (!userlist) {
+        var group = LDAPEntryToGroup(entry);
+        if (!group) {
           return;
         }
+        
+        var groupName = group.name;
+        var userlist = group.userlist;
         groupNames.push(groupName);
         for (var i=0;i<userlist.length;i++) {
           var user = userlist[i];
