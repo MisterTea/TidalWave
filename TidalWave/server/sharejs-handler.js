@@ -54,14 +54,16 @@ exports.init = function(app) {
         // User is subscribing to a new document
         log.debug("Got new sub");
         document = data['d'];
+
+        pageConnectionMap[data['d']] = pageConnectionMap[data['d']] ?
+          pageConnectionMap[data['d']]+1 :
+          1;
+        log.info(pageConnectionMap[data['d']] + " CLIENTS CONNECTED TO " + data['d']);
+        
         if (!database.collections[data['c']] ||
             !database.collections[data['c']][data['d']]) {
           // Document does not exist
           log.debug("New document");
-
-          pageConnectionMap[data['d']] = pageConnectionMap[data['d']] ?
-            pageConnectionMap[data['d']]+1 :
-            1;
 
           Page.findOne({_id:data['d']},function(err,page){
             if (page) {
@@ -95,7 +97,8 @@ exports.init = function(app) {
     stream.on('end', function() {
       log.debug("CLIENT END");
       pageConnectionMap[document]--;
-      if (pageConnectionMap[document]==0) {
+      log.info(pageConnectionMap[document] + " CLIENTS ARE CONNECTED TO " + document + "\n");
+      if (pageConnectionMap[document]<=0) {
         delete pageConnectionMap[document];
         LiveSync.syncAndRemove(document, function(){
         });

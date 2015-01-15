@@ -3,6 +3,24 @@ var connection = null;
 var doc = null;
 var editor = null;
 
+testEditor = function(testString) {
+  setTimeout(function() {
+    console.log("BEGIN INJECT\n");
+    if (!editor.getReadOnly()) {
+      var r = Math.random();
+      if (r<.5) {
+        editor.removeToLineStart();
+      } else {
+        editor.insert(testString);
+      }
+    } else {
+      console.log("EDITOR IS READONLY\n");
+    }
+    console.log("END INJECT\n");
+    testEditor(testString);
+  }, 10);
+};
+
 // Helper function to resize the ace editor as the window size changes.
 function resizeAce() {
   if($('#editor').is(":visible")) {
@@ -253,6 +271,7 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
         output.cause = null;
       }
       output.message = exception.message;
+      output.context = navigator.userAgent,
       output.stack = exception.stack;
       output.location = window.location;
       output.performance = window.performance;
@@ -874,14 +893,14 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
         $scope.diffDestLines = null;
       }
         
-      if (!pageDetails) {
+      if($scope.searchContentResults) {
+        $scope.pageMode = 'searchResults';
+      } else if (!pageDetails) {
         $scope.pageMode = 'recentChanges';
       } else if($scope.diffSourceLines) {
         $scope.pageMode = 'diff';
       } else if(history) {
         $scope.pageMode = 'history';
-      } else if($scope.searchContentResults) {
-        $scope.pageMode = 'searchResults';
       } else {
         $scope.pageMode = 'content';
       }

@@ -1,7 +1,12 @@
 <div ng-controller="PageMenuController">
   <div class="well col-xs-12 col-sm-2" ng-show="showMenu" id="PageMenuController">
     <div id="page-query" class="input-group input-group-sm" style="width:100%">
-      <input type="text" class="form-control" ng-model="query" ng-keyup="$event.keyCode == 13 && submit()">
+      <input
+         type="text"
+         class="form-control"
+         ng-model="query"
+         ng-model-options="{ debounce: 500 }"
+         ng-keyup="$event.keyCode == 13 && submit()">
       <span ng-class="query?'input-group-addon query-button-active':'input-group-addon query-button-inactive'">
         <a href="" ng-click="submit()"><span ng-class="queryPageExists?'glyphicon glyphicon-chevron-right':'glyphicon glyphicon-pencil'" style="font-size: 18px; color:black;"></span></a>
       </span>

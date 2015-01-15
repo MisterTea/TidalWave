@@ -46,7 +46,7 @@ window.sharejs.Doc.prototype.attachAce = function(editor, keepEditorContents, ed
   }
   editorDoc = editor.getSession().getDocument();
   editorDoc.setNewLineMode('unix');
-  check = function() {
+  check = function(callback) {
     return window.setTimeout(function() {
       var editorText, otText;
       editorText = editorDoc.getValue();
@@ -55,6 +55,8 @@ window.sharejs.Doc.prototype.attachAce = function(editor, keepEditorContents, ed
         console.error("Text does not match!");
         console.error("editor: " + editorText);
         console.error("ot:     " + otText);
+      } else {
+        callback();
       }
     }, 0);
   };
@@ -67,17 +69,18 @@ window.sharejs.Doc.prototype.attachAce = function(editor, keepEditorContents, ed
       editorListenerCallback(ctx.get());
     }
   }
-  check();
+  check(function() {});
   suppress = false;
   editorListener = function(change) {
     if (suppress) {
       return null;
     }
+    editor.setReadOnly(true);
     applyToShareJS(editorDoc, change.data, ctx);
     if(editorListenerCallback) {
       editorListenerCallback(change);
     }
-    return check();
+    return check(function() { editor.setReadOnly(false); });
   };
   editorDoc.on('change', editorListener);
   offsetToPos = function(offset) {
@@ -98,23 +101,25 @@ window.sharejs.Doc.prototype.attachAce = function(editor, keepEditorContents, ed
   };
   ctx.onInsert = function(pos, text) {
     suppress = true;
+    editor.setReadOnly(true);
     editorDoc.insert(offsetToPos(pos), text);
     if(editorListenerCallback) {
       editorListenerCallback(null);
     }
     suppress = false;
-    return check();
+    return check(function() { editor.setReadOnly(false); });
   };
   ctx.onRemove = function(pos, length) {
     var range;
     suppress = true;
+    editor.setReadOnly(true);
     range = Range.fromPoints(offsetToPos(pos), offsetToPos(pos + length));
     editorDoc.remove(range);
     if(editorListenerCallback) {
       editorListenerCallback(null);
     }
     suppress = false;
-    return check();
+    return check(function() { editor.setReadOnly(false); });
   };
   this.detachAce = function() {
     editorDoc.removeListener('change', editorListener);

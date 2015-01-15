@@ -108,7 +108,8 @@ var AngularErrorSchema = mongoose.Schema({
   stack: String,
   location: Mixed,
   cause: String,
-  performance: Mixed
+  performance: Mixed,
+  context: Mixed
 });
 exports.AngularError = mongoose.model("AngularError",AngularErrorSchema);
 

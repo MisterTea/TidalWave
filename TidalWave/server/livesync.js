@@ -80,10 +80,11 @@ exports.sync = function(docName, callback) {
   //console.log("Checking for new versions");
   log.debug("PERFORMING SYNC");
   database.query(null, "users", null, null, function(dummy,results){
-    log.debug("LOOKING FOR DOCUMENT");
+    log.debug("LOOKING FOR DOCUMENT " + docName);
     var foundDocument = false;
     for (var i=0;i<results.length;i++) {
       var result = results[i];
+      log.debug("GOT RESULT: " + result.docName);
       if (result.docName != docName) {
         continue;
       }
@@ -94,10 +95,14 @@ exports.sync = function(docName, callback) {
         foundDocument = true;
         dumpPageVersion(result, callback);
         return;
+      } else {
+        // This version is the same as the last version
+        return;
       }
     }
     if (!foundDocument) {
       // Something went really wrong
+      log.error("COULD NOT FIND DOCUMENT: " + docName);
       callback();
     }
     return;

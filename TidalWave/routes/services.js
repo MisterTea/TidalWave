@@ -22,6 +22,10 @@ var updateDerivedPermissions = AuthHelper.updateDerivedPermissions;
 
 var router = express.Router();
 
+RegExp.escape = function(s) {
+    return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+};
+
 var userPermissionFilter = function(user) {
   if (user) {
     return {
@@ -244,7 +248,7 @@ router.post(
     var query = req.param('query');
 
     queryPermissionWrapper(
-      Page.find({name:new RegExp("^"+query, "i")}), req.user)
+      Page.find({name:new RegExp("^"+RegExp.escape(query), "i")}), req.user)
       .limit(10)
       .exec(function(err, pages) {
         log.debug("Result for " + query + ": " + JSON.stringify(pages));
@@ -437,7 +441,7 @@ router.post(
   function(req, res) {
     var fullName = req.param('fullName');
     User
-      .find({fullName:new RegExp("^"+fullName, "i")})
+      .find({fullName:new RegExp("^"+RegExp.escape(fullName), "i")})
       .where('lastLoginTime').ne(null)
       .limit(5)
       .sort('fullName')
@@ -480,7 +484,7 @@ router.post(
   function(req, res) {
     var name = req.param('name');
     Group
-      .find({name:new RegExp("^"+name, "i")})
+      .find({name:new RegExp("^"+RegExp.escape(name), "i")})
       .limit(5)
       .sort('name')
       .exec(function(err, groups) {
@@ -543,7 +547,7 @@ router.post(
     } else {
       log.info("Searching with mongoose");
       queryPermissionWrapper(Page
-        .find({content:new RegExp(content, "i")}), req.user)
+        .find({content:new RegExp(RegExp.escape(content), "i")}), req.user)
         .limit(10)
         .sort('name')
         .exec(function(err, pages) {
@@ -712,7 +716,7 @@ router.post(
 router.post(
   '/hierarchyStartsWith',
   function(req, res) {
-    Hierarchy.fetch(req.user,{name: new RegExp("^"+req.param('query'), "i")}, function(result) {
+    Hierarchy.fetch(req.user,{name: new RegExp("^"+RegExp.escape(req.param('query')), "i")}, function(result) {
       res
         .type('application/json')
         .status(200)

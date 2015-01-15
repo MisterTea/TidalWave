@@ -1,7 +1,7 @@
 function logError(details) {
   $.ajax({
     type: 'POST',
-    url: '/service/jserror',
+    url: '/service/angularerror',
     data: JSON.stringify(details),
     contentType: 'application/json; charset=utf-8',
     complete:function(jqXHR, textStatus) {
@@ -13,7 +13,8 @@ function logError(details) {
 
 window.onerror = function (errorMsg, url, lineNumber, column, errorObj) {
   logError({
-    exception:errorMsg,
+    message:errorMsg,
+    cause:null,
     context:navigator.userAgent,
     stack:errorObj,
     location : window.location,
