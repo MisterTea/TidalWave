@@ -30,11 +30,11 @@ router.get(
 );
 
 router.get(
-  '/:page',
+  '/*',
   function(req, res) {
-    var pageName = req.param('page');
+    var fullyQualifiedName = req.path.substring(1);
 
-    Page.findOne({name:pageName})
+    Page.findOne({fullyQualifiedName:fullyQualifiedName})
       .exec(function(err, page) {
         var pageIsPublic = (page && page.isPublic);
     

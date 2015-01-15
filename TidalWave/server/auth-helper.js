@@ -96,7 +96,14 @@ var updateDerivedPermissions = exports.updateDerivedPermissions = function(page,
       updateChildrenDerivedPermissions(parentPage, callback);
     });
   } else {
-    updateChildrenDerivedPermissions(page, callback);
+    page.derivedUserPermissions = [];
+    page.derivedGroupPermissions = [];
+    page.save(function(err) {
+      if (err) {
+        log.error(err);
+      }
+      updateChildrenDerivedPermissions(page, callback);
+    });
   }
 };
 

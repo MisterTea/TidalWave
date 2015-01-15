@@ -23,12 +23,12 @@ var getAncestry = exports.getAncestry = function(page, callback) {
         return;
       }
       getAncestry(parentPage, function(parentAncestry) {
-        parentAncestry.push({_id:page._id,name:page.name});
+        parentAncestry.push({_id:page._id,name:page.name,fqn:page.fullyQualifiedName});
         callback(parentAncestry);
       });
     });
   } else {
-    callback([{_id:page._id,name:page.name}]);
+    callback([{_id:page._id,name:page.name,fqn:page.fullyQualifiedName}]);
   }
 };
 
@@ -118,10 +118,10 @@ exports.fetch = function(user,filter,cb) {
           }
           var page = pages[i];
           if (!page.parentId) {
-            completed[i] = {id:page._id,name:page.name,children:[]};
+            completed[i] = {id:page._id,name:page.name,children:[],fqn:page.fullyQualifiedName};
             pageHierarchy.push(completed[i]);
           } else if (page.parentId in pageIndexMap && completed[pageIndexMap[page.parentId]]) {
-            completed[i] = {id:page._id,name:page.name,children:[]};
+            completed[i] = {id:page._id,name:page.name,children:[],fqn:page.fullyQualifiedName};
             completed[pageIndexMap[page.parentId]].children.push(completed[i]);
           }
         }

@@ -128,47 +128,37 @@ router.post(
           }
           userCanAccessPage(req.user,page,function(success) {
             if (success) {
-              var updatePage = function(page) {
-                Page.findByIdAndUpdate(
-                  page._id,
-                  {$set: 
-                   {name:page.name,
-                    parentId:page.parentId,
-                    userPermissions:page.userPermissions,
-                    groupPermissions:page.groupPermissions,
-                    derivedUserPermissions:page.derivedUserPermissions,
-                    derivedGroupPermissions:page.derivedGroupPermissions,
-                    isPublic:page.isPublic
-                   }},function(err, page) {
-                     if (err) {
-                       log.error({error:err});
-                       res.status(500).end();
-                       return;
-                     }
-                     log.debug("Updated successfully");
+              Page.findByIdAndUpdate(
+                page._id,
+                {$set: 
+                 {name:page.name,
+                  parentId:page.parentId,
+                  userPermissions:page.userPermissions,
+                  groupPermissions:page.groupPermissions,
+                  isPublic:page.isPublic
+                 }},function(err, page) {
+                   if (err) {
+                     log.error({error:err});
+                     res.status(500).end();
+                     return;
+                   }
+                   log.debug("Updated successfully");
+                   model.updateFullyQualifiedName(page, function() {
                      updateDerivedPermissions(page,function() {
-                       res.status(200).end();
+                       Page.findById(page._id, function(err, innerPage) {
+                         fetchPageDetailsForPage(
+                           innerPage,
+                           function(pageDetails) {
+                             res.status(200).type("application/json").send(JSON.stringify(pageDetails));
+                           },
+                           function(error) {
+                             log.error(error);
+                             res.status(500).end();
+                           });
+                       });
                      });
                    });
-              };
-
-              if (page.parentId) {
-                // We need to fetch the parent in case the derived
-                // permissions have changed.
-                Page.findById(page.parentId, function(err, parentPage) {
-                  if (err) {
-                    res.status(500).end();
-                    return;
-                  }
-                  page.derivedUserPermissions = parentPage.userPermissions;
-                  page.derivedGroupPermissions = parentPage.groupPermissions;
-                  updatePage(page);
-                });
-              } else {
-                page.derivedUserPermissions = [];
-                page.derivedGroupPermissions = [];
-                updatePage(page);
-              }
+                 });
             } else {
               log.info("UPDATE WOULD BAN USER FROM HIS OWN PAGE");
               // Tried to change permissions in a way that would ban the user doing the update.
@@ -257,82 +247,91 @@ router.post(
   }
 );
 
-router.post(
-  '/pageDetailsByName/:name',
-  function(req, res) {
-    log.debug("Getting page details with name: " + req.param('name'));
-    queryPermissionWrapper(
-      Page.findOne({name:req.param('name')}), req.user)
-      .exec(function(err, page) {
-        log.debug("Got page: " + JSON.stringify(page));
-        if (page) {
-          Hierarchy.getAncestry(page, function(ancestry) {
-            var pageDetails = {
-              page:page,
-              ancestry:ancestry,
-              version:null,
-              content:page.content,
-              userPermissions:[],
-              groupPermissions:[],
-              derivedUserPermissions:[],
-              derivedGroupPermissions:[]
-            };
-            // Get all users on the permissions list
+var fetchPageDetailsForPage = function(page, success, failure) {
+  Hierarchy.getAncestry(page, function(ancestry) {
+    var pageDetails = {
+      page:page,
+      ancestry:ancestry,
+      version:null,
+      content:page.content,
+      userPermissions:[],
+      groupPermissions:[],
+      derivedUserPermissions:[],
+      derivedGroupPermissions:[]
+    };
+    // Get all users on the permissions list
+    User.find(
+      {'_id': { $in: page.userPermissions }},
+      function(err,users) {
+        if (err) {
+          failure(err);
+          return;
+        }
+        for (var i=0;i<users.length;i++) {
+          pageDetails.userPermissions.push(users[i]);
+        }
+
+        // Get all groups on the permissions list
+        Group.find(
+          {'_id': { $in: page.groupPermissions }},
+          function(err, groups) {
+            if (err) {
+              failure(err);
+              return;
+            }
+            for (var j=0;j<groups.length;j++) {
+              pageDetails.groupPermissions.push(groups[j]);
+            }
+
+            // Get all derived user & group permissions
             User.find(
-              {'_id': { $in: page.userPermissions }},
+              {'_id': { $in: page.derivedUserPermissions }},
               function(err,users) {
                 if (err) {
-                  log.error({error:err});
-                  res.status(500).end();
+                  failure(err);
                   return;
                 }
                 for (var i=0;i<users.length;i++) {
-                  pageDetails.userPermissions.push(users[i]);
+                  pageDetails.derivedUserPermissions.push(users[i]);
                 }
 
-                // Get all groups on the permissions list
                 Group.find(
-                  {'_id': { $in: page.groupPermissions }},
+                  {'_id': { $in: page.derivedGroupPermissions }},
                   function(err, groups) {
                     if (err) {
-                      console.log(err);
-                      res.status(500).end();
+                      failure(err);
                       return;
                     }
                     for (var j=0;j<groups.length;j++) {
-                      pageDetails.groupPermissions.push(groups[j]);
+                      pageDetails.derivedGroupPermissions.push(groups[j]);
                     }
-
-                    // Get all derived user permissions
-                    User.find(
-                      {'_id': { $in: page.derivedUserPermissions }},
-                      function(err,users) {
-                        if (err) {
-                          log.error({error:err});
-                          res.status(500).end();
-                          return;
-                        }
-                        for (var i=0;i<users.length;i++) {
-                          pageDetails.derivedUserPermissions.push(users[i]);
-                        }
-
-                        Group.find(
-                          {'_id': { $in: page.derivedGroupPermissions }},
-                          function(err, groups) {
-                            if (err) {
-                              console.log(err);
-                              res.status(500).end();
-                              return;
-                            }
-                            for (var j=0;j<groups.length;j++) {
-                              pageDetails.derivedGroupPermissions.push(groups[j]);
-                            }
-                            res.status(200).type("application/json").send(JSON.stringify(pageDetails));
-                          });
-                      });
+                    success(pageDetails);
                   });
               });
           });
+      });
+  });
+};
+
+router.post(
+  '/pageDetailsByFQN/*',
+  function(req, res) {
+    var fqn = req.path.substring('/pageDetailsByFQN/'.length);
+    log.debug("Getting page details with name: " + fqn);
+    queryPermissionWrapper(
+      Page.findOne({fullyQualifiedName:fqn}), req.user)
+      .exec(function(err, page) {
+        log.debug("Got page: " + JSON.stringify(page));
+        if (page) {
+          fetchPageDetailsForPage(
+            page,
+            function(pageDetails) {
+              res.status(200).type("application/json").send(JSON.stringify(pageDetails));
+            },
+            function(error) {
+              log.error(error);
+              res.status(500).end();
+            });
         } else {
           res.status(404).end();
         }
@@ -404,18 +403,37 @@ router.post(
       .exec(function(err, page){
         if (page == null) {
           // Page does not exist yet, create
+
+          var createPage = function(innerPage) {
+            innerPage.save(function(err, innerInnerPage) {
+              if (err) {
+                log.error(err);
+                res.status(500).end();
+              } else {
+                console.log("Rebuilding hierarchy");
+                Hierarchy.rebuild();
+                updateDerivedPermissions(innerPage,function() {
+                  res.status(200).type("application/json").send(JSON.stringify(innerPage.fullyQualifiedName));
+                });
+              }
+            });
+          };
+          
           var innerPage = new Page({name:pageName,parentId:parentId,content:'',userPermissions:[req.user._id]});
-          innerPage.save(function(err, innerInnerPage) {
-            if (err) {
-              console.log(err);
-            } else {
-              console.log("Rebuilding hierarchy");
-              Hierarchy.rebuild();
-              updateDerivedPermissions(innerPage,function() {
-                res.status(200).end();
-              });
-            }
-          });
+          if (parentId) {
+            Page.findById(parentId, function(err, parentPage) {
+              if (err) {
+                log.error(err);
+                res.status(500).end();
+                return;
+              }
+              innerPage.fullyQualifiedName = parentPage.fullyQualifiedName + "/" + pageName;
+              createPage(innerPage);
+            });
+          } else {
+            innerPage.fullyQualifiedName = pageName;
+            createPage(innerPage);
+          }
         } else {
           res.status(400).end();
         }

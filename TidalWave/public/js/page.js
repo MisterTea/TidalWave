@@ -232,25 +232,25 @@ var userPermissionList = null;
 var groupPermissionList = null;
 
 var convertToNav = function(hierarchy, callback) {
-  var retval = {"label":hierarchy.name,"id":hierarchy.id,"children":[]};
+  var retval = {"label":hierarchy.name,"id":hierarchy.id,"children":[],"fqn":hierarchy.fqn};
   for (var i=0;i<hierarchy.children.length;i++) {
     retval.children.push(convertToNav(hierarchy.children[i]));
   }
   return retval;
 };
 
-var getPageName = function() {
-  if (window.location.pathname=='view') {
+var getPageFQN = function() {
+  if (window.location.pathname=='/view' || window.location.pathname=='/view/') {
     return null;
   }
-  return decodeURI(window.location.pathname.split('/').pop());
+  return decodeURI(window.location.pathname.substring('/view/'.length));
 };
 
-var changePage = function($http,pageName,pageStateService,callback) {
-  if (pageName == getPageName()) {
+var changePage = function($http,fqn,pageStateService,callback) {
+  if (fqn == getPageFQN()) {
     return;
   }
-  window.location = '/view/'+pageName;
+  window.location = '/view/'+fqn;
 };
 
 var getParameterByName = function(name) {
@@ -337,8 +337,8 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
     var tree;
     $scope.my_tree_handler = function(branch) {
       console.log("CLICKED ON");
-      console.log(branch);
-      changePage($http,branch.label,pageStateService,null);
+      console.dir(branch);
+      changePage($http,branch.fqn,pageStateService,null);
     };
     $scope.my_data = [];
     $scope.my_tree = tree = {};
@@ -367,9 +367,9 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
           .success(function(data, status, headers, config) {
             //TODO: Say success
             console.log("Created page");
-            var newPage = $scope.query;
+            var newPageFQN = data;
             $scope.query = '';
-            changePage($http,newPage,pageStateService, function() {
+            changePage($http,newPageFQN,pageStateService, function() {
               pageStateService.set('settingsActive', true);
               pageStateService.set('editMode',true);
             });
@@ -454,7 +454,7 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
                 // create behavior to goto.
                 $scope.queryPageExists = true;
               }
-              nextData.push({id:data[i]._id, label:data[i].name, children:[]});
+              nextData.push({id:data[i]._id, label:data[i].name, fqn:data[i].fullyQualifiedName, children:[]});
             }
             console.log("COMPARING DATA");
             console.dir($scope.lastData);
@@ -809,10 +809,10 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
         //TODO: Alert with an error
       });
 
-    var pageName = getPageName();
+    var pageName = getPageFQN();
     console.log("PAGE NAME: " + pageName);
     if (pageName && pageName != 'view') {
-      $http.post('/service/pageDetailsByName/'+pageName)
+      $http.post('/service/pageDetailsByFQN/'+pageName)
         .success(function(data, status, headers, config) {
           //TODO: Say success
           pageStateService.set('pageDetails',data);
@@ -973,7 +973,7 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
         $http.post('/service/savePageDynamicContent/'+$scope.page._id)
           .success(function(data, status, headers, config) {
             console.log("SAVED PAGE");
-            $http.post('/service/pageDetailsByName/'+$scope.page.name)
+            $http.post('/service/pageDetailsByFQN/'+$scope.page.fullyQualifiedName)
               .success(function(data, status, headers, config) {
                 //TODO: Say success
                 console.log("GOT PAGE DETAILS FROM HTTP");
@@ -1067,23 +1067,16 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
       console.log(pageCopy);
       $http.post('/service/updatePage',pageCopy)
         .success(function(data, status, headers, config) {
-          // Close the settings menu
-          pageStateService.set('settingsActive', false);
-
-          if (nameChanged) {
-            console.log("Name changed, redirecting");
-            changePage($http,$scope.newName,pageStateService,null);
+          console.log("UPDATE PAGE RETURN VALUE");
+          console.dir(data);
+          if (data.page.fullyQualifiedName != pageDetails.page.fullyQualifiedName) {
+            console.log("Name/parent changed, redirecting");
+            changePage($http,data.page.fullyQualifiedName,pageStateService,null);
           } else {
             // Update page details
-            $http.post('/service/pageDetailsByName/'+$scope.newName)
-              .success(function(data, status, headers, config) {
-                //TODO: Say success
-                pageStateService.set('pageDetails',data);
-                pageStateService.set('settingsActive',false);
-              })
-              .error(function(data, status, headers, config) {
-                //TODO: Alert with an error
-              });
+            pageStateService.set('pageDetails',data);
+            // Close the settings menu
+            pageStateService.set('settingsActive',false);
           }
         })
         .error(function(data, status, headers, config) {
@@ -1091,8 +1084,8 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
         });
     };
 
-    $scope.changePage = function(newPage) {
-      changePage($http, newPage, pageStateService,null);
+    $scope.changePage = function(newPageFQN) {
+      changePage($http, newPageFQN, pageStateService,null);
     };
 
     $scope.$on('pageStateServiceUpdate', function(response) {

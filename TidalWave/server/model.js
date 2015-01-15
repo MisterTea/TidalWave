@@ -1,5 +1,6 @@
 var mongoose = require('mongoose');
 var options = require('./options-handler').options;
+var log = require('./logger').log;
 
 // Logs to debug every database query
 mongoose.set('debug', options['database']['debug']);
@@ -40,7 +41,8 @@ var isObjectIdArray = function(n) {
 };
 
 var PageSchema = new mongoose.Schema({
-  name: {type:String, index:true, unique:true, required:true},
+  name: {type:String, index:true, required:true},
+  fullyQualifiedName: {type:String, unique:true, required:true},
   parentId: {type:ObjectId, index:true, validate:isObjectId},
   nextVersion: {type:Number, default:1},
   publish: {type:Boolean, default:false},
@@ -126,6 +128,57 @@ var saveAllDocuments = exports.saveAllDocuments = function(documents, callback) 
   documents[onDocument].save(iterate);
 };
 
+var updateFullyQualifiedName = exports.updateFullyQualifiedName = function(page, callback) {
+  if (page.parentId) {
+    Page.findOne(page.parentId, function(err, parentPage) {
+      updateChildrenFullyQualifiedName(parentPage, callback);
+    });
+  } else {
+    page.fullyQualifiedName = page.name;
+    log.info("page " + page.name + " FQN: " + page.fullyQualifiedName);
+    page.save(function(err) {
+      if (err) {
+        log.error(err);
+      }
+      updateChildrenFullyQualifiedName(page, callback);
+    });
+  }
+};
+
+var updateChildrenFullyQualifiedName = function(page, callback) {
+  var parentFQN = page.fullyQualifiedName;
+
+  // Find all children pages
+  Page.find({parentId:page._id}, function(err, pages) {
+    if (pages.length==0) {
+      // No children to update, return
+      callback();
+    } else {
+      // Update all children's FQN
+      for (var i=0;i<pages.length;i++) {
+        pages[i].fullyQualifiedName = parentFQN + "/" + pages[i].name;
+      }
+
+      // Save all children
+      saveAllDocuments(pages,function() {
+
+        // Recursively update FQN for grandchildren.
+        var onUpdate=0;
+        var iterate = function() {
+          onUpdate++;
+          if (onUpdate>=pages.length) {
+            // We are done
+            callback();
+          } else {
+            updateChildrenFullyQualifiedName(pages[onUpdate],iterate);
+          }
+        };
+        updateChildrenFullyQualifiedName(pages[onUpdate],iterate);
+      });
+    }
+  });  
+};
+
 // Sanitize the database.
 exports.sanitize = function() {
   var AuthHelper = require('./auth-helper');
@@ -140,9 +193,14 @@ exports.sanitize = function() {
         // Updating permissions is recursive: only call for root pages.
         iterate();
         return;
+      } else {
+        updateFullyQualifiedName(pages[onPage], function() {
+          AuthHelper.updateDerivedPermissions(pages[onPage], iterate);
+        });
       }
-      AuthHelper.updateDerivedPermissions(pages[onPage], iterate);
     };
-    AuthHelper.updateDerivedPermissions(pages[onPage], iterate);
+    updateFullyQualifiedName(pages[onPage], function() {
+      AuthHelper.updateDerivedPermissions(pages[onPage], iterate);
+    });
   });
 };

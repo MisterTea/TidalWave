@@ -47,7 +47,7 @@
 
 <div id="ancestry" ng-show="!editMode" class="col-xs-12 col-sm-10">
   <ol class="breadcrumb">
-    <li ng-repeat="ancestor in ancestry"><a href="" ng-click="changePage(ancestor.name);">{{ancestor.name}}</a></li>
+    <li ng-repeat="ancestor in ancestry"><a href="#" ng-click="changePage(ancestor.fqn);">{{ancestor.name}}</a></li>
     <li class="active">{{page.name}}</li>
   </ol>
 </div>
