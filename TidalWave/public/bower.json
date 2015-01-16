@@ -46,5 +46,8 @@
     "validator-js": "~3.22.1",
     "hopscotch": "~0.2.2",
     "gremlins.js": "~0.1.0"
+  },
+  "resolutions": {
+    "angular": "1.3.8"
   }
 }
