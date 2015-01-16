@@ -25,7 +25,6 @@ var launchServer = function() {
   require('./mongoose-handler').init(function() {
     log.debug("Connected to MongoDB database");
     model.sanitize();
-    hierarchy.rebuild();
     AppHandler.launch();
 
     // Check if we have any documents.  If not, create welcome page.

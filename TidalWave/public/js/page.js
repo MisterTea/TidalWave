@@ -481,40 +481,35 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
       } else {
         pageStateService.set('searchContentResults',null);
         pageStateService.set('query',null);
-        var user = pageStateService.get('user');
-        if (user) {
-          console.log("UPDATING HIERARCHY");
-          $http.post('/service/hierarchy')
-            .success(function(data, status, headers, config) {
-              var nextData = [];
-              for (var i=0;i<data.length;i++) {
-                nextData.push(convertToNav(data[i]));
-              }
-              console.log("COMPARING DATA");
-              console.dir($scope.lastData);
-              console.dir(nextData);
-              if (!_.isEqual($scope.lastData,nextData)) {
-                console.log("Menu has changed");
-                $scope.lastData = _.cloneDeep(nextData);
-                $scope.my_data = nextData;
-                $timeout(function() {
-                  $scope.my_tree.expand_all();
-                  var pageDetails = pageStateService.get('pageDetails');
-                  if (pageDetails) {
-                    console.log("Selecting branch " + pageDetails.page.name);
-                    $scope.my_tree.select_branch_by_name(pageDetails.page.name);
-                  }
-                });
-              } else {
-                console.log("menu hasn't changed");
-              }
-            })
-            .error(function(data, status, headers, config) {
-              //TODO: Alert with an error
-            });
-        } else {
-          console.log("NO USER");
-        }
+        console.log("UPDATING HIERARCHY");
+        $http.post('/service/hierarchy')
+          .success(function(data, status, headers, config) {
+            var nextData = [];
+            for (var i=0;i<data.length;i++) {
+              nextData.push(convertToNav(data[i]));
+            }
+            console.log("COMPARING DATA");
+            console.dir($scope.lastData);
+            console.dir(nextData);
+            if (!_.isEqual($scope.lastData,nextData)) {
+              console.log("Menu has changed");
+              $scope.lastData = _.cloneDeep(nextData);
+              $scope.my_data = nextData;
+              $timeout(function() {
+                $scope.my_tree.expand_all();
+                var pageDetails = pageStateService.get('pageDetails');
+                if (pageDetails) {
+                  console.log("Selecting branch " + pageDetails.page.name);
+                  $scope.my_tree.select_branch_by_name(pageDetails.page.name);
+                }
+              });
+            } else {
+              console.log("menu hasn't changed");
+            }
+          })
+          .error(function(data, status, headers, config) {
+            //TODO: Alert with an error
+          });
       }
     };
 

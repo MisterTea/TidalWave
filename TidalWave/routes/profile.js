@@ -1,8 +1,6 @@
 var express = require('express');
 var router = express.Router();
 
-var pageHierarchy = require('../server/hierarchy').pageHierarchy;
-
 router.get(
   '/:profile',
   require('../server/auth-helper').ensureAuthenticated,

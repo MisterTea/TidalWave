@@ -334,7 +334,17 @@ router.post(
               res.status(500).end();
             });
         } else {
-          res.status(404).end();
+          Page.findOne({fullyQualifiedName:fqn}, function(err, permissionPage) {
+            if (err) {
+              log.error(err);
+            }
+
+            if (permissionPage) {
+              res.status(403).end();
+            } else {
+              res.status(404).end();
+            }
+          });
         }
       });
   }
@@ -411,8 +421,6 @@ router.post(
                 log.error(err);
                 res.status(500).end();
               } else {
-                console.log("Rebuilding hierarchy");
-                Hierarchy.rebuild();
                 updateDerivedPermissions(innerPage,function() {
                   res.status(200).type("application/json").send(JSON.stringify(innerPage.fullyQualifiedName));
                 });
