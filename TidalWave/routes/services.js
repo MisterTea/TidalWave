@@ -4,6 +4,7 @@ var AuthHelper = require('../server/auth-helper');
 var LiveSync = require('../server/livesync');
 var toc = require('marked-toc');
 var _ = require('lodash');
+
 var SearchHandler = require('../server/search-handler');
 var log = require('../server/logger').log;
 
@@ -316,7 +317,7 @@ var fetchPageDetailsForPage = function(page, success, failure) {
 router.post(
   '/pageDetailsByFQN/*',
   function(req, res) {
-    var fqn = req.path.substring('/pageDetailsByFQN/'.length);
+    var fqn = unescape(req.path.substring('/pageDetailsByFQN/'.length));
     log.debug("Getting page details with name: " + fqn);
     queryPermissionWrapper(
       Page.findOne({fullyQualifiedName:fqn}), req.user)
@@ -460,7 +461,7 @@ router.post(
     var fullName = req.param('fullName');
     User
       .find({fullName:new RegExp("^"+RegExp.escape(fullName), "i")})
-      .where('lastLoginTime').ne(null)
+      //.where('lastLoginTime').ne(null)
       .limit(5)
       .sort('fullName')
       .exec(function(err, users) {
