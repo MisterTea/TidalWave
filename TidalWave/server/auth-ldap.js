@@ -7,7 +7,7 @@ exports.login = function(uid,password,successCallback,errorCallback) {
   var client = ldap.createClient({
     url: options.ldap.server
   });
-  client.bind(options.ldap.userField+'='+uid+','+options.ldap.bindDN, password, function(err) {
+  client.bind(options.ldap.userField+'='+uid+','+options.ldap.userDN, password, function(err) {
     if (err) {
       log.error({error:err});
       errorCallback(err.message);
