@@ -97,6 +97,7 @@ exports.sync = function(docName, callback) {
         return;
       } else {
         // This version is the same as the last version
+        callback();
         return;
       }
     }

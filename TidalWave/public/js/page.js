@@ -38,7 +38,7 @@ $(window).resize(resizeAce);
 
 var enableEditMode = function(pageStateService, $http, $timeout) {
   console.log("Enabling edit mode");
-  $("#editor").show();
+  //$("#editor").show();
   //$("#PageMenuController").hide();
   console.log($("#editor")[0]);
   // Tell FileDrop we can deal with iframe uploads using this URL:
@@ -980,7 +980,7 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
                 console.log(data);
                 pageStateService.set('pageDetails',data);
                 editor = null;
-                $("#editor").hide();
+                //$("#editor").hide();
                 $timeout(function() {
                   resizeAce();
                 },1);
