@@ -32,7 +32,7 @@ var fetchUsers = function(successCallback,errorCallback) {
     }
     var count=0;
     var users = [];
-    client.search(options['ldap']['bindDN'],{
+    client.search(options['ldap']['userDN'],{
       scope:"one",
       timeLimit:60*60
     },function(err, res) {
@@ -89,7 +89,7 @@ var fetchGroups = function(successCallback,errorCallback) {
     var count=0;
     var userGroupMap = {};
     var groupNames = [];
-    client.search(options['ldap']['bindDN'],{
+    client.search(options['ldap']['groupDN'],{
       scope:"one",
       timeLimit:60*60
     },function(err, res) {
@@ -206,6 +206,9 @@ db.once('open', function callback () {
       User
         .find({})
         .exec(function(err, results){
+          var usersToUpdate = [];
+          var usersToRemove = [];
+      
           console.log("UPDATING USERS: " + results.length);
           for (var a=0;a<results.length;a++) {
             var user = results[a];
@@ -221,7 +224,7 @@ db.once('open', function callback () {
                 user = _.extend(user,newUser);
                 user.fromLdap = true;
                 console.log("Updating user: " + JSON.stringify(user));
-                user.save();
+                usersToUpdate.push(user);
               }
 
               // Consume the LDAP record
@@ -229,10 +232,48 @@ db.once('open', function callback () {
             } else if (user.fromLdap) {
               // Record was not in LDAP anymore, remove
               console.log("Removing user: " + JSON.stringify(user));
-              user.remove();
+              usersToRemove.push(user);
             }
           }
 
+          var updateUsers = function(callback) {
+            if (usersToUpdate.length>0) {
+              var onUpdate = 0;
+              var iterate = function() {
+                if (onUpdate>= usersToUpdate.length) {
+                  callback();
+                  return;
+                }
+                usersToUpdate[onUpdate].save(function(err) {
+                  onUpdate++;
+                  iterate();
+                });
+              };
+              iterate();
+            } else {
+              callback();
+            }
+          };
+
+          var removeUsers = function(callback) {
+            if (usersToRemove.length>0) {
+              var onRemove = 0;
+              var iterate = function() {
+                if (onRemove >= usersToRemove.length) {
+                  callback();
+                  return;
+                }
+                usersToRemove[onRemove].remove(function(err) {
+                  onRemove++;
+                  iterate();
+                });
+              };
+              iterate();
+            } else {
+              callback();
+            }
+          };
+          
           var usersToSave = [];
           var userCount=0;
           for (var userId in userIdMap) {
@@ -245,24 +286,33 @@ db.once('open', function callback () {
             usersToSave.push(ldapUser);
           }
 
-          if (usersToSave.length) {
-            var onUser = 0;
-            var iterateUser = function(err, product, numberAffected) {
-              console.log("Added user: " + JSON.stringify(product));
-              onUser++;
-              if (usersToSave.length>onUser) {
-                new User(usersToSave[onUser]).save(iterateUser);
-              } else {
+          var createUsers = function(callback) {
+            if (usersToSave.length) {
+              var onUser = 0;
+              var iterateUser = function(err, product, numberAffected) {
+                console.log("Added user: " + JSON.stringify(product));
+                onUser++;
+                if (usersToSave.length>onUser) {
+                  new User(usersToSave[onUser]).save(iterateUser);
+                } else {
+                  callback();
+                }
+              };
+              new User(usersToSave[onUser]).save(iterateUser);
+            } else {
+              callback();
+            }
+          };
+
+          removeUsers(function() {
+            updateUsers(function() {
+              createUsers(function() {
                 // Finished, now close the DB
                 console.log("FINISHED");
                 mongoose.disconnect();
-              }
-            };
-            new User(usersToSave[onUser]).save(iterateUser);
-          } else {
-            // Nothing to do, close the DB
-            mongoose.disconnect();
-          }
+              });
+            });
+          });
         });
     };
 
@@ -270,7 +320,7 @@ db.once('open', function callback () {
     Group
       .find({})
       .exec(function(err, results) {
-        console.log("UPDATING GROUPS");
+        console.log("UPDATING GROUPS: " + results.length);
         if (err) {
           assert.ifError(err);
         }
