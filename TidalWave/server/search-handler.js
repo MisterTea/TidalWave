@@ -1,18 +1,24 @@
 var elasticsearch = require('elasticsearch');
 var log = require('./logger').log;
-var client = new elasticsearch.Client({
-  host: 'localhost:9200',
-  log: 'warning'
-});
 
-client.cluster.health(function (err, resp) {
-  if (err) {
-    // Log and disable ElasticSearch
-    log.warn({error:err});
-    exports.client = null;
-  } else {
-    log.info("ElasticSearch client found");
-    exports.client = client;
-  }
-});
+var options = require('./options-handler').options;
 
+if (options["elasticsearch"]["enable"]) {
+  var client = new elasticsearch.Client({
+    host: options["elasticsearch"]["host"],
+    log: options["elasticsearch"]["loglevel"]
+  });
+
+  client.cluster.health(function (err, resp) {
+    if (err) {
+      // Log and disable ElasticSearch
+      log.warn({error:err});
+      exports.client = null;
+    } else {
+      log.info("ElasticSearch client found");
+      exports.client = client;
+    }
+  });
+} else {
+  exports.client = null;
+}
