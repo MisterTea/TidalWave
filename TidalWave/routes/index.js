@@ -32,19 +32,19 @@ router.get(
 router.get(
   '/*',
   function(req, res) {
-    var fullyQualifiedName = req.path.substring(1);
+    var fullyQualifiedName = unescape(req.path.substring('/'.length));
 
     Page.findOne({fullyQualifiedName:fullyQualifiedName})
       .exec(function(err, page) {
         var pageIsPublic = (page && page.isPublic);
-    
+        
         if (!req.isAuthenticated() && !pageIsPublic) { 
           var totalUrl = req.baseUrl + req.url;
           log.warn({invalidAuthentication:true,user:req.user,url:totalUrl});
           res.redirect('/login?redirect='+totalUrl);
           return;
         }
-    
+        
         res.render('page', {
           server:{
             projectName:options.serverName,
