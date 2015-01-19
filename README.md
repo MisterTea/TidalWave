@@ -1,6 +1,6 @@
 Welcome to Tidal Wave!  Tidal wave is a modern interpretation of a wiki engine
 intended for teams to both collaborate in real-time and keep rich, living
-documentation on their projects.
+documentation on their projects.  [Click to see a demo wiki.](https://tidalwave-demo.herokuapp.com/view/Welcome)
 
 # Features
 
