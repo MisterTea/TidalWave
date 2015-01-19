@@ -44,18 +44,26 @@ exports.init = function(app) {
   //   however, in this example we are using a baked-in set of users.
   passport.use(new LocalStrategy(function(username, password, done) {
     User.findOne({ username: username }, function(err, user) {
-      if (err) { return done(err); }
-      if (!user) { return done(null, false, { message: 'Unknown user ' + username }); }
+      if (err) {
+        log.error(err);
+        return done(err);
+      }
+      if (!user) {
+        log.warn({message:"Unknown user", username:username});
+        return done(null, false, { message: 'Unknown user ' + username });
+      }
       auth.login(username,password,function() {
         user.lastLoginTime = Date.now();
         user.save(function(err, innerUser) {
           if (err) {
-            console.log(err);
+            log.error(err);
           } else {
+            log.info(username + " logged in");
             done(null,user);
           }
         });
       }, function(errMessage) {
+        log.error(errMessage);
         return done(null, false, {message: errMessage});
       });
       return true;

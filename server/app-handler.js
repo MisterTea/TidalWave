@@ -11,6 +11,7 @@ var MongoStore = require('connect-mongo')(session);
 var LiveSync = require('./livesync');
 var log = require('./logger').log;
 var options = require('./options-handler').options;
+var mongoose = require('mongoose');
 
 var BunyanStream = {
   buffer:'',
@@ -50,7 +51,7 @@ exports.init = function() {
     saveUninitialized:true,
     resave:true,
     store: new MongoStore({
-      db: "tidalwavesessions"
+      mongooseConnection: mongoose.connection
     })
   }));
   // Remember Me middleware

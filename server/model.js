@@ -199,6 +199,10 @@ exports.sanitize = function() {
         });
       }
     };
+    
+    if (onPage == pages.length) {
+      return;
+    }
     updateFullyQualifiedName(pages[onPage], function() {
       AuthHelper.updateDerivedPermissions(pages[onPage], iterate);
     });
