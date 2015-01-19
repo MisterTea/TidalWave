@@ -521,7 +521,7 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
     $scope.projectName = "Tidal Wave";
     $scope.settingsActive = pageStateService.get('settingsActive');
     $scope.page = {};
-    $scope.$on('pageStateServiceUpdate', function(response) {
+    $scope.$on('pageStateServiceUpdate', function(event, response) {
       console.log("Updating settings");
       $scope.settingsActive = pageStateService.get('settingsActive');
       $scope.editMode = pageStateService.get('editMode');
@@ -653,7 +653,11 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
       $modalInstance.dismiss('cancel');
     };
   })
-  .controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 'pageStateService', function($scope, $http, $timeout, $sce, pageStateService) {
+  .controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', '$anchorScroll', '$location', 'pageStateService', function($scope, $http, $timeout, $sce, $anchorScroll, $location, pageStateService) {
+
+    // When angular scrolls, ensure that the header does not block the
+    // top content.
+    $anchorScroll.yOffset = 100;
 
     if (getParameterByName('tour')) {
     $timeout(function(){
@@ -856,7 +860,7 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
       }
     };
     
-    var updateState = function() {
+    var updateState = function(key, value) {
       if (pageStateService.get('editMode') && pageStateService.get('searchContentResults')) {
         pageStateService.set('searchContentResults',null);
       }
@@ -1010,17 +1014,21 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
       $scope.settingsActive = pageStateService.get('settingsActive');
       console.log("UPDATING MARKDOWN");
       console.log(pageDetails);
-      if (pageDetails && typeof pageDetails.page.content != undefined) {
+      console.log(key);
+      if ((key == 'editMode' || key == 'pageDetails') && pageDetails && typeof pageDetails.page.content != undefined) {
         $http.post('/service/getTOC/'+pageDetails.page._id)
           .success(function(data, status, headers, config) {
             $("#content-markdown").empty();
             var markdownText = null;
             if (data.length>0) {
-              markdownText = marked("<div class=\"well well-lg\" style=\"display: inline-block;\"><h4>Table of Contents</h4>\n" + data.replace('#','##') + "\n</div><br />\n" + pageDetails.page.content);
+              markdownText = marked("<div class=\"well well-lg\" style=\"display: inline-block;\"><h4>Table of Contents</h4>\n" + data.replace(/#/g,'#/#') + "\n</div><br />\n" + pageDetails.page.content);
             } else {
               markdownText = marked(pageDetails.page.content);
             }
             $("#content-markdown").append($.parseHTML(markdownText));
+            $timeout(function(){
+              $anchorScroll();
+            }, 100);
           });
       }
     };
@@ -1083,8 +1091,8 @@ app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShippe
       changePage($http, newPageFQN, pageStateService,null);
     };
 
-    $scope.$on('pageStateServiceUpdate', function(response) {
-      updateState();
+    $scope.$on('pageStateServiceUpdate', function(event, response) {
+      updateState(response.key, response.value);
     });
   }]);
 
