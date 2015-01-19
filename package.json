@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node server/server.js | bunyan",
+    "start": "node server/server.js --optionsFile=options_example.json | bunyan",
     "postinstall": "cd public ; ../node_modules/.bin/bower install"
   },
   "dependencies": {
