@@ -9,3 +9,26 @@
     opacity: 0.5 !important;
 }
 
+.alert-container {
+    position:fixed;
+    top:60px;
+    z-index:100;
+
+    width:100%;
+}
+
+.alert {
+    padding: 5px;
+    margin-bottom: 5px;
+}
+
+.alert-warning {
+    color: #8a6d3b;
+}
+
+.alert a {
+    color: inherit;
+    font-weight: bold;
+    text-decoration: underline;
+}
+

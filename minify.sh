@@ -1,6 +1,6 @@
 pushd public
-cleancss -o all.css css/normalize.css bower_components/bootstrap/dist/css/bootstrap.css bower_components/bootstrap-select/bootstrap-select.css bower_components/selectize/dist/css/selectize.bootstrap3.css bower_components/hopscotch/dist/css/hopscotch.css bower_components/highlightjs/styles/default.css css/bootstrap-paper.css css/abn_tree.css css/diff.css css/footer.css css/innerIcons.css css/login.css css/stylesheet.css css/userList.css
-uglifyjs \
+../node_modules/.bin/cleancss -o all.css css/normalize.css bower_components/bootstrap/dist/css/bootstrap.css bower_components/bootstrap-select/bootstrap-select.css bower_components/selectize/dist/css/selectize.bootstrap3.css bower_components/hopscotch/dist/css/hopscotch.css bower_components/highlightjs/styles/default.css css/bootstrap-paper.css css/abn_tree.css css/diff.css css/footer.css css/innerIcons.css css/login.css css/userList.css css/stylesheet.css
+../node_modules/.bin/uglifyjs \
     bower_components/jquery/dist/jquery.js \
     bower_components/angular/angular.js \
     bower_components/angular-animate/angular-animate.js \
@@ -10,7 +10,7 @@ uglifyjs \
     bower_components/selectize/dist/js/selectize.js \
     bower_components/bootstrap/dist/js/bootstrap.js \
     bower_components/handlebars/handlebars.js \
-    bower_components/underscore/underscore.js \
+    bower_components/lodash/dist/lodash.js \
     bower_components/bootstrap-select/bootstrap-select.js \
     bower_components/momentjs/moment.js \
     otherjs/filedrop/filedrop.js \

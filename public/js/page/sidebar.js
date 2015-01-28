@@ -1,4 +1,4 @@
-app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope', '$log', 'pageStateService', function($scope, $http, $timeout, $rootScope, $log, pageStateService) {
+app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope', '$log', 'pageStateService', 'retryHttp', function($scope, $http, $timeout, $rootScope, $log, pageStateService, retryHttp) {
   $scope.query = "";
   $scope.selectedPageInTree = function(branch) {
     $log.debug("CLICKED ON");
@@ -30,25 +30,16 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
           newParentId = pageDetails.page._id;
         }
         $log.debug("Creating page");
-        $http.post('/service/createPage',
-                   {name:$scope.query, parentId:newParentId})
-          .success(function(data, status, headers, config) {
+        retryHttp.post(
+          '/service/createPage',
+          {name:$scope.query, parentId:newParentId},
+          function(data, status, headers, config) {
             $log.debug("Created page");
             var newPageFQN = data;
             $scope.query = '';
             changePage($http,newPageFQN,pageStateService, function() {
               pageStateService.set('settingsActive', true);
               pageStateService.set('editMode',true);
-            });
-          })
-          .error(function(data, status, headers, config) {
-            logError({
-              message:headers,
-              cause:status,
-              context:navigator.userAgent,
-              stack:printStackTrace(),
-              location:window.location,
-              performance:window.performance
             });
           });
       } else {
@@ -81,25 +72,19 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
     else if (key == 'query' || key == 'user' || key == 'pageDetails') {
       var query = pageStateService.get('query');
       if (query) {
-        $http.post('/service/findPageContent/'+query)
-          .success(function(data, status, headers, config) {
+        retryHttp.post(
+          '/service/findPageContent/'+query,
+          null,
+          function(data, status, headers, config) {
             pageStateService.set('searchContentResults',data);
             $log.debug("PAGE CONTENT DATA");
             $log.debug(JSON.stringify($scope.searchContentResults));
-          })
-          .error(function(data, status, headers, config) {
-            logError({
-              message:headers,
-              cause:status,
-              context:navigator.userAgent,
-              stack:printStackTrace(),
-              location:window.location,
-              performance:window.performance
-            });
           });
 
-        $http.post('/service/pageStartsWith/'+query)
-          .success(function(data, status, headers, config) {
+        retryHttp.post(
+          '/service/pageStartsWith/'+query,
+          null,
+          function(data, status, headers, config) {
             var nextData = [];
             $scope.queryPageExists = false;
             for (var i=0;i<data.length;i++) {
@@ -128,16 +113,6 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
             } else {
               $log.debug("menu hasn't changed");
             }
-          })
-          .error(function(data, status, headers, config) {
-            logError({
-              message:headers,
-              cause:status,
-              context:navigator.userAgent,
-              stack:printStackTrace(),
-              location:window.location,
-              performance:window.performance
-            });
           });
       } else {
         $scope.queryPageExists = false;
@@ -145,8 +120,10 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
           pageStateService.set('searchContentResults',null);
         }
         $log.debug("UPDATING HIERARCHY");
-        $http.post('/service/hierarchy')
-          .success(function(data, status, headers, config) {
+        retryHttp.post(
+          '/service/hierarchy',
+          null,
+          function(data, status, headers, config) {
             var nextData = [];
             for (var i=0;i<data.length;i++) {
               nextData.push(convertToNav(data[i]));
@@ -168,16 +145,6 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
             } else {
               $log.debug("menu hasn't changed");
             }
-          })
-          .error(function(data, status, headers, config) {
-            logError({
-              message:headers,
-              cause:status,
-              context:navigator.userAgent,
-              stack:printStackTrace(),
-              location:window.location,
-              performance:window.performance
-            });
           });
       }
     }

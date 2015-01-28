@@ -1,0 +1,12 @@
+<div
+   class="alert-container"
+   ng-controller="AlertController">
+  <div class="row" ng-repeat="alert in alerts">
+    <div
+       ng-class="['alert','alert-'+alert.level,'col-xs-12 col-sm-8 col-sm-offset-2']"
+       style="text-align: center;"
+       role="alert">
+      <span ng-bind-html="alert.message"></span>
+    </div>
+  </div>
+</div>
