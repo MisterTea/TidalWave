@@ -1,25 +1,27 @@
-app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope', 'pageStateService', function($scope, $http, $timeout, $rootScope, pageStateService) {
-    $scope.query = "";
-    var tree;
-    $scope.my_tree_handler = function(branch) {
-      console.log("CLICKED ON");
-      console.dir(branch);
-      changePage($http,branch.fqn,pageStateService,null);
-    };
-    $scope.my_data = [];
-    $scope.my_tree = tree = {};
-    $scope.queryPageExists = false;
+app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope', '$log', 'pageStateService', function($scope, $http, $timeout, $rootScope, $log, pageStateService) {
+  $scope.query = "";
+  $scope.selectedPageInTree = function(branch) {
+    $log.debug("CLICKED ON");
+    $log.debug(branch);
+    changePage($http,branch.fqn,pageStateService,null);
+  };
+  $scope.my_data = [];
+  $scope.my_tree = {};
+  $scope.queryPageExists = false;
+  $scope.showMenu = true;
 
-    $scope.showMenu = true;
+  // The user has pressed enter on a query.  Go to the page or create
+  // a new page if it does not exist.
+  $scope.submit = function() {
+    if ($scope.query.length==0) {
+      return;
+    }
 
-    $scope.submit = function() {
-      if ($scope.query.length==0) {
-        return;
-      }
-
-      if ($scope.queryPageExists) {
-        window.location = "/view/"+$scope.query;
-      } else {
+    // TODO: queryPageExists is updated too late, make a new check for
+    // this when we switch to ajax page changes.
+    if ($scope.queryPageExists) {
+      window.location = "/view/"+$scope.query;
+    } else {
       var user = pageStateService.get('user');
       if (user) {
         var pageDetails = pageStateService.get('pageDetails');
@@ -27,12 +29,11 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
         if (pageDetails) {
           newParentId = pageDetails.page._id;
         }
-        //console.log("Creating page");
+        $log.debug("Creating page");
         $http.post('/service/createPage',
                    {name:$scope.query, parentId:newParentId})
           .success(function(data, status, headers, config) {
-            //TODO: Say success
-            console.log("Created page");
+            $log.debug("Created page");
             var newPageFQN = data;
             $scope.query = '';
             changePage($http,newPageFQN,pageStateService, function() {
@@ -41,151 +42,154 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
             });
           })
           .error(function(data, status, headers, config) {
-            //TODO: Alert with an error
+            logError({
+              message:headers,
+              cause:status,
+              context:navigator.userAgent,
+              stack:printStackTrace(),
+              location:window.location,
+              performance:window.performance
+            });
           });
       } else {
         window.location = "/login";
       }
-      }
-    };
+    }
+  };
 
-    $scope.$on('pageStateServiceUpdate', function(event, response) {
-      console.log("GOT PAGE STATE UPDATE");
-      console.dir(response);
-      console.log(response.key);
-      
-      if (response.key == 'editMode' || response.key == 'pageMode') {
-        // editmode/pagemode changed.  Maybe remove the query or hide
-        // the whole menu.
-        var newShowMenuValue = true;
-        console.log("DEFAULT SHOWMENU TO TRUE");
-        var editMode = pageStateService.get('editMode');
-        var pageMode = pageStateService.get('pageMode');
-        if (editMode || pageMode=='diff') {
-          console.log("NOT SHOWING MENU: " + editMode + " " + pageMode);
-          newShowMenuValue = false;
-        }
-
-        console.log("SETTING SHOWMENU FROM " + $scope.showMenu + " TO " + newShowMenuValue);
-        $scope.showMenu = newShowMenuValue;
-        
-        var query = pageStateService.get('query');
-        if (editMode && query) {
-          query = null;
-          pageStateService.set('query',null);
-        }
+  $scope.$on('pageStateServiceUpdate', function(event, response) {
+    var key = response.key;
+    var value = response.value;
+    
+    if (key == 'editMode' || key == 'pageMode') {
+      // editmode/pagemode changed.  Maybe remove the query or hide
+      // the whole menu.
+      var editMode = pageStateService.get('editMode');
+      var pageMode = pageStateService.get('pageMode');
+      if (editMode || pageMode=='diff') {
+        $log.debug("NOT SHOWING MENU: " + editMode + " " + pageMode);
+        $scope.showMenu = false;
       }
 
-      if (response.key == 'query') {
-        // query changed, refresh sidebar menu
-        var query = pageStateService.get('query');
-        if ($scope.query != query) {
-          $scope.query = query;
-          $scope.updateSidebarMenu($scope.query);
-        }
+      var query = pageStateService.get('query');
+      if (editMode && query) {
+        query = null;
+        pageStateService.set('query',null);
       }
+    }
 
-      if (response.key == 'user') {
-        console.log("USER CHANGED");
-        // User changed, refresh sidebar menu
-        $scope.updateSidebarMenu($scope.query);
-      }
-
-      if (response.key == 'pageDetails') {
-        var pageDetails = pageStateService.get('pageDetails');
-        if (pageDetails) {
-          console.log("Selecting branch " + pageDetails.page.name);
-          $scope.my_tree.select_branch_by_name(pageDetails.page.name);
-        }
-      }
-    });
-
-    $scope.$watch('query',function(newValue,oldValue) {
-      console.log(oldValue + " TO " + newValue);
-      $scope.updateSidebarMenu(newValue);
-    });
-
-    $scope.updateSidebarMenu = function(newValue) {
-      if (newValue && newValue.length>0) {
-        pageStateService.set('query',newValue);
-        $http.post('/service/findPageContent/'+newValue)
+    else if (key == 'query' || key == 'user' || key == 'pageDetails') {
+      var query = pageStateService.get('query');
+      if (query) {
+        $http.post('/service/findPageContent/'+query)
           .success(function(data, status, headers, config) {
             pageStateService.set('searchContentResults',data);
-            console.log("PAGE CONTENT DATA");
-            console.log(JSON.stringify($scope.searchContentResults));
+            $log.debug("PAGE CONTENT DATA");
+            $log.debug(JSON.stringify($scope.searchContentResults));
           })
           .error(function(data, status, headers, config) {
-            //TODO: Alert with an error
+            logError({
+              message:headers,
+              cause:status,
+              context:navigator.userAgent,
+              stack:printStackTrace(),
+              location:window.location,
+              performance:window.performance
+            });
           });
 
-        $http.post('/service/pageStartsWith/'+newValue)
+        $http.post('/service/pageStartsWith/'+query)
           .success(function(data, status, headers, config) {
             var nextData = [];
             $scope.queryPageExists = false;
             for (var i=0;i<data.length;i++) {
-              if (data[i].name == newValue) {
+              if (data[i].name == query) {
                 // Page already exists with the query, change the
                 // create behavior to goto.
                 $scope.queryPageExists = true;
               }
               nextData.push({id:data[i]._id, label:data[i].name, fqn:data[i].fullyQualifiedName, children:[]});
             }
-            console.log("COMPARING DATA");
-            console.dir($scope.lastData);
-            console.dir(nextData);
+            $log.debug("COMPARING DATA");
+            $log.debug($scope.lastData);
+            $log.debug(nextData);
             if (!_.isEqual($scope.lastData,nextData)) {
-              console.log("Menu has changed");
+              $log.debug("Menu has changed");
               $scope.lastData = _.cloneDeep(nextData);
               $scope.my_data = nextData;
               $timeout(function() {
                 $scope.my_tree.expand_all();
                 var pageDetails = pageStateService.get('pageDetails');
                 if (pageDetails) {
-                  console.log("Selecting branch " + pageDetails.page.name);
+                  $log.debug("Selecting branch " + pageDetails.page.name);
                   $scope.my_tree.select_branch_by_name(pageDetails.page.name);
                 }
               });
             } else {
-              console.log("menu hasn't changed");
+              $log.debug("menu hasn't changed");
             }
           })
           .error(function(data, status, headers, config) {
-            //TODO: Alert with an error
+            logError({
+              message:headers,
+              cause:status,
+              context:navigator.userAgent,
+              stack:printStackTrace(),
+              location:window.location,
+              performance:window.performance
+            });
           });
       } else {
-        pageStateService.set('searchContentResults',null);
-        pageStateService.set('query',null);
-        console.log("UPDATING HIERARCHY");
+        $scope.queryPageExists = false;
+        if (pageStateService.get('searchContentResults')) {
+          pageStateService.set('searchContentResults',null);
+        }
+        $log.debug("UPDATING HIERARCHY");
         $http.post('/service/hierarchy')
           .success(function(data, status, headers, config) {
             var nextData = [];
             for (var i=0;i<data.length;i++) {
               nextData.push(convertToNav(data[i]));
             }
-            console.log("COMPARING DATA");
-            console.dir($scope.lastData);
-            console.dir(nextData);
+            $log.debug("COMPARING DATA");
+            $log.debug($scope.lastData);
+            $log.debug(nextData);
             if (!_.isEqual($scope.lastData,nextData)) {
-              console.log("Menu has changed");
+              $log.debug("Menu has changed");
               $scope.lastData = _.cloneDeep(nextData);
               $scope.my_data = nextData;
               $timeout(function() {
-                $scope.my_tree.expand_all();
                 var pageDetails = pageStateService.get('pageDetails');
                 if (pageDetails) {
-                  console.log("Selecting branch " + pageDetails.page.name);
+                  $log.debug("Selecting branch " + pageDetails.page.name);
                   $scope.my_tree.select_branch_by_name(pageDetails.page.name);
                 }
               });
             } else {
-              console.log("menu hasn't changed");
+              $log.debug("menu hasn't changed");
             }
           })
           .error(function(data, status, headers, config) {
-            //TODO: Alert with an error
+            logError({
+              message:headers,
+              cause:status,
+              context:navigator.userAgent,
+              stack:printStackTrace(),
+              location:window.location,
+              performance:window.performance
+            });
           });
       }
-    };
+    }
+  });
 
-    $scope.updateSidebarMenu($scope.query);
+  $scope.$watch('query',function(newValue,oldValue) {
+    $log.debug(oldValue + " TO " + newValue);
+    if (newValue && newValue.length>0) {
+      pageStateService.set('query',newValue);
+    } else {
+      pageStateService.set('query',null);
+    }
+  });
+
 }]);

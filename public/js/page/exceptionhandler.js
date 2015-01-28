@@ -1,3 +1,7 @@
+app.config(['$logProvider', function($logProvider){
+    $logProvider.debugEnabled(true);
+}]);
+
 app.factory('$exceptionHandler', function($log) {
     return function(exception, cause) {
       console.log("GOT EXCEPTION");
