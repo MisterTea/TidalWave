@@ -62,10 +62,12 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
         $scope.showMenu = false;
       }
 
-      var query = pageStateService.get('query');
-      if (editMode && query) {
+      if (editMode && pageStateService.get('query')) {
         query = null;
         pageStateService.set('query',null);
+      }
+      if (editMode && pageStateService.get('searchContentResults')) {
+        pageStateService.set('searchContentResults',null);
       }
     }
 
@@ -77,6 +79,9 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
       }
       
       var query = pageStateService.get('query');
+      if (query != $scope.query) {
+        $scope.query = query;
+      }
       if (query) {
         retryHttp.post(
           '/service/findPageContent/'+query,
@@ -132,6 +137,13 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
           function(data, status, headers, config) {
             var nextData = [];
             for (var i=0;i<data.length;i++) {
+              var convertToNav = function(hierarchy) {
+                var retval = {"label":hierarchy.name,"id":hierarchy.id,"children":[],"fqn":hierarchy.fqn};
+                for (var i=0;i<hierarchy.children.length;i++) {
+                  retval.children.push(convertToNav(hierarchy.children[i]));
+                }
+                return retval;
+              };
               nextData.push(convertToNav(data[i]));
             }
             $log.debug("COMPARING DATA");

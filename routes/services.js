@@ -662,7 +662,6 @@ router.post(
   function(req,res) {
     console.log("SAVING FILE");
     var fileDataJson = req.body;
-    console.dir(fileDataJson);
 
     var uniqueName =
           fileDataJson.pageId + "_" +
@@ -677,6 +676,7 @@ router.post(
 
     fileData.save(function (err) {
       if (err) {
+        console.dir(err);
         log.error({error:err});
         res.status(500).end();
       }

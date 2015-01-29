@@ -1,8 +1,3 @@
-var socket = null;
-var connection = null;
-var doc = null;
-var editor = null;
-
 testEditor = function(testString) {
   setTimeout(function() {
     console.log("BEGIN INJECT\n");
@@ -19,108 +14,6 @@ testEditor = function(testString) {
     console.log("END INJECT\n");
     testEditor(testString);
   }, 10);
-};
-
-// Helper function to resize the ace editor as the window size changes.
-function resizeAce() {
-  if($('#editor').is(":visible")) {
-    $('#editor').height($(window).height() - 130);
-    $('#content').height($(window).height() - 130);
-    $('#content').css("overflow-y","scroll");
-    editor.resize(true);
-  } else {
-    $('#content').css("height", "auto");
-    $('#content').css("overflow-y","visible");
-  }
-};
-//listen for changes
-$(window).resize(resizeAce);
-
-var enableEditMode = function(pageStateService, $http, $timeout) {
-  console.log("Enabling edit mode");
-  //$("#editor").show();
-  //$("#PageMenuController").hide();
-  console.log($("#editor")[0]);
-  // Tell FileDrop we can deal with iframe uploads using this URL:
-  var options = {input:false};
-
-  // Attach FileDrop to an area
-  var zone = new FileDrop('editor', options);
-
-  // Do something when a user chooses or drops a file:
-  zone.event('send', function (files) {
-    // Depending on browser support files (FileList) might contain multiple items.
-    files.each(function (file) {
-      console.log(file);
-      //alert(file.name + ' ' + file.type + ' (' + file.size + ') bytes');
-      var fr = new FileReader();
-
-      // For some reason onload is being called 2x.
-      var called=false;
-      fr.onload = function(e) {
-        if (called) return;
-        called = true;
-        var pageDetails = pageStateService.get('pageDetails');
-        var mime = e.target.result.split(',')[0].substring(5);
-        var data = e.target.result.split(',')[1];
-        if(file.type.match(/image.*/)){
-          $http.post('/service/saveImage', {mime:mime,base64:data,pageId:pageDetails.page._id,name:file.name})
-            .success(function(filename, status, headers, config) {
-              console.log("INJECTING IMAGE");
-              editor.insert("<img src=\"/service/getImage/"+filename+"\"></img>");
-              //TODO: Say success
-            })
-            .error(function(data, status, headers, config) {
-              //TODO: Alert with an error
-            });
-        } else {
-          // Regular attachment
-          $http.post('/service/saveFile', {mime:mime,base64:data,pageId:pageDetails.page._id,name:file.name})
-            .success(function(filename, status, headers, config) {
-              console.log("INJECTING FILE");
-              editor.insert("<a href=\"/service/getFile/"+filename+"\" target=\"_blank\">Download "+file.name+"</a>");
-              //TODO: Say success
-            })
-            .error(function(data, status, headers, config) {
-              //TODO: Alert with an error
-            });
-        }
-      };
-      fr.readAsDataURL(file.nativeFile);
-    });
-  });
-  editor = ace.edit("editor");
-  $timeout(function() {
-    resizeAce();
-  },1);
-  editor.setReadOnly(true);
-  editor.setValue("Loading...");
-  editor.getSession().setUseWrapMode(true); // lines should wrap
-  //editor.setTheme("ace/theme/monokai");
-  editor.getSession().setMode("ace/mode/markdown");
-
-  socket = new BCSocket(null, {reconnect: true});
-  connection = new window.sharejs.Connection(socket);
-
-  var pageDetails = pageStateService.get('pageDetails');
-  console.log("SUBSCRIBING TO " + pageDetails.page._id);
-  doc = connection.get('users', pageDetails.page._id);
-  doc.subscribe();
-
-  doc.whenReady(function () {
-    console.log("SHAREJS IS READY");
-    editor.setReadOnly(false);
-    console.log(doc);
-    if (!doc.type) doc.create('text');
-    if (doc.type && doc.type.name === 'text') {
-      doc.attachAce(editor, false, function(change) {
-        $("#content-markdown").empty();
-        var markdownText = marked(editor.getSession().getDocument().getValue());
-        $("#content-markdown").append($.parseHTML(markdownText));
-      });
-      editor.focus();
-    }
-  });
 };
 
 var preprocessDiff = function(allDiffs) {
@@ -227,18 +120,6 @@ var preprocessDiff = function(allDiffs) {
   return [sourceLines,destLines];
 };
 
-var parentList = null;
-var userPermissionList = null;
-var groupPermissionList = null;
-
-var convertToNav = function(hierarchy, callback) {
-  var retval = {"label":hierarchy.name,"id":hierarchy.id,"children":[],"fqn":hierarchy.fqn};
-  for (var i=0;i<hierarchy.children.length;i++) {
-    retval.children.push(convertToNav(hierarchy.children[i]));
-  }
-  return retval;
-};
-
 var getPageFQN = function() {
   if (window.location.pathname=='/view' || window.location.pathname=='/view/') {
     return null;
@@ -248,6 +129,10 @@ var getPageFQN = function() {
 
 var changePage = function($http,fqn,pageStateService,callback) {
   if (fqn == getPageFQN()) {
+    return;
+  }
+  if (pageStateService.get('editMode')) {
+    console.log("Tried to change pages while in edit mode.");
     return;
   }
   window.location = '/view/'+fqn;

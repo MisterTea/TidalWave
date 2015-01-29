@@ -1,3 +1,63 @@
+var socket = null;
+var connection = null;
+var doc = null;
+editor = null;
+var parentList = null;
+var userPermissionList = null;
+var groupPermissionList = null;
+
+// Helper function to resize the ace editor as the window size changes.
+function resizeAce() {
+  if($('#editor').is(":visible")) {
+    $('#editor').height($(window).height() - 130);
+    $('#content').height($(window).height() - 130);
+    $('#content').css("overflow-y","scroll");
+    editor.resize(true);
+  } else {
+    $('#content').css("height", "auto");
+    $('#content').css("overflow-y","visible");
+  }
+};
+//listen for changes to the window size and update the ace editor size.
+$(window).resize(resizeAce);
+
+var enableEditMode = function(pageStateService, $http, $timeout) {
+  console.log("Enabling edit mode");
+
+  editor = ace.edit("editor");
+  $timeout(function() {
+    resizeAce();
+  },1);
+  editor.setReadOnly(true);
+  editor.setValue("Loading...");
+  editor.getSession().setUseWrapMode(true); // lines should wrap
+  //editor.setTheme("ace/theme/monokai");
+  editor.getSession().setMode("ace/mode/markdown");
+
+  socket = new BCSocket(null, {reconnect: true});
+  connection = new window.sharejs.Connection(socket);
+
+  var pageDetails = pageStateService.get('pageDetails');
+  console.log("SUBSCRIBING TO " + pageDetails.page._id);
+  doc = connection.get('users', pageDetails.page._id);
+  doc.subscribe();
+
+  doc.whenReady(function () {
+    console.log("SHAREJS IS READY");
+    editor.setReadOnly(false);
+    console.log(doc);
+    if (!doc.type) doc.create('text');
+    if (doc.type && doc.type.name === 'text') {
+      doc.attachAce(editor, false, function(change) {
+        $("#content-markdown").empty();
+        var markdownText = marked(editor.getSession().getDocument().getValue());
+        $("#content-markdown").append($.parseHTML(markdownText));
+      });
+      editor.focus();
+    }
+  });
+};
+
 app.controller('DeletePageModalInstanceCtrl', function ($scope, $modalInstance, pagename) {
   $scope.pagename = pagename;
 
@@ -11,44 +71,25 @@ app.controller('DeletePageModalInstanceCtrl', function ($scope, $modalInstance, 
 });
 
 app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', '$anchorScroll', '$location', 'pageStateService', function($scope, $http, $timeout, $sce, $anchorScroll, $location, pageStateService) {
+  $scope.query = null;
+  $scope.editMode = false;
+  $scope.pageMode = null;
 
+  // Set up FileDrop once the controller is created.
+  $timeout(function() {
+    setupFiledrop($http, pageStateService);
+  });
+  
   // When angular scrolls, ensure that the header does not block the
   // top content.
   $anchorScroll.yOffset = 100;
 
   if (getParameterByName('tour')) {
     $timeout(function(){
-      // Define the tour!
-      var tour = {
-        id: "hello-hopscotch",
-        steps: [
-          {
-            title: "Welcome to TidalWave!",
-            content: "To view a page, select it in the list.  To create a new page, type the name in this box and click the pencil.",
-            target: "page-query",
-            placement: "bottom"
-          },
-          {
-            title: "Editing a page",
-            content: "To edit a page or change the settings (name, visibility), click here.  Multiple people can edit the same page simultaneously.",
-            target: "edit-list-item",
-            placement: "bottom"
-          },
-          {
-            title: "Thank you!",
-            content: "That\'s it!  Thanks for trying Tidal Wave, please send feedback to jgmath2000@gmail.com",
-            target: "ancestry",
-            placement: "bottom"
-          }
-        ]
-      };
-
-      // Start the tour!
-      hopscotch.startTour(tour);
-    }, 1000);
+      createFirstViewTour();
+    }, 100);
   }
 
-  $scope.query = null;
   $http.post('/service/recentChangesVisible')
     .success(function(data, status, headers, config) {
       // TODO: Implement this url
@@ -59,6 +100,36 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
       //TODO: Alert with an error
       console.log("ERROR");
       console.log(data);
+    });
+
+  // Start by fetching the current user
+  $http.post('/service/me')
+    .success(function(data, status, headers, config) {
+      if (data) {
+        //TODO: Say success
+        pageStateService.set('user',data);
+      } else {
+        console.log("NO USER FOUND.  ASSUMING ANONYMOUS");
+      }
+
+      // Then fetch the current page
+      var pageName = getPageFQN();
+      console.log("PAGE NAME: " + pageName);
+      if (pageName && pageName != 'view') {
+        $http.post('/service/pageDetailsByFQN/'+pageName)
+          .success(function(data, status, headers, config) {
+            //TODO: Say success
+            pageStateService.set('pageDetails',data);
+          })
+          .error(function(data, status, headers, config) {
+            //TODO: Alert with an error
+          });
+      } else {
+        console.log("ON HOME PAGE");
+      }
+    })
+    .error(function(data, status, headers, config) {
+      //TODO: Alert with an error
     });
 
   $scope.prettyDate = function(date) {
@@ -151,38 +222,6 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
       });
     }
   })[0].selectize;
-
-  $http.post('/service/me')
-    .success(function(data, status, headers, config) {
-      if (data) {
-        //TODO: Say success
-        pageStateService.set('user',data);
-      } else {
-        console.log("NO USER FOUND.  ASSUMING ANONYMOUS");
-      }
-    })
-    .error(function(data, status, headers, config) {
-      //TODO: Alert with an error
-    });
-
-  var pageName = getPageFQN();
-  console.log("PAGE NAME: " + pageName);
-  if (pageName && pageName != 'view') {
-    $http.post('/service/pageDetailsByFQN/'+pageName)
-      .success(function(data, status, headers, config) {
-        //TODO: Say success
-        pageStateService.set('pageDetails',data);
-      })
-      .error(function(data, status, headers, config) {
-        //TODO: Alert with an error
-      });
-  } else {
-    console.log("ON HOME PAGE");
-  }
-  console.log("IN PAGE CONTENT CONTROLLER");
-  $scope.editMode = false;
-
-  $scope.pageMode = null;
 
   $scope.restorePageVersion = function(version) {
     var pageDetails = pageStateService.get('pageDetails');
@@ -392,16 +431,13 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
           console.log("SAVED PAGE");
           $http.post('/service/pageDetailsByFQN/'+$scope.page.fullyQualifiedName)
             .success(function(data, status, headers, config) {
-              //TODO: Say success
               console.log("GOT PAGE DETAILS FROM HTTP");
               console.log(data);
               pageStateService.set('pageDetails',data);
               editor = null;
-              //$("#editor").hide();
               $timeout(function() {
                 resizeAce();
               },1);
-              //$("#PageMenuController").show();
               if (doc) {
                 doc.destroy();
                 connection.disconnect();
@@ -411,7 +447,6 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
               $scope.editMode = pageStateService.get('editMode');
             })
             .error(function(data, status, headers, config) {
-              //TODO: Alert with an error
               console.log("ERROR");
               console.log(data);
             });
@@ -430,10 +465,10 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
     }
 
     $scope.settingsActive = pageStateService.get('settingsActive');
-    console.log("UPDATING MARKDOWN");
-    console.log(pageDetails);
-    console.log(key);
     if ((key == 'editMode' || key == 'pageDetails') && pageDetails && typeof pageDetails.page.content != undefined) {
+      console.log("UPDATING MARKDOWN");
+      console.log(pageDetails);
+      console.log(key);
       $http.post('/service/getTOC/'+pageDetails.page._id)
         .success(function(data, status, headers, config) {
           $("#content-markdown").empty();

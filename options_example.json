@@ -4,7 +4,7 @@
     "file":"./outputlog.json"
   },
   "database":{
-    "debug":false,
+    "debug":true,
     "uri":"mongodb://localhost/tidalwave"
   },
   "elasticsearch":{
