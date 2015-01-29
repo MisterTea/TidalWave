@@ -60,6 +60,8 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
       if (editMode || pageMode=='diff') {
         $log.debug("NOT SHOWING MENU: " + editMode + " " + pageMode);
         $scope.showMenu = false;
+      } else {
+        $scope.showMenu = true;
       }
 
       if (editMode && pageStateService.get('query')) {
