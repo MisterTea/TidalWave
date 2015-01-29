@@ -70,6 +70,12 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
     }
 
     else if (key == 'query' || key == 'user' || key == 'pageDetails') {
+      if (key == 'pageDetails') {
+        var pageDetails = value;
+        $log.debug("Selecting branch " + pageDetails.page.name);
+        $scope.my_tree.select_branch_by_name(pageDetails.page.name);
+      }
+      
       var query = pageStateService.get('query');
       if (query) {
         retryHttp.post(
