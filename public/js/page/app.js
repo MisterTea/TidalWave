@@ -120,22 +120,28 @@ var preprocessDiff = function(allDiffs) {
   return [sourceLines,destLines];
 };
 
-var getPageFQN = function() {
-  if (window.location.pathname=='/view' || window.location.pathname=='/view/') {
-    return null;
-  }
-  return decodeURI(window.location.pathname.substring('/view/'.length));
-};
-
-var changePage = function($http,fqn,pageStateService,callback) {
-  if (fqn == getPageFQN()) {
+var changePage = function($http,$location,fqn,pageStateService,callback) {
+  fqn = '/'+fqn;
+  if (fqn == $location.path()) {
     return;
   }
   if (pageStateService.get('editMode')) {
     console.log("Tried to change pages while in edit mode.");
     return;
   }
-  window.location = '/view/'+fqn;
+  //window.location = '/view/'+fqn;
+  console.log("FQN: " + fqn);
+  $http.post('/service/pageDetailsByFQN'+fqn)
+    .success(function(data, status, headers, config) {
+      //TODO: Say success
+      pageStateService.set('pageDetails',data);
+      $location.hash('');
+      $location.path(fqn);
+    })
+    .error(function(data, status, headers, config) {
+      //TODO: Alert with an error
+    });
+
 };
 
 var getParameterByName = function(name) {
@@ -144,4 +150,3 @@ var getParameterByName = function(name) {
 };
 
 app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper', 'ui.bootstrap']);
-

@@ -58,18 +58,6 @@ var enableEditMode = function(pageStateService, $http, $timeout) {
   });
 };
 
-app.controller('DeletePageModalInstanceCtrl', function ($scope, $modalInstance, pagename) {
-  $scope.pagename = pagename;
-
-  $scope.ok = function () {
-    $modalInstance.close();
-  };
-
-  $scope.cancel = function () {
-    $modalInstance.dismiss('cancel');
-  };
-});
-
 app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', '$anchorScroll', '$location', 'pageStateService', function($scope, $http, $timeout, $sce, $anchorScroll, $location, pageStateService) {
   $scope.query = null;
   $scope.editMode = false;
@@ -79,7 +67,7 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
   $timeout(function() {
     setupFiledrop($http, pageStateService);
   });
-  
+
   // When angular scrolls, ensure that the header does not block the
   // top content.
   $anchorScroll.yOffset = 100;
@@ -113,10 +101,10 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
       }
 
       // Then fetch the current page
-      var pageName = getPageFQN();
+      var pageName = $location.path();
       console.log("PAGE NAME: " + pageName);
-      if (pageName && pageName != 'view') {
-        $http.post('/service/pageDetailsByFQN/'+pageName)
+      if (pageName && pageName.length>1) {
+        $http.post('/service/pageDetailsByFQN'+pageName)
           .success(function(data, status, headers, config) {
             //TODO: Say success
             pageStateService.set('pageDetails',data);
@@ -255,7 +243,7 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
       }
     }
   };
-  
+
   $scope.updateSettings = function() {
     var pageDetails = pageStateService.get('pageDetails');
     var pageCopy = JSON.parse(JSON.stringify(pageDetails.page));
@@ -297,7 +285,7 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
         console.dir(data);
         if (data.page.fullyQualifiedName != pageDetails.page.fullyQualifiedName) {
           console.log("Name/parent changed, redirecting");
-          changePage($http,data.page.fullyQualifiedName,pageStateService,null);
+          changePage($http,$location,data.page.fullyQualifiedName,pageStateService,null);
         } else {
           // Update page details
           pageStateService.set('pageDetails',data);
@@ -311,13 +299,13 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
   };
 
   $scope.changePage = function(newPageFQN) {
-    changePage($http, newPageFQN, pageStateService,null);
+    changePage($http,$location,newPageFQN, pageStateService,null);
   };
 
   $scope.$on('pageStateServiceUpdate', function(event, response) {
     var key = response.key;
     var value = response.value;
-    
+
     if (pageStateService.get('editMode') && pageStateService.get('searchContentResults')) {
       pageStateService.set('searchContentResults',null);
     }
@@ -348,7 +336,7 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
       $scope.diffSourceLines = null;
       $scope.diffDestLines = null;
     }
-    
+
     if($scope.searchContentResults) {
       $scope.pageMode = 'searchResults';
     } else if (!pageDetails) {
@@ -363,7 +351,7 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
     if ($scope.pageMode != pageStateService.get('pageMode')) {
       pageStateService.set('pageMode',$scope.pageMode);
     }
-    
+
     if (pageDetails) {
       $scope.page = pageDetails?pageDetails.page:null;
       $scope.newName = pageDetails.page.name;
@@ -429,7 +417,7 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
       $http.post('/service/savePageDynamicContent/'+$scope.page._id)
         .success(function(data, status, headers, config) {
           console.log("SAVED PAGE");
-          $http.post('/service/pageDetailsByFQN/'+$scope.page.fullyQualifiedName)
+          $http.post('/service/pageDetailsByFQN'+$location.path())
             .success(function(data, status, headers, config) {
               console.log("GOT PAGE DETAILS FROM HTTP");
               console.log(data);
@@ -474,7 +462,7 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
           $("#content-markdown").empty();
           var markdownText = null;
           if (data.length>0) {
-            markdownText = marked("<div class=\"well well-lg\" style=\"display: inline-block;\"><h4>Table of Contents</h4>\n" + data.replace(/#/g,'#/#') + "\n</div><br />\n" + pageDetails.page.content);
+            markdownText = marked("<div class=\"well well-lg\" style=\"display: inline-block;\"><h4>Table of Contents</h4>\n" + data.replace(/#/g,'#'+$location.path()+'#') + "\n</div><br />\n" + pageDetails.page.content);
           } else {
             markdownText = marked(pageDetails.page.content);
           }

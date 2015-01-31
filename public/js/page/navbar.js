@@ -80,19 +80,26 @@ app.controller('NavbarController', ['$scope', '$http', '$modal', 'pageStateServi
 
     $scope.saveHTML = function() {
       var pageDetails = pageStateService.get('pageDetails');
-      var blob = new Blob([marked(pageDetails.page.content)], {type: "text/plain;charset=utf-8"});
-      saveAs(blob, pageDetails.page.name + ".html");
+      $http.get('/all.css')
+        .success(function(data, status, headers, config) {
+          var css = data;
+          var htmlPage = "<html><head><style>"+css+"</style></head><body>"+marked(pageDetails.page.content)+"</body></html>";
+          var blob = new Blob([htmlPage], {type: "text/plain;charset=utf-8"});
+          saveAs(blob, pageDetails.page.name + ".html");
+        })
+        .error(function(data, status, headers, config) {
+        });
     };
 
     $scope.savePDF = function() {
       var pageDetails = pageStateService.get('pageDetails');
-      var doc = new jsPDF();          
+      var doc = new jsPDF();
       doc.fromHTML(
         marked(pageDetails.page.content),
         15,
         15,
         {
-          'width': 800
+          'width': 100
         });
 
       doc.save(pageDetails.page.name + ".pdf");
@@ -125,3 +132,15 @@ app.controller('NavbarController', ['$scope', '$http', '$modal', 'pageStateServi
       });
     };
 }]);
+
+app.controller('DeletePageModalInstanceCtrl', function ($scope, $modalInstance, pagename) {
+  $scope.pagename = pagename;
+
+  $scope.ok = function () {
+    $modalInstance.close();
+  };
+
+  $scope.cancel = function () {
+    $modalInstance.dismiss('cancel');
+  };
+});

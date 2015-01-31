@@ -1,4 +1,13 @@
+var alreadyRan = false;
+
 var setupFiledrop = function($http, pageStateService) {
+  if (alreadyRan) {
+    console.log("ERROR!  TRIED TO SET UP FILEDROP 2x");
+    dlksjldjfs;
+  } else {
+    alreadyRan = true;
+  }
+
   // Tell FileDrop we can deal with iframe uploads using this URL:
   var options = {input:false};
 
@@ -48,4 +57,3 @@ var setupFiledrop = function($http, pageStateService) {
     });
   });
 };
-

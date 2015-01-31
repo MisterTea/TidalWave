@@ -1,9 +1,9 @@
-app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope', '$log', 'pageStateService', 'retryHttp', function($scope, $http, $timeout, $rootScope, $log, pageStateService, retryHttp) {
+app.controller('SideBarController', ['$scope', '$http', '$location', '$timeout', '$rootScope', '$log', 'pageStateService', 'retryHttp', function($scope, $http, $location, $timeout, $rootScope, $log, pageStateService, retryHttp) {
   $scope.query = "";
   $scope.selectedPageInTree = function(branch) {
     $log.debug("CLICKED ON");
     $log.debug(branch);
-    changePage($http,branch.fqn,pageStateService,null);
+    changePage($http,$location,branch.fqn,pageStateService,null);
   };
   $scope.my_data = [];
   $scope.my_tree = {};
@@ -37,7 +37,7 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
             $log.debug("Created page");
             var newPageFQN = data;
             $scope.query = '';
-            changePage($http,newPageFQN,pageStateService, function() {
+            changePage($http,$location,newPageFQN,pageStateService, function() {
               pageStateService.set('settingsActive', true);
               pageStateService.set('editMode',true);
             });
@@ -51,7 +51,7 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
   $scope.$on('pageStateServiceUpdate', function(event, response) {
     var key = response.key;
     var value = response.value;
-    
+
     if (key == 'editMode' || key == 'pageMode') {
       // editmode/pagemode changed.  Maybe remove the query or hide
       // the whole menu.
@@ -79,7 +79,7 @@ app.controller('SideBarController', ['$scope', '$http', '$timeout', '$rootScope'
         $log.debug("Selecting branch " + pageDetails.page.name);
         $scope.my_tree.select_branch_by_name(pageDetails.page.name);
       }
-      
+
       var query = pageStateService.get('query');
       if (query != $scope.query) {
         $scope.query = query;
