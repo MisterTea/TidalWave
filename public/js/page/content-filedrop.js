@@ -1,6 +1,6 @@
 var alreadyRan = false;
 
-var setupFiledrop = function($http, pageStateService) {
+var setupFiledrop = function(retryHttp, pageStateService) {
   if (alreadyRan) {
     console.log("ERROR!  TRIED TO SET UP FILEDROP 2x");
     dlksjldjfs;
@@ -31,25 +31,21 @@ var setupFiledrop = function($http, pageStateService) {
         var mime = e.target.result.split(',')[0].substring(5);
         var data = e.target.result.split(',')[1];
         if(file.type.match(/image.*/)){
-          $http.post('/service/saveImage', {mime:mime,base64:data,pageId:pageDetails.page._id,name:file.name})
-            .success(function(filename, status, headers, config) {
-              console.log("INJECTING IMAGE");
+          retryHttp.post(
+            '/service/saveImage',
+            {mime:mime,base64:data,pageId:pageDetails.page._id,name:file.name},
+            function(filename, status, headers, config) {
+              //console.log("INJECTING IMAGE");
               editor.insert("<img src=\"/service/getImage/"+filename+"\"></img>");
-              //TODO: Say success
-            })
-            .error(function(data, status, headers, config) {
-              //TODO: Alert with an error
             });
         } else {
           // Regular attachment
-          $http.post('/service/saveFile', {mime:mime,base64:data,pageId:pageDetails.page._id,name:file.name})
-            .success(function(filename, status, headers, config) {
-              console.log("INJECTING FILE");
+          retryHttp.post(
+            '/service/saveFile',
+            {mime:mime,base64:data,pageId:pageDetails.page._id,name:file.name},
+            function(filename, status, headers, config) {
+              //console.log("INJECTING FILE");
               editor.insert("<a href=\"/service/getFile/"+filename+"\" target=\"_blank\">Download "+file.name+"</a>");
-              //TODO: Say success
-            })
-            .error(function(data, status, headers, config) {
-              //TODO: Alert with an error
             });
         }
       };

@@ -21,7 +21,7 @@ function resizeAce() {
 //listen for changes to the window size and update the ace editor size.
 $(window).resize(resizeAce);
 
-var enableEditMode = function(pageStateService, $http, $timeout) {
+var enableEditMode = function(pageStateService, $timeout) {
   console.log("Enabling edit mode");
 
   editor = ace.edit("editor");
@@ -58,14 +58,14 @@ var enableEditMode = function(pageStateService, $http, $timeout) {
   });
 };
 
-app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', '$anchorScroll', '$location', 'pageStateService', function($scope, $http, $timeout, $sce, $anchorScroll, $location, pageStateService) {
+app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sce', '$anchorScroll', '$location', 'pageStateService', function($scope, retryHttp, $timeout, $sce, $anchorScroll, $location, pageStateService) {
   $scope.query = null;
   $scope.editMode = false;
   $scope.pageMode = null;
 
   // Set up FileDrop once the controller is created.
   $timeout(function() {
-    setupFiledrop($http, pageStateService);
+    setupFiledrop(retryHttp, pageStateService);
   });
 
   // When angular scrolls, ensure that the header does not block the
@@ -78,21 +78,20 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
     }, 100);
   }
 
-  $http.post('/service/recentChangesVisible')
-    .success(function(data, status, headers, config) {
+  retryHttp.post(
+    '/service/recentChangesVisible',
+    null,
+    function(data, status, headers, config) {
       // TODO: Implement this url
       $scope.recentChanges = [
       ];
-    })
-    .error(function(data, status, headers, config) {
-      //TODO: Alert with an error
-      console.log("ERROR");
-      console.log(data);
     });
 
   // Start by fetching the current user
-  $http.post('/service/me')
-    .success(function(data, status, headers, config) {
+  retryHttp.post(
+    '/service/me',
+    null,
+    function(data, status, headers, config) {
       if (data) {
         //TODO: Say success
         pageStateService.set('user',data);
@@ -104,20 +103,15 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
       var pageName = $location.path();
       console.log("PAGE NAME: " + pageName);
       if (pageName && pageName.length>1) {
-        $http.post('/service/pageDetailsByFQN'+pageName)
-          .success(function(data, status, headers, config) {
-            //TODO: Say success
+        retryHttp.post(
+          '/service/pageDetailsByFQN'+pageName,
+          null,
+          function(data, status, headers, config) {
             pageStateService.set('pageDetails',data);
-          })
-          .error(function(data, status, headers, config) {
-            //TODO: Alert with an error
           });
       } else {
         console.log("ON HOME PAGE");
       }
-    })
-    .error(function(data, status, headers, config) {
-      //TODO: Alert with an error
     });
 
   $scope.prettyDate = function(date) {
@@ -213,16 +207,14 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
 
   $scope.restorePageVersion = function(version) {
     var pageDetails = pageStateService.get('pageDetails');
-    $http.post('/service/restorePageVersion', {
-      _id:pageDetails.page._id,
-      version:version
-    })
-      .success(function(data, status, headers, config) {
+    retryHttp.post(
+      '/service/restorePageVersion',
+      {
+        _id:pageDetails.page._id,
+        version:version
+      },
+      function(data, status, headers, config) {
         //TODO: Say success
-      })
-      .error(function(data, status, headers, config) {
-        //TODO: Alert with an error
-        //NOTE: Can error if someone is editing the page you are trying to restore.
       });
   };
 
@@ -279,27 +271,26 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
     }
 
     console.log(pageCopy);
-    $http.post('/service/updatePage',pageCopy)
-      .success(function(data, status, headers, config) {
+    retryHttp.post(
+      '/service/updatePage',
+      pageCopy,
+      function(data, status, headers, config) {
         console.log("UPDATE PAGE RETURN VALUE");
         console.dir(data);
         if (data.page.fullyQualifiedName != pageDetails.page.fullyQualifiedName) {
           console.log("Name/parent changed, redirecting");
-          changePage($http,$location,data.page.fullyQualifiedName,pageStateService,null);
+          changePage(retryHttp,$location,data.page.fullyQualifiedName,pageStateService,null);
         } else {
           // Update page details
           pageStateService.set('pageDetails',data);
           // Close the settings menu
           pageStateService.set('settingsActive',false);
         }
-      })
-      .error(function(data, status, headers, config) {
-        //TODO: Alert with an error
       });
   };
 
   $scope.changePage = function(newPageFQN) {
-    changePage($http,$location,newPageFQN, pageStateService,null);
+    changePage(retryHttp,$location,newPageFQN, pageStateService,null);
   };
 
   $scope.$on('pageStateServiceUpdate', function(event, response) {
@@ -414,11 +405,15 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
     if ($scope.editMode && !pageStateService.get('editMode')) {
       // Leave edit mode
       console.log("LEAVING EDIT MODE");
-      $http.post('/service/savePageDynamicContent/'+$scope.page._id)
-        .success(function(data, status, headers, config) {
+      retryHttp.post(
+        '/service/savePageDynamicContent/'+$scope.page._id,
+        null,
+        function(data, status, headers, config) {
           console.log("SAVED PAGE");
-          $http.post('/service/pageDetailsByFQN'+$location.path())
-            .success(function(data, status, headers, config) {
+          retryHttp.post(
+            '/service/pageDetailsByFQN'+$location.path(),
+            null,
+            function(data, status, headers, config) {
               console.log("GOT PAGE DETAILS FROM HTTP");
               console.log(data);
               pageStateService.set('pageDetails',data);
@@ -433,23 +428,14 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
               }
               pageStateService.set('settingsActive',false);
               $scope.editMode = pageStateService.get('editMode');
-            })
-            .error(function(data, status, headers, config) {
-              console.log("ERROR");
-              console.log(data);
             });
-        })
-        .error(function(data, status, headers, config) {
-          //TODO: Alert with an error
-          console.log("ERROR");
-          console.log(data);
         });
     }
     if (!$scope.editMode && pageStateService.get('editMode')) {
       // Enter edit mode
       $scope.editMode = pageStateService.get('editMode');
       console.log("ENTERING EDIT MODE");
-      enableEditMode(pageStateService,$http,$timeout);
+      enableEditMode(pageStateService,$timeout);
     }
 
     $scope.settingsActive = pageStateService.get('settingsActive');
@@ -457,8 +443,10 @@ app.controller('PageContentController', ['$scope', '$http', '$timeout', '$sce', 
       console.log("UPDATING MARKDOWN");
       console.log(pageDetails);
       console.log(key);
-      $http.post('/service/getTOC/'+pageDetails.page._id)
-        .success(function(data, status, headers, config) {
+      retryHttp.post(
+        '/service/getTOC/'+pageDetails.page._id,
+        null,
+        function(data, status, headers, config) {
           $("#content-markdown").empty();
           var markdownText = null;
           if (data.length>0) {

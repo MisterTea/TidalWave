@@ -1,11 +1,11 @@
-app.controller('NavbarController', ['$scope', '$http', '$modal', 'pageStateService', function($scope, $http, $modal, pageStateService) {
+app.controller('NavbarController', ['$scope', 'retryHttp', '$modal', '$timeout', 'pageStateService', function($scope, retryHttp, $modal, $timeout, pageStateService) {
     $scope.username = "";
     $scope.editMode = pageStateService.get('editMode');
     $scope.projectName = "Tidal Wave";
     $scope.settingsActive = pageStateService.get('settingsActive');
     $scope.page = {};
     $scope.$on('pageStateServiceUpdate', function(event, response) {
-      console.log("Updating settings");
+      console.log("Updating settings: " + pageStateService.get('settingsActive'));
       $scope.settingsActive = pageStateService.get('settingsActive');
       $scope.editMode = pageStateService.get('editMode');
       var pageDetails = pageStateService.get('pageDetails');
@@ -37,19 +37,14 @@ app.controller('NavbarController', ['$scope', '$http', '$modal', 'pageStateServi
         pageStateService.set('pageMode','content');
       } else {
         console.log("Fetching history");
-        $http.post('/service/pageHistory/'+pageStateService.get('pageDetails').page._id)
-          .success(function(data, status, headers, config) {
-            // TODO: Implement this url
+        retryHttp.post(
+          '/service/pageHistory/'+pageStateService.get('pageDetails').page._id,
+          null,
+          function(data, status, headers, config) {
             console.log("GOT HISTORY");
             console.log(data);
             pageStateService.set('history',data);
-          })
-          .error(function(data, status, headers, config) {
-            //TODO: Alert with an error
-            console.log("ERROR");
-            console.log(data);
           });
-
       }
     };
     $scope.toggleSettings = function() {
@@ -57,6 +52,7 @@ app.controller('NavbarController', ['$scope', '$http', '$modal', 'pageStateServi
       pageStateService.set(
         'settingsActive',
         !pageStateService.get('settingsActive'));
+      editor.focus(); //To focus the ace editor (this also fixes the settings highlight)
     };
     $scope.toggleWatch = function() {
       console.log("TOGGLING WATCH");
@@ -80,14 +76,13 @@ app.controller('NavbarController', ['$scope', '$http', '$modal', 'pageStateServi
 
     $scope.saveHTML = function() {
       var pageDetails = pageStateService.get('pageDetails');
-      $http.get('/all.css')
-        .success(function(data, status, headers, config) {
+      retryHttp.get(
+        '/all.css',
+        function(data, status, headers, config) {
           var css = data;
           var htmlPage = "<html><head><style>"+css+"</style></head><body>"+marked(pageDetails.page.content)+"</body></html>";
           var blob = new Blob([htmlPage], {type: "text/plain;charset=utf-8"});
           saveAs(blob, pageDetails.page.name + ".html");
-        })
-        .error(function(data, status, headers, config) {
         });
     };
 
@@ -118,14 +113,11 @@ app.controller('NavbarController', ['$scope', '$http', '$modal', 'pageStateServi
       });
 
       modalInstance.result.then(function () {
-        $http.post('/service/deletePage/'+pageDetails.page._id)
-          .success(function(data, status, headers, config) {
+        retryHttp.post(
+          '/service/deletePage/'+pageDetails.page._id,
+          null,
+          function(data, status, headers, config) {
             window.location='/view/';
-          })
-          .error(function(data, status, headers, config) {
-            //TODO: Alert with an error
-            console.log("ERROR");
-            console.log(data);
           });
       }, function () {
         console.log('Modal dismissed at: ' + new Date());

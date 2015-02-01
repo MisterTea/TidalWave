@@ -1,9 +1,9 @@
-app.controller('SideBarController', ['$scope', '$http', '$location', '$timeout', '$rootScope', '$log', 'pageStateService', 'retryHttp', function($scope, $http, $location, $timeout, $rootScope, $log, pageStateService, retryHttp) {
+app.controller('SideBarController', ['$scope', '$location', '$timeout', '$rootScope', '$log', 'pageStateService', 'retryHttp', function($scope, $location, $timeout, $rootScope, $log, pageStateService, retryHttp) {
   $scope.query = "";
   $scope.selectedPageInTree = function(branch) {
     $log.debug("CLICKED ON");
     $log.debug(branch);
-    changePage($http,$location,branch.fqn,pageStateService,null);
+    changePage(retryHttp,$location,branch.fqn,pageStateService,null);
   };
   $scope.my_data = [];
   $scope.my_tree = {};
@@ -37,7 +37,7 @@ app.controller('SideBarController', ['$scope', '$http', '$location', '$timeout',
             $log.debug("Created page");
             var newPageFQN = data;
             $scope.query = '';
-            changePage($http,$location,newPageFQN,pageStateService, function() {
+            changePage(retryHttp,$location,newPageFQN,pageStateService, function() {
               pageStateService.set('settingsActive', true);
               pageStateService.set('editMode',true);
             });

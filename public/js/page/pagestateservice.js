@@ -1,4 +1,4 @@
-app.service('pageStateService', ['$rootScope', '$http', function($rootScope, $http) {
+app.service('pageStateService', ['$rootScope', 'retryHttp', function($rootScope, retryHttp) {
     var state = {
       settingsActive:false,
       editMode:false,
@@ -21,12 +21,11 @@ app.service('pageStateService', ['$rootScope', '$http', function($rootScope, $ht
     var push = function(key) {
       if (key == 'user') {
         // Push the new user
-        $http.post('/service/updateMe', state[key])
-          .success(function(data, status, headers, config) {
+        retryHttp.post(
+          '/service/updateMe',
+          state[key],
+          function(data, status, headers, config) {
             //TODO: Say success
-          })
-          .error(function(data, status, headers, config) {
-            //TODO: Alert with an error
           });
       }
     };

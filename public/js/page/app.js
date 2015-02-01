@@ -120,7 +120,7 @@ var preprocessDiff = function(allDiffs) {
   return [sourceLines,destLines];
 };
 
-var changePage = function($http,$location,fqn,pageStateService,callback) {
+var changePage = function(retryHttp,$location,fqn,pageStateService,callback) {
   fqn = '/'+fqn;
   if (fqn == $location.path()) {
     return;
@@ -131,17 +131,14 @@ var changePage = function($http,$location,fqn,pageStateService,callback) {
   }
   //window.location = '/view/'+fqn;
   console.log("FQN: " + fqn);
-  $http.post('/service/pageDetailsByFQN'+fqn)
-    .success(function(data, status, headers, config) {
-      //TODO: Say success
+  retryHttp.post(
+    '/service/pageDetailsByFQN'+fqn,
+    null,
+    function(data, status, headers, config) {
       pageStateService.set('pageDetails',data);
       $location.hash('');
       $location.path(fqn);
-    })
-    .error(function(data, status, headers, config) {
-      //TODO: Alert with an error
     });
-
 };
 
 var getParameterByName = function(name) {
