@@ -23,7 +23,7 @@ app.service('retryHttp',['$http','$timeout','alertService',function(
 
     return delayBeforeRetry;
   };
-  
+
   var get = function(url, callback, delayBeforeRetry) {
     $http.get(url)
       .success(function(data, status, headers, config) {
@@ -46,7 +46,7 @@ app.service('retryHttp',['$http','$timeout','alertService',function(
         delayBeforeRetry = backoff(delayBeforeRetry);
 
         $timeout(function() {
-          post(url, callback, delayBeforeRetry);
+          get(url, callback, delayBeforeRetry);
         }, delayBeforeRetry);
       });
   };
@@ -70,7 +70,7 @@ app.service('retryHttp',['$http','$timeout','alertService',function(
         }
 
         delayBeforeRetry = backoff(delayBeforeRetry);
-        
+
         $timeout(function() {
           post(url, form, callback, delayBeforeRetry);
         }, delayBeforeRetry);
