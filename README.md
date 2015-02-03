@@ -26,12 +26,13 @@ documentation on their projects.  [Click to see a demo wiki.](https://tidalwave-
     - Here you can grant permissions to access the page
     - Note that any permissions given to the page will propagate to any children.
 - Code Snippets
-    - Code snippets should be indented, like the following:
+    - Code snippets should be indented or escaped with triple backquotes, like the following:
 
-
+```
     public static void main(String args[]) {
         return 0;
     }
+```
 
 # Contact
 
