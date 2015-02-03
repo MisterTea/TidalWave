@@ -106,20 +106,6 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
         changePage(retryHttp, $location, null, pageStateService, function() {
         });
       }
-      /*
-      var pageName = $location.path();
-      console.log("PAGE NAME: " + pageName);
-      if (pageName && pageName.length>1) {
-        retryHttp.post(
-          '/service/pageDetailsByFQN'+pageName,
-          null,
-          function(data, status, headers, config) {
-            pageStateService.set('pageDetails',data);
-          });
-      } else {
-        console.log("ON HOME PAGE");
-      }
-       */
     });
 
   $scope.prettyDate = function(date) {
