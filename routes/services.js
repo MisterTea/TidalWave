@@ -116,7 +116,7 @@ router.post(
 
     var page = new Page(req.body);
     log.debug({text:"UPDATING PAGE:", page:page});
-    
+
     Page.findById(
       page._id,
       function(err, outerPage) {
@@ -131,7 +131,7 @@ router.post(
             if (success) {
               Page.findByIdAndUpdate(
                 page._id,
-                {$set: 
+                {$set:
                  {name:page.name,
                   parentId:page.parentId,
                   userPermissions:page.userPermissions,
@@ -181,7 +181,7 @@ router.post(
 
     var pageId = req.param('pageId');
     log.debug({text:"DELETING PAGE", pageId:pageId});
-    
+
     Page.findById(
       pageId,
       function(err, page) {
@@ -427,7 +427,7 @@ router.post(
               }
             });
           };
-          
+
           var innerPage = new Page({name:pageName,parentId:parentId,content:'',userPermissions:[req.user._id]});
           if (parentId) {
             Page.findById(parentId, function(err, parentPage) {
@@ -543,7 +543,7 @@ router.post(
             filtered: {
               filter: userPermissionFilter(req.user),
               query: {
-                match_phrase_prefix: {        
+                match_phrase_prefix: {
                   content: {
                     query:'"'+content+'"',
                     prefix_length:3,

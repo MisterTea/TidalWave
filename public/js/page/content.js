@@ -103,6 +103,13 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
       var pageName = $location.path();
       console.log("PAGE NAME: " + pageName);
       if (pageName && pageName.length>1) {
+        changePage(retryHttp, $location, null, pageStateService, function() {
+        });
+      }
+      /*
+      var pageName = $location.path();
+      console.log("PAGE NAME: " + pageName);
+      if (pageName && pageName.length>1) {
         retryHttp.post(
           '/service/pageDetailsByFQN'+pageName,
           null,
@@ -112,6 +119,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
       } else {
         console.log("ON HOME PAGE");
       }
+       */
     });
 
   $scope.prettyDate = function(date) {

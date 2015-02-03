@@ -120,10 +120,15 @@ var preprocessDiff = function(allDiffs) {
   return [sourceLines,destLines];
 };
 
+// Setting fqn==null will load the curent page
 var changePage = function(retryHttp,$location,fqn,pageStateService,callback) {
-  fqn = '/'+fqn;
-  if (fqn == $location.path()) {
-    return;
+  if (fqn) {
+    fqn = '/'+fqn;
+    if (fqn == $location.path()) {
+      return;
+    }
+  } else {
+    fqn = $location.path();
   }
   if (pageStateService.get('editMode')) {
     console.log("Tried to change pages while in edit mode.");
@@ -136,6 +141,19 @@ var changePage = function(retryHttp,$location,fqn,pageStateService,callback) {
     null,
     function(data, status, headers, config) {
       pageStateService.set('pageDetails',data);
+      $location.hash('');
+      $location.path(fqn);
+      if (callback) {
+        callback();
+      }
+    },
+    function(data, status, headers, config) {
+      if (status == 403) {
+        console.log("Permission denied");
+      }
+      if (status == 404) {
+        console.log("Unknown page");
+      }
       $location.hash('');
       $location.path(fqn);
     });

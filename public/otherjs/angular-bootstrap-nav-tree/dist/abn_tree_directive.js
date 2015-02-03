@@ -289,6 +289,14 @@
                   }
                 });
               };
+              tree.select_branch_by_field = function(field, name) {
+                for_each_branch(function(b) {
+                  if (b[field] == name) {
+                    select_branch(b);
+                    b.expanded=true;
+                  }
+                });
+              };
               tree.get_children = function(b) {
                 return b.children;
               };

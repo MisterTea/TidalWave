@@ -24,33 +24,37 @@ app.service('retryHttp',['$http','$timeout','alertService',function(
     return delayBeforeRetry;
   };
 
-  var get = function(url, callback, delayBeforeRetry) {
+  var get = function(url, callback, errorCallback, delayBeforeRetry) {
     $http.get(url)
       .success(function(data, status, headers, config) {
         callback(data,status,headers,config);
       })
       .error(function(data, status, headers, config) {
         if (data.ret_code != 408) {
-          // Not a timeout, bail.
-          logError({
-            message:headers,
-            cause:status,
-            context:navigator.userAgent,
-            stack:printStackTrace(),
-            location:window.location,
-            performance:window.performance
-          });
+          if (errorCallback) {
+            errorCallback(data, status, headers, config);
+          } else {
+            // Not a timeout, bail.
+            logError({
+              message:headers,
+              cause:status,
+              context:navigator.userAgent,
+              stack:printStackTrace(),
+              location:window.location,
+              performance:window.performance
+            });
+          }
           return;
         }
 
         delayBeforeRetry = backoff(delayBeforeRetry);
 
         $timeout(function() {
-          get(url, callback, delayBeforeRetry);
+          get(url, callback, errorCallback, delayBeforeRetry);
         }, delayBeforeRetry);
       });
   };
-  var post = function(url, form, callback, delayBeforeRetry) {
+  var post = function(url, form, callback, errorCallback, delayBeforeRetry) {
     $http.post(url,form)
       .success(function(data, status, headers, config) {
         callback(data,status,headers,config);
@@ -58,21 +62,25 @@ app.service('retryHttp',['$http','$timeout','alertService',function(
       .error(function(data, status, headers, config) {
         if (status != 0) {
           // Not a timeout, bail.
-          logError({
-            message:headers,
-            cause:status,
-            context:navigator.userAgent,
-            stack:printStackTrace(),
-            location:window.location,
-            performance:window.performance
-          });
+          if (errorCallback) {
+            errorCallback(data, status, headers, config);
+          } else {
+            logError({
+              message:headers,
+              cause:status,
+              context:navigator.userAgent,
+              stack:printStackTrace(),
+              location:window.location,
+              performance:window.performance
+            });
+          }
           return;
         }
 
         delayBeforeRetry = backoff(delayBeforeRetry);
 
         $timeout(function() {
-          post(url, form, callback, delayBeforeRetry);
+          post(url, form, callback, errorCallback, delayBeforeRetry);
         }, delayBeforeRetry);
       });
   };

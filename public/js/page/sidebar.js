@@ -156,11 +156,8 @@ app.controller('SideBarController', ['$scope', '$location', '$timeout', '$rootSc
               $scope.lastData = _.cloneDeep(nextData);
               $scope.my_data = nextData;
               $timeout(function() {
-                var pageDetails = pageStateService.get('pageDetails');
-                if (pageDetails) {
-                  $log.debug("Selecting branch " + pageDetails.page.name);
-                  $scope.my_tree.select_branch_by_name(pageDetails.page.name);
-                }
+                $log.debug("Selecting branch " + $location.path());
+                $scope.my_tree.select_branch_by_field('fqn', $location.path());
               });
             } else {
               $log.debug("menu hasn't changed");
