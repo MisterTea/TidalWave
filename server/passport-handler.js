@@ -104,7 +104,7 @@ exports.init = function(app) {
     }
 
     passport.authenticate('local', function(err, user, info) {
-      if (err) { 
+      if (err) {
         next(err);
         return;
       }
@@ -124,8 +124,10 @@ exports.init = function(app) {
     })(req, res, next);
   });
   app.get('/logout', function(req, res){
-    req.logout();
-    res.redirect('/');
+    req.logOut();
+    req.session.destroy(function(err) {
+      res.redirect('/');
+    });
   });
   app.get('/register', function(req, res){
     res.render(
@@ -169,7 +171,7 @@ exports.init = function(app) {
         req.body.username = req.body.email;
 
         passport.authenticate('local', function(err, user, info) {
-          if (err) { 
+          if (err) {
             log.error({message:"DB error"});
             res.status(500).end();
             return;
