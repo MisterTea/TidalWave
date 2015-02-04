@@ -442,7 +442,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
     }
 
     $scope.settingsActive = pageStateService.get('settingsActive');
-    if ((key == 'editMode' || key == 'pageDetails') && pageDetails && typeof pageDetails.page.content != undefined) {
+    if ((key == 'user' || key == 'editMode' || key == 'pageDetails') && pageDetails && typeof pageDetails.page.content != undefined) {
       console.log("UPDATING MARKDOWN");
       console.log(pageDetails);
       console.log(key);
@@ -464,8 +464,14 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
             }, 100);
           });
       } else {
-        $("#content-markdown").empty();
-        $("#content-markdown").append(marked("Sorry, you do not have access to this page."));
+        var user = pageStateService.get('user');
+        if (user) {
+          $("#content-markdown").empty();
+          $("#content-markdown").append(marked("Sorry, you do not have access to this page."));
+        } else {
+          $("#content-markdown").empty();
+          $("#content-markdown").append(marked("Sorry, you do not have access to this page.\n\nMaybe you need to [login](/login#/?redirect="+escape("/view#"+$location.path()+"#"+$location.hash())+")?"));
+        }
       }
     }
   });
