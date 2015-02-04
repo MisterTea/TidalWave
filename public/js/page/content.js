@@ -350,14 +350,24 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
       }
       $scope.version = pageDetails?pageDetails.version:null;
       $scope.lastAncestorName = '';
-      var ancestry = $scope.ancestry = pageDetails.ancestry.slice();
+      var ancestry = pageDetails.page.fullyQualifiedName.split('/');
+      // Remove the page itself from the ancestry
+      ancestry.pop();
+      console.log("ANCESTRY");
+      console.dir($scope.ancestry);
+      console.dir(pageDetails.page.fullyQualifiedName.split('/'));
+
+      $scope.ancestry = [];
+      var fqn='';
+      for (var i=0;i<ancestry.length;i++) {
+        fqn = fqn + ancestry[i];
+        $scope.ancestry.push({fqn:fqn,name:ancestry[i]});
+        fqn = fqn + '/';
+      }
 
       if ($scope.page) {
         $scope.isPublic = $scope.page.isPublic;
       }
-
-      // Remove the page itself from the ancestry
-      ancestry.pop();
 
       console.log(ancestry);
       if (ancestry && ancestry.length>0) {
@@ -366,7 +376,6 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
         parentList.addOption({_id:parent._id, name:parent.name});
         parentList.setValue(parent._id);
       } else {
-        console.log("CLEARING PARENT");
         parentList.clearOptions();
         parentList.setValue(null);
       }
@@ -437,22 +446,27 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
       console.log("UPDATING MARKDOWN");
       console.log(pageDetails);
       console.log(key);
-      retryHttp.post(
-        '/service/getTOC/'+pageDetails.page._id,
-        null,
-        function(data, status, headers, config) {
-          $("#content-markdown").empty();
-          var markdownText = null;
-          if (data.length>0) {
-            markdownText = marked("<div class=\"well well-lg\" style=\"display: inline-block;\"><h4>Table of Contents</h4>\n" + data.replace(/#/g,'#'+$location.path()+'#') + "\n</div><br />\n" + pageDetails.page.content);
-          } else {
-            markdownText = marked(pageDetails.page.content);
-          }
-          $("#content-markdown").append($.parseHTML(markdownText));
-          $timeout(function(){
-            $anchorScroll();
-          }, 100);
-        });
+      if (pageDetails.viewable) {
+        retryHttp.post(
+          '/service/getTOC/'+pageDetails.page._id,
+          null,
+          function(data, status, headers, config) {
+            $("#content-markdown").empty();
+            var markdownText = null;
+            if (data.length>0) {
+              markdownText = marked("<div class=\"well well-lg\" style=\"display: inline-block;\"><h4>Table of Contents</h4>\n" + data.replace(/#/g,'#'+$location.path()+'#') + "\n</div><br />\n" + pageDetails.page.content);
+            } else {
+              markdownText = marked(pageDetails.page.content);
+            }
+            $("#content-markdown").append($.parseHTML(markdownText));
+            $timeout(function(){
+              $anchorScroll();
+            }, 100);
+          });
+      } else {
+        $("#content-markdown").empty();
+        $("#content-markdown").append(marked("Sorry, you do not have access to this page."));
+      }
     }
   });
 }]);

@@ -148,11 +148,9 @@ var changePage = function(retryHttp,$location,fqn,pageStateService,callback) {
       }
     },
     function(data, status, headers, config) {
-      if (status == 403) {
-        console.log("Permission denied");
-      }
       if (status == 404) {
         console.log("Unknown page");
+        window.location = '/view';
       }
       $location.hash('');
       $location.path(fqn);

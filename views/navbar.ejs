@@ -53,7 +53,7 @@
           </ul>
         </li>
         <li ng-show="editMode"><a href="" ng-click="toggleEditMode()">Finish Editing</a></li>
-        <li id="edit-list-item" ng-show="!editMode && username"><a href="" ng-click="toggleEditMode()">Edit</a></li>
+        <li id="edit-list-item" ng-show="!editMode && username && editable"><a href="" ng-click="toggleEditMode()">Edit</a></li>
         <li ng-show="editMode" ng-class="settingsActive?'active':''">
           <a href="" ng-click="toggleSettings()">Settings</a>
         </li>

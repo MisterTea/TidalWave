@@ -249,69 +249,67 @@ router.post(
 );
 
 var fetchPageDetailsForPage = function(page, success, failure) {
-  Hierarchy.getAncestry(page, function(ancestry) {
-    var pageDetails = {
-      page:page,
-      ancestry:ancestry,
-      version:null,
-      content:page.content,
-      userPermissions:[],
-      groupPermissions:[],
-      derivedUserPermissions:[],
-      derivedGroupPermissions:[]
-    };
-    // Get all users on the permissions list
-    User.find(
-      {'_id': { $in: page.userPermissions }},
-      function(err,users) {
-        if (err) {
-          failure(err);
-          return;
-        }
-        for (var i=0;i<users.length;i++) {
-          pageDetails.userPermissions.push(users[i]);
-        }
+  var pageDetails = {
+    page:page,
+    version:null,
+    userPermissions:[],
+    groupPermissions:[],
+    derivedUserPermissions:[],
+    derivedGroupPermissions:[],
+    editable:true,
+    viewable:true
+  };
+  // Get all users on the permissions list
+  User.find(
+    {'_id': { $in: page.userPermissions }},
+    function(err,users) {
+      if (err) {
+        failure(err);
+        return;
+      }
+      for (var i=0;i<users.length;i++) {
+        pageDetails.userPermissions.push(users[i]);
+      }
 
-        // Get all groups on the permissions list
-        Group.find(
-          {'_id': { $in: page.groupPermissions }},
-          function(err, groups) {
-            if (err) {
-              failure(err);
-              return;
-            }
-            for (var j=0;j<groups.length;j++) {
-              pageDetails.groupPermissions.push(groups[j]);
-            }
+      // Get all groups on the permissions list
+      Group.find(
+        {'_id': { $in: page.groupPermissions }},
+        function(err, groups) {
+          if (err) {
+            failure(err);
+            return;
+          }
+          for (var j=0;j<groups.length;j++) {
+            pageDetails.groupPermissions.push(groups[j]);
+          }
 
-            // Get all derived user & group permissions
-            User.find(
-              {'_id': { $in: page.derivedUserPermissions }},
-              function(err,users) {
-                if (err) {
-                  failure(err);
-                  return;
-                }
-                for (var i=0;i<users.length;i++) {
-                  pageDetails.derivedUserPermissions.push(users[i]);
-                }
+          // Get all derived user & group permissions
+          User.find(
+            {'_id': { $in: page.derivedUserPermissions }},
+            function(err,users) {
+              if (err) {
+                failure(err);
+                return;
+              }
+              for (var i=0;i<users.length;i++) {
+                pageDetails.derivedUserPermissions.push(users[i]);
+              }
 
-                Group.find(
-                  {'_id': { $in: page.derivedGroupPermissions }},
-                  function(err, groups) {
-                    if (err) {
-                      failure(err);
-                      return;
-                    }
-                    for (var j=0;j<groups.length;j++) {
-                      pageDetails.derivedGroupPermissions.push(groups[j]);
-                    }
-                    success(pageDetails);
-                  });
-              });
-          });
-      });
-  });
+              Group.find(
+                {'_id': { $in: page.derivedGroupPermissions }},
+                function(err, groups) {
+                  if (err) {
+                    failure(err);
+                    return;
+                  }
+                  for (var j=0;j<groups.length;j++) {
+                    pageDetails.derivedGroupPermissions.push(groups[j]);
+                  }
+                  success(pageDetails);
+                });
+            });
+        });
+    });
 };
 
 router.post(
@@ -340,7 +338,18 @@ router.post(
             }
 
             if (permissionPage) {
-              res.status(403).end();
+              fetchPageDetailsForPage(
+                permissionPage,
+                function(permissionPageDetails) {
+                  permissionPageDetails.page.content = null;
+                  permissionPageDetails.editable = false;
+                  permissionPageDetails.viewable = false;
+                  res.status(200).type("application/json").send(JSON.stringify(permissionPageDetails));
+                },
+                function(error) {
+                  log.error(error);
+                  res.status(500).end();
+                });
             } else {
               res.status(404).end();
             }
