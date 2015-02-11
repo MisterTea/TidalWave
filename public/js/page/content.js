@@ -21,6 +21,9 @@ function resizeAce() {
 //listen for changes to the window size and update the ace editor size.
 $(window).resize(resizeAce);
 
+var lastDocumentChangeTime = 0;
+var nextDocumentChangeTime = 0;
+
 var enableEditMode = function(pageStateService, $timeout) {
   console.log("Enabling edit mode");
 
@@ -49,9 +52,18 @@ var enableEditMode = function(pageStateService, $timeout) {
     if (!doc.type) doc.create('text');
     if (doc.type && doc.type.name === 'text') {
       doc.attachAce(editor, false, function(change) {
-        $("#content-markdown").empty();
-        var markdownText = marked(editor.getSession().getDocument().getValue());
-        $("#content-markdown").append($.parseHTML(markdownText));
+        nextDocumentChangeTime = Date.now()+990;
+        $timeout(function() {
+          // About every second or when there are no future changes,
+          // update the document.
+          if (lastDocumentChangeTime+1000 <= Date.now() ||
+             nextDocumentChangeTime <= Date.now()) {
+            lastDocumentChangeTime = Date.now();
+            $("#content-markdown").empty();
+            var markdownText = marked(editor.getSession().getDocument().getValue());
+            $("#content-markdown").append($.parseHTML(markdownText));
+          }
+        }, 1000);
       });
       editor.focus();
     }
