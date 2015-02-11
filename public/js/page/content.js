@@ -273,7 +273,11 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
         console.dir(data);
         if (data.page.fullyQualifiedName != pageDetails.page.fullyQualifiedName) {
           console.log("Name/parent changed, redirecting");
-          changePage(retryHttp,$location,data.page.fullyQualifiedName,pageStateService,null);
+          //changePage(retryHttp,$location,data.page.fullyQualifiedName,pageStateService,null);
+
+          // When this happens, do a complete refresh of the page
+          window.location = '/view#/'+encodeURI(data.page.fullyQualifiedName);
+          window.location.reload(true);
         } else {
           // Update page details
           pageStateService.set('pageDetails',data);
@@ -353,9 +357,6 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
       var ancestry = pageDetails.page.fullyQualifiedName.split('/');
       // Remove the page itself from the ancestry
       ancestry.pop();
-      console.log("ANCESTRY");
-      console.dir($scope.ancestry);
-      console.dir(pageDetails.page.fullyQualifiedName.split('/'));
 
       $scope.ancestry = [];
       var fqn='';
@@ -364,6 +365,9 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
         $scope.ancestry.push({fqn:fqn,name:ancestry[i]});
         fqn = fqn + '/';
       }
+      console.log("ANCESTRY");
+      console.dir($scope.ancestry);
+      console.dir(pageDetails.page.fullyQualifiedName.split('/'));
 
       if ($scope.page) {
         $scope.isPublic = $scope.page.isPublic;
@@ -372,9 +376,11 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
       console.log(ancestry);
       if (ancestry && ancestry.length>0) {
         var parent = ancestry[ancestry.length-1];
+        console.log("PARENT");
+        console.log(parent);
         parentList.clearOptions();
-        parentList.addOption({_id:parent._id, name:parent.name});
-        parentList.setValue(parent._id);
+        parentList.addOption({_id:pageDetails.page.parentId, name:parent});
+        parentList.setValue(pageDetails.page.parentId);
       } else {
         parentList.clearOptions();
         parentList.setValue(null);
