@@ -1,9 +1,12 @@
+var fs = require('fs');
+
 var express = require('express');
 var Hierarchy = require('../server/hierarchy');
 var AuthHelper = require('../server/auth-helper');
 var LiveSync = require('../server/livesync');
 var toc = require('marked-toc');
 var _ = require('lodash');
+var options = require('../server/options-handler').options;
 
 var SearchHandler = require('../server/search-handler');
 var log = require('../server/logger').log;
@@ -625,14 +628,26 @@ router.post(
       base64:imageData.base64,
       data:new Buffer(imageData.base64, 'base64'),
       mime:imageData.mime,
-      name:uniqueName});
+      name:uniqueName,
+      filename:imageData.name});
 
-    image.save(function (err) {
-      if (err) {
-        res.status(500).end();
-      }
-      res.status(200).type("text/plain").send(uniqueName);
-    });
+    if (options.database.saveMediaToDb) {
+      image.save(function (err) {
+        if (err) {
+          res.status(500).end();
+          return;
+        }
+        res.status(200).type("text/plain").send(uniqueName);
+      });
+    } else {
+      fs.writeFile('usermedia/'+uniqueName, JSON.stringify(image), function(err) {
+        if (err) {
+          res.status(500).end();
+          return;
+        }
+        res.status(200).type("text/plain").send(uniqueName);
+      });
+    }
   });
 
 router.get(
@@ -642,27 +657,59 @@ router.get(
     console.log("Getting image with name " + name);
 
     var pageId = name.split('_')[0];
-    queryPermissionWrapper(
-      Page.findById(pageId), req.user)
-      .exec(function(err, page) {
+    if (options.database.saveMediaToDb) {
+      queryPermissionWrapper(
+        Page.findById(pageId), req.user)
+        .exec(function(err, page) {
+          if (err) {
+            res.status(500).end();
+            return;
+          }
+          if (!page) {
+            res.status(403).end();
+          }
+
+          Image.find({name:name}, function(err,results) {
+            if (results.length>1) {
+              res.status(500).end();
+            } else if(results.length==0) {
+              res.status(404).end();
+            }
+            var image = results[0];
+            res.setHeader('Content-disposition', 'attachment; filename='+image.filename);
+            res.status(200).type(image.mime).send(image.data);
+          });
+        });
+    } else {
+      Page.findById(pageId, function(err, page) {
         if (err) {
           res.status(500).end();
           return;
         }
         if (!page) {
-          res.status(403).end();
+          res.status(404).end();
+          return;
         }
-
-        Image.find({name:name}, function(err,results) {
-          if (results.length>1) {
-            res.status(500).end();
-          } else if(results.length==0) {
-            res.status(404).end();
+        AuthHelper.userCanAccessPage(req.user, page, function(canAccess) {
+          if (!canAccess) {
+            res.status(403).end();
+            return;
           }
-          var image = results[0];
-          res.status(200).type(image.mime).send(image.data);
+
+          fs.readFile('usermedia/'+name, function(err, data) {
+            if (err) {
+              res.status(500).end();
+              return;
+            }
+            var image = JSON.parse(data);
+            // Note that image.data didn't survive going to JSON and back.
+            res.setHeader('Content-disposition', 'attachment; filename='+image.filename);
+            res.status(200).type(image.mime).send(new Buffer(image.base64, 'base64'));
+          });
+
         });
       });
+    }
   });
 
 router.post(
@@ -681,16 +728,27 @@ router.post(
       base64:fileDataJson.base64,
       data:new Buffer(fileDataJson.base64, 'base64'),
       mime:fileDataJson.mime,
-      name:uniqueName});
+      name:uniqueName,
+      filename:fileDataJson.name});
 
-    fileData.save(function (err) {
-      if (err) {
-        console.dir(err);
-        log.error({error:err});
-        res.status(500).end();
-      }
-      res.status(200).type("text/plain").send(uniqueName);
-    });
+    if (options.database.saveMediaToDb) {
+      fileData.save(function (err) {
+        if (err) {
+          console.dir(err);
+          log.error({error:err});
+          res.status(500).end();
+        }
+        res.status(200).type("text/plain").send(uniqueName);
+      });
+    } else {
+      fs.writeFile('usermedia/'+uniqueName, JSON.stringify(fileData), function(err) {
+        if (err) {
+          res.status(500).end();
+          return;
+        }
+        res.status(200).type("text/plain").send(uniqueName);
+      });
+    }
   });
 
 router.get(
@@ -700,27 +758,60 @@ router.get(
     console.log("Getting file with name " + name);
 
     var pageId = name.split('_')[0];
-    queryPermissionWrapper(
-      Page.findById(pageId), req.user)
-      .exec(function(err, page) {
+    if (options.database.saveMediaToDb) {
+      queryPermissionWrapper(
+        Page.findById(pageId), req.user)
+        .exec(function(err, page) {
+          if (err) {
+            res.status(500).end();
+            return;
+          }
+          if (!page) {
+            res.status(403).end();
+          }
+
+          FileData.find({name:name}, function(err,results) {
+            if (results.length>1) {
+              res.status(500).end();
+            } else if(results.length==0) {
+              res.status(404).end();
+            }
+            var file = results[0];
+            res.setHeader('Content-disposition', 'attachment; filename='+file.filename);
+            res.status(200).type(file.mime).send(file.data);
+          });
+        });
+    } else {
+      Page.findById(pageId, function(err, page) {
         if (err) {
           res.status(500).end();
           return;
         }
         if (!page) {
-          res.status(403).end();
+          res.status(404).end();
+          return;
         }
-
-        FileData.find({name:name}, function(err,results) {
-          if (results.length>1) {
-            res.status(500).end();
-          } else if(results.length==0) {
-            res.status(404).end();
+        AuthHelper.userCanAccessPage(req.user, page, function(canAccess) {
+          if (!canAccess) {
+            res.status(403).end();
+            return;
           }
-          var file = results[0];
-          res.status(200).type(file.mime).send(file.data);
+
+          fs.readFile('usermedia/'+name, function(err, data) {
+            if (err) {
+              res.status(500).end();
+              return;
+            }
+            var fileData = JSON.parse(data);
+            // Note that fileData.data didn't survive going to JSON and back.
+            res.setHeader('Content-disposition', 'attachment; filename='+fileData.filename);
+            res.status(200).type(fileData.mime).send(new Buffer(fileData.base64, 'base64'));
+          });
+
         });
       });
+    }
+
   });
 
 router.post(

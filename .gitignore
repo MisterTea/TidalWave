@@ -12,6 +12,7 @@ pids
 logs
 results
 outputlog*
+usermedia/*
 
 npm-debug.log
 node_modules

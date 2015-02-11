@@ -28,7 +28,7 @@ var isObjectIdArray = function(n) {
     // Allow null/undefined
     return true;
   }
-  
+
   if (!Array.isArray(n)) {
     return false;
   }
@@ -93,7 +93,8 @@ var ImageSchema = mongoose.Schema({
   data: {type:Buffer, required:true},
   base64: {type:String, required:true},
   mime: {type:String, required:true, index:true},
-  name: {type:String, required:true, unique:true, index:true}
+  name: {type:String, required:true, unique:true, index:true},
+  filename: {type:String, required:true, index:true}
 });
 exports.Image = mongoose.model("Image",ImageSchema);
 
@@ -101,7 +102,8 @@ var FileDataSchema = mongoose.Schema({
   data: {type:Buffer, required:true},
   base64: {type:String, required:true},
   mime: {type:String, required:true, index:true},
-  name: {type:String, required:true, unique:true, index:true}
+  name: {type:String, required:true, unique:true, index:true},
+  filename: {type:String, required:true, index:true}
 });
 exports.FileData = mongoose.model("FileData",FileDataSchema);
 
@@ -176,7 +178,7 @@ var updateChildrenFullyQualifiedName = function(page, callback) {
         updateChildrenFullyQualifiedName(pages[onUpdate],iterate);
       });
     }
-  });  
+  });
 };
 
 // Sanitize the database.
@@ -199,7 +201,7 @@ exports.sanitize = function() {
         });
       }
     };
-    
+
     if (onPage == pages.length) {
       return;
     }

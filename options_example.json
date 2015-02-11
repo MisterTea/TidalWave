@@ -5,7 +5,8 @@
   },
   "database":{
     "debug":true,
-    "uri":"mongodb://localhost/tidalwave"
+    "uri":"mongodb://localhost/tidalwave",
+    "saveMediaToDb":false
   },
   "elasticsearch":{
     "enable":false,
