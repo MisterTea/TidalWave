@@ -14,7 +14,7 @@ var log = require('./logger').log;
 //   the request will proceed.  Otherwise, the user will be redirected to the
 //   login page.
 exports.ensureAuthenticated = function(req, res, next) {
-  if (req.isAuthenticated()) { 
+  if (req.isAuthenticated()) {
     next();
     return;
   }
@@ -54,6 +54,11 @@ var userCanAccessPage = null;
 exports.userCanAccessPage = userCanAccessPage = function(user,page,callback) {
   if (page.isPublic) {
     callback(true);
+    return;
+  }
+
+  if (!user) {
+    callback(false);
     return;
   }
 
@@ -143,5 +148,3 @@ var updateChildrenDerivedPermissions = exports.updateChildrenDerivedPermissions 
     }
   });
 };
-
-
