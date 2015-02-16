@@ -696,17 +696,23 @@ router.get(
             return;
           }
 
-          fs.readFile('usermedia/'+name, function(err, data) {
-            if (err) {
-              res.status(500).end();
+          var path = 'usermedia/'+name;
+          fs.exists(path, function(exists) {
+            if (!exists) {
+              res.status(404).end();
               return;
             }
-            var image = JSON.parse(data);
-            // Note that image.data didn't survive going to JSON and back.
-            res.setHeader('Content-disposition', 'attachment; filename='+image.filename);
-            res.status(200).type(image.mime).send(new Buffer(image.base64, 'base64'));
+            fs.readFile(path, function(err, data) {
+              if (err) {
+                res.status(500).end();
+                return;
+              }
+              var image = JSON.parse(data);
+              // Note that image.data didn't survive going to JSON and back.
+              res.setHeader('Content-disposition', 'attachment; filename='+image.filename);
+              res.status(200).type(image.mime).send(new Buffer(image.base64, 'base64'));
+            });
           });
-
         });
       });
     }
@@ -797,17 +803,23 @@ router.get(
             return;
           }
 
-          fs.readFile('usermedia/'+name, function(err, data) {
-            if (err) {
-              res.status(500).end();
+          var path = 'usermedia/'+name;
+          fs.exists(path, function(exists) {
+            if (!exists) {
+              res.status(404).end();
               return;
             }
-            var fileData = JSON.parse(data);
-            // Note that fileData.data didn't survive going to JSON and back.
-            res.setHeader('Content-disposition', 'attachment; filename='+fileData.filename);
-            res.status(200).type(fileData.mime).send(new Buffer(fileData.base64, 'base64'));
+            fs.readFile(path, function(err, data) {
+              if (err) {
+                res.status(500).end();
+                return;
+              }
+              var fileData = JSON.parse(data);
+              // Note that fileData.data didn't survive going to JSON and back.
+              res.setHeader('Content-disposition', 'attachment; filename='+fileData.filename);
+              res.status(200).type(fileData.mime).send(new Buffer(fileData.base64, 'base64'));
+            });
           });
-
         });
       });
     }
