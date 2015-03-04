@@ -32,6 +32,7 @@ var enableEditMode = function(pageStateService, $timeout) {
     resizeAce();
   },1);
   editor.setReadOnly(true);
+  editor.setOption("spellcheck", true);
   editor.setValue("Loading...");
   editor.getSession().setUseWrapMode(true); // lines should wrap
   //editor.setTheme("ace/theme/monokai");
@@ -48,6 +49,7 @@ var enableEditMode = function(pageStateService, $timeout) {
   doc.whenReady(function () {
     console.log("SHAREJS IS READY");
     editor.setReadOnly(false);
+    editor.setOption("spellcheck", true);
     console.log(doc);
     if (!doc.type) doc.create('text');
     if (doc.type && doc.type.name === 'text') {
@@ -295,6 +297,10 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
           pageStateService.set('pageDetails',data);
           // Close the settings menu
           pageStateService.set('settingsActive',false);
+          // Wait a little and then make sure editor is the right size
+          $timeout(function() {
+            resizeAce();
+          },1);
         }
       });
   };
