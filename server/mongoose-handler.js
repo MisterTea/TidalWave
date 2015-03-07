@@ -1,6 +1,5 @@
 var mongoose = require('mongoose');
 var log = require('./logger').log;
-var process = require('process');
 
 var options = require('./options-handler').options;
 
@@ -9,7 +8,9 @@ exports.init = function(callback) {
   var db = mongoose.connection;
   db.on('error', function(err) {
     log.error(err);
-    process.exit(1);
+    setTimeout(function() {
+      process.exit(1);
+    }, 1000);
   });
   db.once('open', callback);
 };
