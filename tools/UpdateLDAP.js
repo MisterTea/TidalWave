@@ -12,6 +12,8 @@ var Group = model.Group;
 
 var options = require('../server/options-handler').options;
 
+var mongooseHandler = require('../server/mongoose-handler');
+
 var extractor = require('./LDAPExtractor');
 
 var LDAPEntryToUser = extractor.LDAPEntryToUser;
@@ -104,7 +106,7 @@ var fetchGroups = function(successCallback,errorCallback) {
         if (!group) {
           return;
         }
-        
+
         var groupName = group.name;
         var userlist = group.userlist;
         groupNames.push(groupName);
@@ -173,16 +175,13 @@ var getUsersAndGroups = function(success,failure) {
     });
 };
 
-mongoose.connect('mongodb://localhost/tidalwave');
-var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', function callback () {
+mongooseHandler.init(function callback () {
   getUsersAndGroups(function (userIdMap,groupList) {
     var groupNameMap = {};
     for (var a=0;a<groupList.length;a++) {
       groupNameMap[groupList[a]] = groupList[a];
     }
-    
+
     var groupNameIdMap = {};
 
     // This runs after update groups (below)
@@ -208,7 +207,7 @@ db.once('open', function callback () {
         .exec(function(err, results){
           var usersToUpdate = [];
           var usersToRemove = [];
-      
+
           console.log("UPDATING USERS: " + results.length);
           for (var a=0;a<results.length;a++) {
             var user = results[a];
@@ -273,7 +272,7 @@ db.once('open', function callback () {
               callback();
             }
           };
-          
+
           var usersToSave = [];
           var userCount=0;
           for (var userId in userIdMap) {
@@ -370,4 +369,3 @@ db.once('open', function callback () {
     assert.ifError(err);
   });
 });
-
