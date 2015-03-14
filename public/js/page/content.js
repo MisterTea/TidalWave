@@ -8,7 +8,7 @@ var groupPermissionList = null;
 
 // Helper function to resize the ace editor as the window size changes.
 function resizeAce() {
-  if($('#editor').is(":visible")) {
+  if(editor) {
     $('#editor').height($(window).height() - 130);
     $('#content').height($(window).height() - 130);
     $('#content').css("overflow-y","scroll");
@@ -430,33 +430,6 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
     }
 
     if ($scope.editMode && !pageStateService.get('editMode')) {
-      // Leave edit mode
-      console.log("LEAVING EDIT MODE");
-      retryHttp.post(
-        '/service/savePageDynamicContent/'+$scope.page._id,
-        null,
-        function(data, status, headers, config) {
-          console.log("SAVED PAGE");
-          retryHttp.post(
-            '/service/pageDetailsByFQN'+$location.path(),
-            null,
-            function(data, status, headers, config) {
-              console.log("GOT PAGE DETAILS FROM HTTP");
-              console.log(data);
-              pageStateService.set('pageDetails',data);
-              editor = null;
-              $timeout(function() {
-                resizeAce();
-              },1);
-              if (doc) {
-                doc.destroy();
-                connection.disconnect();
-                doc = socket = connection = null;
-              }
-              pageStateService.set('settingsActive',false);
-              $scope.editMode = pageStateService.get('editMode');
-            });
-        });
     }
     if (!$scope.editMode && pageStateService.get('editMode')) {
       // Enter edit mode
@@ -498,5 +471,36 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
         }
       }
     }
+  });
+
+  $scope.$on('finishedEditMode', function(event, response) {
+    // Leave edit mode
+    console.log("LEAVING EDIT MODE");
+    retryHttp.post(
+      '/service/savePageDynamicContent/'+$scope.page._id,
+      null,
+      function(data, status, headers, config) {
+        console.log("SAVED PAGE");
+        retryHttp.post(
+          '/service/pageDetailsByFQN'+$location.path(),
+          null,
+          function(data, status, headers, config) {
+            console.log("GOT PAGE DETAILS FROM HTTP");
+            console.log(data);
+            pageStateService.set('pageDetails',data);
+            editor = null;
+            $timeout(function() {
+              resizeAce();
+              pageStateService.set('editMode', false);
+              $scope.editMode = false;
+            },1);
+            if (doc) {
+              doc.destroy();
+              connection.disconnect();
+              doc = socket = connection = null;
+            }
+            pageStateService.set('settingsActive',false);
+          });
+      });
   });
 }]);

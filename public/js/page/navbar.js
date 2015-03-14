@@ -1,4 +1,4 @@
-app.controller('NavbarController', ['$scope', 'retryHttp', '$modal', '$timeout', 'pageStateService', function($scope, retryHttp, $modal, $timeout, pageStateService) {
+app.controller('NavbarController', ['$scope', '$rootScope', 'retryHttp', '$modal', '$timeout', 'pageStateService', function($scope, $rootScope, retryHttp, $modal, $timeout, pageStateService) {
   $scope.username = "";
   $scope.editMode = pageStateService.get('editMode');
   $scope.projectName = "Tidal Wave";
@@ -71,9 +71,11 @@ app.controller('NavbarController', ['$scope', 'retryHttp', '$modal', '$timeout',
   };
   $scope.toggleEditMode = function() {
     console.log("Toggling setting");
-    pageStateService.set(
-      'editMode',
-      !pageStateService.get('editMode'));
+    if (pageStateService.get('editMode')) {
+      $rootScope.$broadcast('finishedEditMode', {});
+    } else {
+      pageStateService.set('editMode',true);
+    }
   };
 
   $scope.saveHTML = function() {
