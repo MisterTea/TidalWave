@@ -2,7 +2,7 @@
   <h2>Search Results for '{{query}}'</h2>
   <ol ng-show="searchContentResults.length<=10">
     <li ng-repeat="result in searchContentResults">
-      <h4><a ng-href="/view/{{result.name}}">{{result.name}}</a></h4>
+      <h4><a href="" ng-click="changePageAndClearSearch(result.fullyQualifiedName)">{{result.name}}</a></h4>
     </li>
     <hr ng-if="!$last" />
   </ol>

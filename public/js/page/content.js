@@ -306,7 +306,13 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
   };
 
   $scope.changePage = function(newPageFQN) {
+    console.log("CHANGING PAGE: " + newPageFQN);
     changePage(retryHttp,$location,newPageFQN, pageStateService,null);
+  };
+
+  $scope.changePageAndClearSearch = function(newPageFQN) {
+    pageStateService.set('query','');
+    $scope.changePage(newPageFQN);
   };
 
   $scope.$on('pageStateServiceUpdate', function(event, response) {
