@@ -218,6 +218,10 @@ mongooseHandler.init(function callback () {
         }
       }
 
+      // Clear these so they can be garbage collected
+      groupNameMap = null;
+      groupNameIdMap = null;
+
       // Update users
       var userStream = User
             .find({})
