@@ -21,7 +21,7 @@ var LDAPEntryToGroup = extractor.LDAPEntryToGroup;
 
 var fetchUsers = function(successCallback,errorCallback) {
   var client = ldap.createClient({
-    url: options['ldap']['server'],
+    url: options['ldap']['server']
   });
 
   client.bind('', '', function(err) {
@@ -36,7 +36,7 @@ var fetchUsers = function(successCallback,errorCallback) {
     var users = [];
     client.search(options['ldap']['userDN'],{
       scope:"one",
-      attributes:extractor.userAttributes,
+      attributes:extractor.LDAPUserAttributes,
       timeLimit:60*60
     },function(err, res) {
       if (err) {
