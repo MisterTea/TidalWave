@@ -21,7 +21,7 @@ var LDAPEntryToGroup = extractor.LDAPEntryToGroup;
 
 var fetchUsers = function(successCallback,errorCallback) {
   var client = ldap.createClient({
-    url: options['ldap']['server']
+    url: options['ldap']['server'],
   });
 
   client.bind('', '', function(err) {
@@ -36,6 +36,7 @@ var fetchUsers = function(successCallback,errorCallback) {
     var users = [];
     client.search(options['ldap']['userDN'],{
       scope:"one",
+      attributes:extractor.userAttributes,
       timeLimit:60*60
     },function(err, res) {
       if (err) {
@@ -52,7 +53,7 @@ var fetchUsers = function(successCallback,errorCallback) {
 
         count++;
         if(count%1000==0) {
-          console.error(count);
+          console.error('USER ' + count);
         }
       });
       res.on('searchReference', function(referral) {
@@ -93,6 +94,7 @@ var fetchGroups = function(successCallback,errorCallback) {
     var groupNames = [];
     client.search(options['ldap']['groupDN'],{
       scope:"one",
+      attributes:extractor.LDAPGroupAttributes,
       timeLimit:60*60
     },function(err, res) {
       if (err) {
@@ -121,7 +123,7 @@ var fetchGroups = function(successCallback,errorCallback) {
         }
         count++;
         if(count%1000==0) {
-          console.error(count);
+          console.error('GROUP ' + count);
         }
       });
       res.on('searchReference', function(referral) {
@@ -144,35 +146,50 @@ var fetchGroups = function(successCallback,errorCallback) {
   });
 };
 
+var handoffUsersAndGroups = function(userGroupCollection, success) {
+  if ('users' in userGroupCollection && 'groupList' in userGroupCollection) {
+    var users = userGroupCollection['users'];
+    var groupList = userGroupCollection['groupList'];
+    var userGroupMap = userGroupCollection['userGroupMap'];
+
+    var uidMap = {};
+    for (var i=0;i<users.length;i++) {
+      var user = users[i];
+      user.groups = [];
+      //console.log(user.username + "\t" + user.email + "\t" + user.fullName);
+      uidMap[user.username] = user;
+    }
+
+    for (var uid in userGroupMap) {
+      if (uidMap[uid]) {
+        //console.log('"' + uid + '"\t' + JSON.stringify(userGroupMap[uid]));
+        uidMap[uid].groups = userGroupMap[uid];
+      }
+    }
+
+    success(uidMap,groupList);
+    return;
+  }
+
+  setTimeout(function() {
+    handoffUsersAndGroups(userGroupCollection, success);
+  }, 1000);
+};
+
 var getUsersAndGroups = function(success,failure) {
+  var userGroupCollection = {};
   fetchUsers(
     function(users) {
-      var uidMap = {};
-      for (var i=0;i<users.length;i++) {
-        var user = users[i];
-        user.groups = [];
-        //console.log(user.username + "\t" + user.email + "\t" + user.fullName);
-        uidMap[user.username] = user;
-      }
-
-      fetchGroups(
-        function(groupList,userGroupMap) {
-          for (var uid in userGroupMap) {
-            if (uidMap[uid]) {
-              //console.log('"' + uid + '"\t' + JSON.stringify(userGroupMap[uid]));
-              uidMap[uid].groups = userGroupMap[uid];
-            }
-          }
-
-          success(uidMap,groupList);
-        },
-        function(err) {
-          failure(err);
-        });
-    },
-    function(err) {
-      failure(err);
+      userGroupCollection['users'] = users;
     });
+
+  fetchGroups(
+    function(groupList,userGroupMap) {
+      userGroupCollection['groupList'] = groupList;
+      userGroupCollection['userGroupMap'] = userGroupMap;
+    });
+
+  handoffUsersAndGroups(userGroupCollection, success);
 };
 
 mongooseHandler.init(function callback () {
@@ -202,15 +219,12 @@ mongooseHandler.init(function callback () {
       }
 
       // Update users
-      User
-        .find({})
-        .exec(function(err, results){
-          var usersToUpdate = [];
-          var usersToRemove = [];
+      var userStream = User
+            .find({})
+            .stream();
 
-          console.log("UPDATING USERS: " + results.length);
-          for (var a=0;a<results.length;a++) {
-            var user = results[a];
+      userStream
+        .on('data', function(user) {
             if (userIdMap[user.username]) {
               var newUser = userIdMap[user.username];
 
@@ -219,126 +233,60 @@ mongooseHandler.init(function callback () {
                   user.email != newUser.email ||
                   !_.isEqual(user.groups,newUser.groups)) {
                 // Update the user record from LDAP
-                console.log(JSON.stringify(newUser) + "!= " + JSON.stringify(user));
+                //console.log(JSON.stringify(newUser) + "!= " + JSON.stringify(user));
                 user = _.extend(user,newUser);
                 user.fromLdap = true;
-                console.log("Updating user: " + JSON.stringify(user));
-                usersToUpdate.push(user);
+                console.log("Updating user: " + user.username);
+                user.save();
               }
 
               // Consume the LDAP record
               delete userIdMap[user.username];
             } else if (user.fromLdap) {
               // Record was not in LDAP anymore, remove
-              console.log("Removing user: " + JSON.stringify(user));
-              usersToRemove.push(user);
+              console.log("Removing user: " + user.username);
+              user.remove();
             }
+        })
+      .on('close', function(err) {
+        var userCount=0;
+        for (var userId in userIdMap) {
+          userCount++;
+          if (userCount%100==0) {
+            console.log(userCount + " / " + Object.keys(userIdMap).length);
           }
+          var ldapUser = userIdMap[userId];
+          ldapUser.fromLdap = true;
+          console.log("Adding user: " + ldapUser.username);
+          new User(ldapUser).save();
+        }
 
-          var updateUsers = function(callback) {
-            if (usersToUpdate.length>0) {
-              var onUpdate = 0;
-              var iterate = function() {
-                if (onUpdate>= usersToUpdate.length) {
-                  callback();
-                  return;
-                }
-                usersToUpdate[onUpdate].save(function(err) {
-                  onUpdate++;
-                  iterate();
-                });
-              };
-              iterate();
-            } else {
-              callback();
-            }
-          };
-
-          var removeUsers = function(callback) {
-            if (usersToRemove.length>0) {
-              var onRemove = 0;
-              var iterate = function() {
-                if (onRemove >= usersToRemove.length) {
-                  callback();
-                  return;
-                }
-                usersToRemove[onRemove].remove(function(err) {
-                  onRemove++;
-                  iterate();
-                });
-              };
-              iterate();
-            } else {
-              callback();
-            }
-          };
-
-          var usersToSave = [];
-          var userCount=0;
-          for (var userId in userIdMap) {
-            userCount++;
-            if (userCount%100==0) {
-              console.log(userCount + " / " + Object.keys(userIdMap).length);
-            }
-            var ldapUser = userIdMap[userId];
-            ldapUser.fromLdap = true;
-            usersToSave.push(ldapUser);
-          }
-
-          var createUsers = function(callback) {
-            if (usersToSave.length) {
-              var onUser = 0;
-              var iterateUser = function(err, product, numberAffected) {
-                console.log("Added user: " + JSON.stringify(product));
-                onUser++;
-                if (usersToSave.length>onUser) {
-                  new User(usersToSave[onUser]).save(iterateUser);
-                } else {
-                  callback();
-                }
-              };
-              new User(usersToSave[onUser]).save(iterateUser);
-            } else {
-              callback();
-            }
-          };
-
-          removeUsers(function() {
-            updateUsers(function() {
-              createUsers(function() {
-                // Finished, now close the DB
-                console.log("FINISHED");
-                mongoose.disconnect();
-              });
-            });
-          });
-        });
+        setTimeout(function() {
+          // Finished, now close the DB
+          console.log("FINISHED");
+          mongoose.disconnect();
+        }, 60000);
+      });
     };
 
     // Update groups
-    Group
+    var groupStream = Group
       .find({})
-      .exec(function(err, results) {
-        console.log("UPDATING GROUPS: " + results.length);
-        if (err) {
-          assert.ifError(err);
-        }
+          .stream();
 
-        if (results) {
-          for (var a=0;a<results.length;a++) {
-            var group = results[a];
-            if (groupNameMap[group.name]) {
-              // The group still exists
-              groupNameIdMap[group.name] = group._id;
-              delete groupNameMap[group.name];
-            } else if(group.fromLdap) {
-              // The group is deleted
-              console.log("Removing group: " + JSON.stringify(group));
-              group.remove();
-            }
-          }
+    groupStream
+      .on('data', function(group) {
+        if (groupNameMap[group.name]) {
+          // The group still exists
+          groupNameIdMap[group.name] = group._id;
+          delete groupNameMap[group.name];
+        } else if(group.fromLdap) {
+          // The group is deleted
+          console.log("Removing group: " + JSON.stringify(group));
+          group.remove();
         }
-
+      })
+    .on('close', function() {
         var groupsToSave = [];
         for (var groupName in groupNameMap) {
           var group = new Group({name:groupName,fromLdap:true});
@@ -363,7 +311,6 @@ mongooseHandler.init(function callback () {
           // Nothing to do, update users
           updateUsers();
         }
-
       });
   }, function(err) {
     assert.ifError(err);
