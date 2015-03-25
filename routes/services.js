@@ -103,6 +103,7 @@ router.post(
         if (err) {
           log.error({error:err});
           res.status(500).end();
+          return;
         }
         res.status(200).end();
       });
@@ -667,13 +668,16 @@ router.get(
           }
           if (!page) {
             res.status(403).end();
+            return;
           }
 
           Image.find({name:name}, function(err,results) {
             if (results.length>1) {
               res.status(500).end();
+              return;
             } else if(results.length==0) {
               res.status(404).end();
+              return;
             }
             var image = results[0];
             res.setHeader('Content-disposition', 'attachment; filename='+image.filename);
@@ -743,6 +747,7 @@ router.post(
           console.dir(err);
           log.error({error:err});
           res.status(500).end();
+          return;
         }
         res.status(200).type("text/plain").send(uniqueName);
       });
@@ -774,13 +779,16 @@ router.get(
           }
           if (!page) {
             res.status(403).end();
+            return;
           }
 
           FileData.find({name:name}, function(err,results) {
             if (results.length>1) {
               res.status(500).end();
+              return;
             } else if(results.length==0) {
               res.status(404).end();
+              return;
             }
             var file = results[0];
             res.setHeader('Content-disposition', 'attachment; filename='+file.filename);
