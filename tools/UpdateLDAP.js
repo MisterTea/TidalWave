@@ -1,6 +1,7 @@
 var ldap = require('ldapjs');
 var assert = require('assert');
 var _ = require('lodash');
+var async = require('async');
 
 var mongoose = require('mongoose');
 
@@ -252,24 +253,29 @@ mongooseHandler.init(function callback () {
               user.remove();
             }
         })
-      .on('close', function(err) {
-        var userCount=0;
-        for (var userId in userIdMap) {
-          userCount++;
-          if (userCount%100==0) {
-            console.log(userCount + " / " + Object.keys(userIdMap).length);
-          }
-          var ldapUser = userIdMap[userId];
-          ldapUser.fromLdap = true;
-          console.log("Adding user: " + ldapUser.username);
-          new User(ldapUser).save();
-        }
-
-        setTimeout(function() {
-          // Finished, now close the DB
-          console.log("FINISHED");
-          mongoose.disconnect();
-        }, 60000);
+        .on('close', function(err) {
+          var userCount=0;
+          async.mapSeries(Object.keys(userIdMap), function(userId, callback) {
+            userCount++;
+            if (userCount%100==0) {
+              console.log(userCount + " / " + Object.keys(userIdMap).length);
+            }
+            var ldapUser = userIdMap[userId];
+            ldapUser.fromLdap = true;
+            console.log("Adding user: " + ldapUser.username);
+            new User(ldapUser).save(function(err, innerUser) {
+              console.log("User added " + innerUser.username);
+              if (err) {
+                console.error(err);
+                process.exit(1);
+              }
+              callback(err, innerUser);
+            });
+          }, function(err, results) {
+            // Finished, now close the DB
+            console.log("FINISHED");
+            mongoose.disconnect();
+          });
       });
     };
 
