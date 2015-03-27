@@ -1,7 +1,7 @@
 app.controller('LoginController', ['$scope', '$http', '$timeout', '$location', 'pageStateService', function($scope, $http, $timeout, $location, pageStateService) {
-  if ($location.search()['redirect']) {
-    $("#login-form").attr("action", "/login?redirect=" + $location.search()['redirect']);
+  if (location.hash) {
+    $("#login-form").attr("action", "/login?redirect=" + encodeURIComponent("/view/"+location.hash));
   } else {
-    $("#login-form").attr("action", "/login?redirect=/view");
+    $("#login-form").attr("action", "/login?redirect=" + encodeURIComponent("/view/"));
   }
 }]);

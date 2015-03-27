@@ -93,7 +93,7 @@ exports.init = function(app) {
     );
   });
   app.post('/login', function(req, res, next) {
-    var redirect = req.param('redirect');
+    var redirect = decodeURIComponent(req.param('redirect'));
     if (!redirect) {
       redirect = "/view";
     }

@@ -473,7 +473,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
           $("#content-markdown").append(marked("Sorry, you do not have access to this page."));
         } else {
           $("#content-markdown").empty();
-          $("#content-markdown").append(marked("Sorry, you do not have access to this page.\n\nMaybe you need to [login](/login#/?redirect="+escape("/view#"+$location.path()+"#"+$location.hash())+")?"));
+          $("#content-markdown").append(marked("Sorry, you do not have access to this page.\n\nMaybe you need to [login](/login?redirect=/view#/"+pageDetails.page.fullyQualifiedName+")?"));
         }
       }
     }
