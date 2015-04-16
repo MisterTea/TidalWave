@@ -138,9 +138,11 @@ app.controller('SideBarController', ['$scope', '$location', '$timeout', '$rootSc
           null,
           function(data, status, headers, config) {
             var nextData = [];
+            data = _.sortBy(data, 'name');
             for (var i=0;i<data.length;i++) {
               var convertToNav = function(hierarchy) {
                 var retval = {"label":hierarchy.name,"id":hierarchy.id,"children":[],"fqn":hierarchy.fqn};
+                hierarchy.children = _.sortBy(hierarchy.children, 'name');
                 for (var i=0;i<hierarchy.children.length;i++) {
                   retval.children.push(convertToNav(hierarchy.children[i]));
                 }
