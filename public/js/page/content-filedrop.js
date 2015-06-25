@@ -3,7 +3,6 @@ var alreadyRan = false;
 var setupFiledrop = function(retryHttp, pageStateService) {
   if (alreadyRan) {
     console.log("ERROR!  TRIED TO SET UP FILEDROP 2x");
-    dlksjldjfs;
   } else {
     alreadyRan = true;
   }
