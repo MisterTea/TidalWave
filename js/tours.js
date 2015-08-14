@@ -1,4 +1,6 @@
-var createFirstViewTour = function() {
+var hopscotch = require('hopscotch');
+
+exports.createFirstViewTour = function() {
   // Define the tour!
   var tour = {
     id: "hello-tidalwave",

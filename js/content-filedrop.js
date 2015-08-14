@@ -4,7 +4,7 @@ var alreadyRan = false;
 require('filedrop');
 var FileDrop = window.FileDrop;
 
-exports.setupFiledrop = function(editor, retryHttp, pageStateService) {
+exports.setupFiledrop = function(retryHttp, pageStateService) {
   if (alreadyRan) {
     console.log("ERROR!  TRIED TO SET UP FILEDROP 2x");
   } else {
@@ -39,6 +39,7 @@ exports.setupFiledrop = function(editor, retryHttp, pageStateService) {
             {mime:mime,base64:data,pageId:pageDetails.page._id,name:file.name},
             function(filename, status, headers, config) {
               //console.log("INJECTING IMAGE");
+              var editor = require('./content').editor;
               editor.insert("<img src=\"/service/getImage/"+filename+"\"></img>");
             });
         } else {
@@ -48,6 +49,7 @@ exports.setupFiledrop = function(editor, retryHttp, pageStateService) {
             {mime:mime,base64:data,pageId:pageDetails.page._id,name:file.name},
             function(filename, status, headers, config) {
               //console.log("INJECTING FILE");
+              var editor = require('./content').editor;
               editor.insert("<a href=\"/service/getFile/"+filename+"\" target=\"_blank\">Download "+file.name+"</a>");
             });
         }

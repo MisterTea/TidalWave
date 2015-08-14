@@ -23,6 +23,7 @@ var BCSocket = require('browserchannel/dist/bcsocket-uncompressed').BCSocket;
 var sharejs = require('../node_modules/share/lib/client');
 var moment = require('moment');
 var diff_match_patch = require('diff-match-patch');
+var tours = require('./tours');
 
 var Range, applyToShareJS, requireImpl;
 
@@ -335,7 +336,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
 
   // Set up FileDrop once the controller is created.
   $timeout(function() {
-    ContentFiledrop.setupFiledrop(editor, retryHttp, pageStateService);
+    ContentFiledrop.setupFiledrop(retryHttp, pageStateService);
   });
 
   // When angular scrolls, ensure that the header does not block the
@@ -344,7 +345,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
 
   if (getParameterByName('tour')) {
     $timeout(function(){
-      createFirstViewTour();
+      tours.createFirstViewTour();
     }, 100);
   }
 
