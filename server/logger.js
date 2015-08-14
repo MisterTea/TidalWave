@@ -22,4 +22,3 @@ var log = bunyan.createLogger(
 );
 
 exports.log = log;
-

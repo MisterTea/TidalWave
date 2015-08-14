@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html ng-app="TidalWavePage">
-  <% include headerdebug %>
+  <head>
+    <% include headerdebug %>
+  </head>
 
   <body>
     <script type="text/javascript">
@@ -15,18 +17,32 @@
         <div class="row">
           <div class="col-xs-1 col-sm-4"></div>
           <div class="col-xs-10 col-sm-4">
+            <% if(auth.indexOf('facebook') > -1) { %>
+              <div style="margin: 10px 0px;">
+                <a class="btn btn-block btn-social btn-facebook" style="color: #FFF" href="/auth/facebook">
+                  <i class="fa fa-facebook"></i> Sign in with Facebook
+                </a>
+              </div>
+            <% } %>
+            <% if(auth.indexOf('google') > -1) { %>
+              <div style="margin: 10px 0px;">
+                <a class="btn btn-block btn-social btn-google" style="color: #FFF" href="/auth/google">
+                  <i class="fa fa-google"></i> Sign in with Google
+                </a>
+              </div>
+            <% } %>
             <div class="form-wrap">
-              <% if(auth=='ldap') { %>
+              <% if(auth.indexOf('ldap') > -1) { %>
               <h1>Log in with your OpenDirectory account</h1>
-              <% } else if(auth=='plain') { %>
+              <% } else if(auth.indexOf('plain') > -1) { %>
               <h1>Log in or <a href="/register" style="text-decoration: underline;">create a new account</a></h1>
               <% } %>
               <form role="form" action="/login?redirect=<%= redirectUrl %>" method="post" id="login-form" autocomplete="off">
                 <div class="form-group">
-                  <% if(auth=='ldap') { %>
+                  <% if(auth.indexOf('ldap') > -1) { %>
                   <label for="username">Username</label>
                   <input type="text" name="username" class="form-control" placeholder="Enter your username...">
-                  <% } else if(auth=='plain') { %>
+                  <% } else if(auth.indexOf('plain') > -1) { %>
                   <label for="username">Email</label>
                   <input type="text" name="username" class="form-control" placeholder="Enter your email...">
                   <% } %>
@@ -49,12 +65,14 @@
                        class="btn btn-custom btn-lg btn-block"
                        value="Log in">
                   </div>
-                  <% if(auth=='plain') { %>
+                  <% if(auth.indexOf('plain') > -1) { %>
                     <div class="col-xs-3">
                       <a href="/forgotpassword" class="forget" data-toggle="modal" data-target=".forget-modal">Forgot your password?</a>
                     </div>
+                  <% } %>
                 </div>
                 <div class="row">
+                  <% if(auth.indexOf('plain') > -1) { %>
                   <div class="col-xs-3"></div>
                   <div class="col-xs-6">
                     <input type="submit" name="register" id="btn-login" class="btn btn-custom btn-lg btn-block" value="Create new account">

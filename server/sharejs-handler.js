@@ -10,7 +10,10 @@ var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
 
-var database = livedb.memory();
+var options = require('./options-handler').options;
+var livedbmongo = require('livedb-mongo');
+var database = livedbmongo(options['database']['uri']);
+
 var backend = livedb.client(database);
 
 var LiveSync = require('./livesync');
@@ -19,7 +22,7 @@ LiveSync.init(backend.driver, database);
 var pageConnectionMap = {};
 
 exports.init = function(app) {
-  backend.addProjection('_users', 'users', 'json0', {
+  backend.addProjection('_sharejsdocuments', 'sharejsdocuments', 'text', {
     x: true
   });
   var share = sharejs.server.createClient({
@@ -59,30 +62,31 @@ exports.init = function(app) {
           pageConnectionMap[data['d']]+1 :
           1;
         log.info(pageConnectionMap[data['d']] + " CLIENTS CONNECTED TO " + data['d']);
-        
-        if (!database.collections[data['c']] ||
-            !database.collections[data['c']][data['d']]) {
-          // Document does not exist
-          log.debug("New document");
 
-          Page.findOne({_id:data['d']},function(err,page){
-            if (page) {
-              log.debug("Fetch page from DB");
-              // Inject document from database
-              database.writeSnapshot(data['c'],data['d'],{
-                v:0,
-                type:'http://sharejs.org/types/textv1',
-                data:page.content
-              }, function(err){});
-            }
-            return stream.push(data);
-          });
-          return true;
-        } else {
-          return stream.push(data);
-        }
+        var collection = database.getVersion(data['c'], data['d'], function(error, version) {
+
+          if (version == 0) {
+            // Document does not exist
+            log.debug("New document");
+
+            Page.findOne({_id:data['d']},function(err,page){
+              if (page) {
+                log.debug("Fetch page from DB");
+                // Inject document from database
+                database.writeSnapshot(data['c'],data['d'],{
+                  v:0,
+                  type:'http://sharejs.org/types/textv1',
+                  data:page.content
+                }, function(err){});
+              }
+              stream.push(data);
+            });
+          } else {
+            stream.push(data);
+          }
+        });
       } else {
-        return stream.push(data);
+        stream.push(data);
       }
     });
     stream.on('error', function(msg) {
@@ -100,7 +104,7 @@ exports.init = function(app) {
       log.info(pageConnectionMap[document] + " CLIENTS ARE CONNECTED TO " + document + "\n");
       if (pageConnectionMap[document]<=0) {
         delete pageConnectionMap[document];
-        LiveSync.syncAndRemove(document, function(){
+        LiveSync.sync(document, function(){
         });
       }
       return client.close();

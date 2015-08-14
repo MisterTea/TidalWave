@@ -14,18 +14,32 @@
     "loglevel":"warning"
   },
   "serverName":"Tidal Wave",
-  "auth":"plain",
   "hostname":"tidalwave.com",
   "port":null,
   "email" : {
     "serverEmailAddress":"tidalwave-mailer@tidalwave.com",
     "transport":"direct",
-    "options":{}
+    "options": null
   },
-  "ldap":{
-    "server":"ldaps://myldapserver:636",
-    "userField":"uid",
-    "bindDN":"cn=users,dc=com"
+  "login": {
+    "auth": [
+      "facebook",
+      "google",
+      "plain"
+    ],
+    "facebook": {
+      "clientID": "INSERT_FACEBOOK_CLIENTID_HERE",
+      "clientSecret": "INSERT_FACEBOOK_SECRET_HERE"
+    },
+    "google": {
+      "clientID": "INSERT_GOOGLE_CLIENTID_HERE",
+      "clientSecret": "INSERT_GOOGLE_SECRET_HERE"
+    },
+    "ldap":{
+      "server":"ldaps://myldapserver:636",
+      "userField":"uid",
+      "bindDN":"cn=users,dc=com"
+    }
   },
   "ssl":false,
   "sessionSecret":"t1d4lw4ve",

@@ -14,3 +14,7 @@ exports.init = function(callback) {
   });
   db.once('open', callback);
 };
+
+exports.disconnect = function() {
+  mongoose.disconnect();
+};

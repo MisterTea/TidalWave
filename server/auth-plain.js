@@ -1,4 +1,3 @@
-var options = require('./options-handler').options;
 var log = require('./logger').log;
 
 var model = require('./model');
@@ -30,4 +29,3 @@ exports.login = function(username,password,successCallback,errorCallback) {
       });
   });
 };
-

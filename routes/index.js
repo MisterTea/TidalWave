@@ -1,5 +1,4 @@
 var express = require('express');
-var Hierarchy = require('../server/hierarchy');
 var AuthHelper = require('../server/auth-helper');
 var options = require('../server/options-handler').options;
 var log = require('../server/logger').log;
@@ -16,10 +15,9 @@ var Image = model.Image;
 router.get(
   '/',
   function(req, res) {
-    res.render('page', {
+    res.render('index', {
       server:{
-        projectName:options.serverName,
-        user:req.user
+        projectName:options.serverName
       }
     });
   }

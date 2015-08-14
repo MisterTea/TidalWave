@@ -79,20 +79,13 @@ var dumpPageVersion = function(result, callback) {
 exports.sync = function(docName, callback) {
   //console.log("Checking for new versions");
   log.debug("PERFORMING SYNC");
-  database.query(null, "users", null, null, function(dummy,results){
+  database.getSnapshot("sharejsdocuments", docName, function(error,result){
     log.debug("LOOKING FOR DOCUMENT " + docName);
-    var foundDocument = false;
-    for (var i=0;i<results.length;i++) {
-      var result = results[i];
-      log.debug("GOT RESULT: " + result.docName);
-      if (result.docName != docName) {
-        continue;
-      }
+    if (result) {
       if (!(lastVersionDumped[result.docName] == result.v)) {
         log.debug("DUMPING NEW VERSION");
         log.debug(result);
         // Dump new PageVersion
-        foundDocument = true;
         dumpPageVersion(result, callback);
         return;
       } else {
@@ -100,28 +93,17 @@ exports.sync = function(docName, callback) {
         callback();
         return;
       }
-    }
-    if (!foundDocument) {
+    } else {
       // Something went really wrong
       log.error("COULD NOT FIND DOCUMENT: " + docName);
       callback();
     }
-    return;
-  });
-};
-
-exports.syncAndRemove = function(docName) {
-  log.debug("Removing liveDB doc " + docName);
-  exports.sync(docName, function() {
-    delete database.collections['users'][docName];
-    delete database.ops['users'][docName];
-    delete driver.versions[util.encodeCD('users', docName)];
   });
 };
 
 exports.syncAll = function() {
   //console.log("Checking for new versions");
-  database.query(null, "users", null, null, function(dummy,results){
+  database.query(null, "sharejsdocuments", {}, {}, function(dummy,results){
     _.each(results,function(result) {
       if (!(lastVersionDumped[result.docName] == result.v)) {
         // Dump new PageVersion

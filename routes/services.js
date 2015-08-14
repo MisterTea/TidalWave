@@ -355,6 +355,7 @@ router.post(
                   res.status(500).end();
                 });
             } else {
+              log.error("User tried to access page with permission");
               res.status(404).end();
             }
           });

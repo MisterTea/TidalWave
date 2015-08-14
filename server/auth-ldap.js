@@ -5,9 +5,11 @@ var log = require('./logger').log;
 
 exports.login = function(uid,password,successCallback,errorCallback) {
   var client = ldap.createClient({
-    url: options.ldap.server
+    url: options.login.ldap.server
   });
-  client.bind(options.ldap.userField+'='+uid+','+options.ldap.userDN, password, function(err) {
+  var userField = options.login.ldap.userField;
+  var userDN = options.login.ldap.userDN;
+  client.bind(userField+'='+uid+','+userDN, password, function(err) {
     if (err) {
       log.error({error:err});
       errorCallback(err.message);
@@ -24,4 +26,3 @@ exports.login = function(uid,password,successCallback,errorCallback) {
     });
   });
 };
-

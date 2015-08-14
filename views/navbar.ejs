@@ -45,10 +45,10 @@
         <li id="watch-list-item" ng-class="isWatchingPage?'active':''" ng-show="username && !editMode">
           <a href="" ng-click="toggleWatch()">{{isWatchingPage?"Unwatch":"Watch"}}</a>
         </li>
-        <li id="export-list-item" class="dropdown" ng-show="!editMode">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown">Export <b class="caret"></b></a>
-          <ul class="dropdown-menu">
-            <li><a ng-click="savePDF()">PDF (Experimental)</a></li>
+        <li dropdown ng-show="!editMode">
+          <a href="" dropdown-toggle>Export <b class="caret"></b></a>
+          <ul class="dropdown-menu" role="menu">
+            <li><a ng-click="savePDF()" ng-if="false">PDF</a></li>
             <li><a ng-click="saveHTML()">HTML</a></li>
           </ul>
         </li>

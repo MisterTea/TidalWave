@@ -44,7 +44,6 @@ exports.init = function() {
   app.use(bodyParser.json({limit: '128mb'}));
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
-  app.use(require('less-middleware')(path.join(__dirname, '../public')));
   app.use(express.static(path.join(__dirname, '../public'), {maxAge: 0}));
   app.use(session({
     secret: options.sessionSecret,
@@ -58,7 +57,7 @@ exports.init = function() {
   app.use( function (req, res, next) {
     if ( req.method == 'POST' && req.url == '/login' ) {
       if ( req.body.rememberme ) {
-        req.session.cookie.maxAge = 30*24*60*60*1000; // Rememeber 'me' for 30 days
+        req.session.cookie.maxAge = 90*24*60*60*1000; // Rememeber 'me' for 90 days
       } else {
         req.session.cookie.expires = false;
       }
@@ -76,8 +75,6 @@ exports.init = function() {
     }
   });
   app.use('/view', require('../routes/index'));
-  app.use('/profile',require('../routes/profile'));
-
   app.use('/service',require('../routes/services'));
 
   require('./sharejs-handler').init(app);
@@ -126,12 +123,12 @@ exports.launch = function() {
       process.emit ("SIGINT");
     });
   }
-  
+
   process.on ("SIGINT", function(){
     log.info("CAUGHT CTRL-C");
     // Do one last sync before we go away
     LiveSync.syncAll();
-    
+
     process.exit ();
   });
 };
