@@ -50,7 +50,8 @@ exports.init = function() {
     saveUninitialized:true,
     resave:true,
     store: new MongoStore({
-      mongooseConnection: mongoose.connection
+      mongooseConnection: mongoose.connection,
+      clear_interval: 3600
     })
   }));
   // Remember Me middleware
