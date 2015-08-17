@@ -306,6 +306,9 @@ var enableLocalStrategy = function(passport) {
         return done(null, false, { message: 'Unknown user ' + username });
       }
       var auth = require('./auth-plain');
+      if (options.login.auth.indexOf('ldap') > -1) {
+        auth = require('./auth-ldap');
+      }
       auth.login(username,password,function() {
         user.lastLoginTime = Date.now();
         user.save(function(err, innerUser) {
