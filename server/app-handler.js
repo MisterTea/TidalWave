@@ -12,6 +12,7 @@ var LiveSync = require('./livesync');
 var log = require('./logger').log;
 var options = require('./options-handler').options;
 var mongoose = require('mongoose');
+var ShareJSHandler = require('./sharejs-handler');
 
 var BunyanStream = {
   buffer:'',
@@ -78,7 +79,7 @@ exports.init = function() {
   app.use('/view', require('../routes/index'));
   app.use('/service',require('../routes/services'));
 
-  require('./sharejs-handler').init(app);
+  ShareJSHandler.init(app);
 
   // catch 404 and forward to error handler
   app.use(function(req, res, next) {
@@ -128,8 +129,11 @@ exports.launch = function() {
   process.on ("SIGINT", function(){
     log.info("CAUGHT CTRL-C");
     // Do one last sync before we go away
-    LiveSync.syncAll();
-
-    process.exit ();
+    ShareJSHandler.syncAll(function(err) {
+      if (err) {
+        log.error(err);
+      }
+      process.exit(1);
+    });
   });
 };

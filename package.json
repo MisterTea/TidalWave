@@ -16,7 +16,7 @@
     "angular-masonry": "^0.11.1",
     "angular-route": "^1.4.4",
     "angular-ui-bootstrap": "^0.13.3",
-    "async": "^0.9.0",
+    "async": "^1.4.2",
     "autolinker": "^0.18.1",
     "body-parser": "^1.8.4",
     "bootstrap": "^3.3.5",

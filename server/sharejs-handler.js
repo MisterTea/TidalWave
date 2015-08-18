@@ -4,6 +4,7 @@ var livedb = require('livedb');
 var sharejs = require('share');
 var express = require('express');
 var log = require('./logger').log;
+var async = require('async');
 
 var model = require('./model');
 var Page = model.Page;
@@ -113,4 +114,14 @@ exports.init = function(app) {
   }));
 
   app.use('/doc', share.rest());
+};
+
+exports.syncAll = function(callback) {
+  // TODO: Gracefully kill connections with clients
+  async.map(Object.keys(pageConnectionMap), function(docName, innerCallback) {
+    log.warn("SHUTDOWN: Found document "+docName+" in edit mode.  Saving snapshot to DB");
+    LiveSync.sync(docName, innerCallback);
+  }, function(err, result) {
+    callback(err);
+  });
 };

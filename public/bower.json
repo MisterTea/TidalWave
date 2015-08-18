@@ -15,7 +15,6 @@
   ],
   "dependencies": {
     "bootstrap": "~3.3.5",
-    "font-awesome": "~4.4.0",
     "bootstrap-social": "~4.9.1",
     "bootstrap-select": "~1.7.3",
     "selectize": "~0.12.1",
@@ -23,10 +22,10 @@
     "highlightjs": "~8.7.0",
     "filedrop": "*",
     "angular-ui-select": "~0.12.1",
-    "gremlins.js": "~0.1.0"
+    "gremlins.js": "~0.1.0",
+    "font-awesome": "~4.4.0"
   },
   "resolutions": {
-    "angular": "~1.4.3",
     "font-awesome": "~4.3"
   }
 }
