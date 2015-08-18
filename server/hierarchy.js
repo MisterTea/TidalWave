@@ -8,8 +8,6 @@ var User = model.User;
 var AuthHelper = require('./auth-helper');
 
 var getAncestry = exports.getAncestry = function(page, callback) {
-  console.log("GETTING ANCESTRY");
-  console.log(page);
   if (page.parentId) {
     Page.findById(page.parentId,function(err, parentPage) {
       if (err || !parentPage) {
@@ -29,11 +27,11 @@ var getAncestry = exports.getAncestry = function(page, callback) {
 var getAncestryClosure = function(pages, callback) {
   log.info("Getting closure of " + pages.length + " pages");
   var pageIndexMap = {};
-        
+
   for (var k=0;k<pages.length;k++) {
     pageIndexMap[pages[k]._id] = k;
   }
-  
+
   var pagesToAdd = [];
   for (var a=0;a<pages.length;a++) {
     var onPage = pages[a];
@@ -87,7 +85,7 @@ exports.fetch = function(user,filter,cb) {
         var completed = {};
         var pageIndexMap = {};
         var pageHierarchy = [];
-        
+
         for (var k=0;k<pages.length;k++) {
           pageIndexMap[pages[k]._id] = k;
         }
