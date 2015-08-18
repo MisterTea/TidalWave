@@ -167,3 +167,24 @@ exports.changePage = function(retryHttp,$location,fqn,pageStateService,callback)
 };
 
 exports.app = angular.module('TidalWavePage', ['angularBootstrapNavTree', 'ngErrorShipper', 'ui.bootstrap']);
+
+// Error logging
+var ErrorLogging = require('./errorlogging');
+
+// Third party
+require('./typo');
+
+require('./exceptionhandler');
+require('./alert');
+require('./retry');
+require('./pagestateservice');
+require('./sidebar');
+require('./navbar');
+require('./filedrop');
+require('./tours');
+require('./content');
+require('./register');
+require('./login');
+
+// In case anyone clobbers window.onerror, get it back
+window.onerror = ErrorLogging.onerror;

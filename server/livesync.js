@@ -13,14 +13,12 @@ var debug = require('debug')('Sync');
 var util = require('../node_modules/livedb/lib/util');
 
 var lastVersionDumped = {};
-var driver = null;
-var database = null;
+var backend = null;
 
 var cName = 'sharejsdocuments';
 
-exports.init = function(driver_, database_) {
-  driver = driver_;
-  database = database_;
+exports.init = function(backend_) {
+  backend = backend_;
 };
 
 var dumpPageVersion = function(result, callback) {
@@ -97,9 +95,12 @@ var dumpPageVersion = function(result, callback) {
 };
 
 exports.sync = function(docName, callback) {
+  if (!docName) {
+    return;
+  }
   //console.log("Checking for new versions");
   log.debug("PERFORMING SYNC");
-  database.getSnapshot(cName, docName, function(error, result) {
+  backend.fetch(cName, docName, function(error, result) {
     log.debug("LOOKING FOR DOCUMENT " + docName);
     if (result) {
       if (!(lastVersionDumped[result.docName] == result.v)) {

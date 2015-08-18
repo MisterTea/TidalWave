@@ -1,6 +1,8 @@
 var $ = require('jquery');
 
 var logError = exports.logError = function(details) {
+  console.error("GOT ERROR");
+  console.dir(details);
   $.ajax({
     type: 'POST',
     url: '/service/angularerror',
@@ -11,9 +13,9 @@ var logError = exports.logError = function(details) {
       //window.location.href = "/";
     }
   });
-}
+};
 
-window.onerror = function (errorMsg, url, lineNumber, column, errorObj) {
+exports.onerror = window.onerror = function (errorMsg, url, lineNumber, column, errorObj) {
   var stack = "";
   if (errorObj && errorObj.stack) {
     stack = errorObj.stack;

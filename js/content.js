@@ -1,3 +1,4 @@
+var ErrorLogging = require('./errorlogging');
 var ace = require('brace');
 require('brace/mode/markdown');
 
@@ -6,7 +7,7 @@ var app = require('./app').app;
 var preprocessDiff = require('./app').preprocessDiff;
 
 require('selectize');
-var ContentFiledrop = require('./content-filedrop');
+var Filedrop = require('./filedrop');
 var changePage = require('./app').changePage;
 
 var marked = exports.marked = require('marked');
@@ -296,6 +297,33 @@ var enableEditMode = function(pageStateService, $timeout) {
 
   socket = new BCSocket(null, {reconnect: true});
   connection = new sharejs.Connection(socket);
+  //connection.debug = true;
+  /*
+  connection.on('error', function(e) {
+    console.log("GOT CONNECTION ERROR");
+    console.dir(e);
+  });
+  connection.on('connecting', function() {
+    console.log("GOT CONNECTING");
+  });
+  connection.on('connected', function() {
+    console.log("GOT CONNECTED");
+  });
+  connection.on('disconnected', function() {
+    console.log("GOT DISCONNECTED");
+  });
+   */
+  connection.on('stopped', function() {
+    console.log("GOT STOPPED");
+    ErrorLogging.logError({
+      message:"Real-Time Server rejected client",
+      cause:null,
+      context:navigator.userAgent,
+      stack:"",
+      location : window.location,
+      performance : window.performance
+    });
+  });
 
   var pageDetails = pageStateService.get('pageDetails');
   console.log("SUBSCRIBING TO " + pageDetails.page._id);
@@ -336,7 +364,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
 
   // Set up FileDrop once the controller is created.
   $timeout(function() {
-    ContentFiledrop.setupFiledrop(retryHttp, pageStateService);
+    Filedrop.setupFiledrop(retryHttp, pageStateService);
   });
 
   // When angular scrolls, ensure that the header does not block the

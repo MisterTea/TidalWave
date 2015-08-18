@@ -46,14 +46,15 @@ exports.init = function() {
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
   app.use(express.static(path.join(__dirname, '../public'), {maxAge: 0}));
+  var mongoStore = new MongoStore({
+      mongooseConnection: mongoose.connection,
+      clear_interval: 3600
+    });
   app.use(session({
     secret: options.sessionSecret,
     saveUninitialized:true,
     resave:true,
-    store: new MongoStore({
-      mongooseConnection: mongoose.connection,
-      clear_interval: 3600
-    })
+    store: mongoStore
   }));
   // Remember Me middleware
   app.use( function (req, res, next) {
@@ -79,7 +80,7 @@ exports.init = function() {
   app.use('/view', require('../routes/index'));
   app.use('/service',require('../routes/services'));
 
-  ShareJSHandler.init(app);
+  ShareJSHandler.init(app, mongoStore);
 
   // catch 404 and forward to error handler
   app.use(function(req, res, next) {

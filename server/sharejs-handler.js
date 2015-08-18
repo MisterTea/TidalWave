@@ -5,6 +5,8 @@ var sharejs = require('share');
 var express = require('express');
 var log = require('./logger').log;
 var async = require('async');
+var cookie = require('cookie');
+var signature = require('cookie-signature');
 
 var model = require('./model');
 var Page = model.Page;
@@ -18,11 +20,13 @@ var database = livedbmongo(options['database']['uri']);
 var backend = livedb.client(database);
 
 var LiveSync = require('./livesync');
-LiveSync.init(backend.driver, database);
+LiveSync.init(backend);
+
+var AuthHelper = require('./auth-helper');
 
 var pageConnectionMap = {};
 
-exports.init = function(app) {
+exports.init = function(app, mongoStore) {
   var share = sharejs.server.createClient({
     backend: backend
   });
@@ -34,6 +38,15 @@ exports.init = function(app) {
     var stream;
     var document = null;
     log.debug("New Client Connected");
+    log.debug(client);
+    var rawSessionCookie = cookie.parse(client.headers.cookie)['connect.sid'];
+    var sessionId = signature.unsign(rawSessionCookie.slice(2), options.sessionSecret);
+    if (sessionId == false) {
+      // Invalid session
+      log.error({message:"Tried to get sessionId that doesn't exist",value:rawSessionCookie});
+      client.stop();
+      return;
+    }
     stream = new Duplex({
       objectMode: true
     });
@@ -44,69 +57,97 @@ exports.init = function(app) {
       } else {
         log.debug("CLIENT IS CLOSED");
       }
-      return callback();
+      callback();
     };
     stream._read = function() {};
     stream.headers = client.headers;
     stream.remoteAddress = stream.address;
     client.on('message', function(data) {
       log.debug('c->s ', JSON.stringify(data));
-      if (data['a']=='sub') {
-        // User is subscribing to a new document
-        log.debug("Got new sub");
-        document = data['d'];
-
-        pageConnectionMap[document] = pageConnectionMap[document] ?
-          pageConnectionMap[document]+1 :
-          1;
-        log.info(pageConnectionMap[document] + " CLIENTS CONNECTED TO " + document);
-      }
-      if (data['a']=='bs') {
-        var collectionDocumentVersionMap = data['s'];
-        var numCollections = Object.keys(collectionDocumentVersionMap).length;
-        if (numCollections != 1) {
-          log.error({message:"Zero or more than one collection not expected",value:numCollections});
-          throw new Error("Zero or more than one collection not expected: " + numCollections);
+      if (data['a']=='sub' || data['a']=='bs') {
+        if (data['a']=='sub') {
+          // User is subscribing to a new document
+          log.debug("Got new sub");
+          document = data['d'];
+        } else { // data['a']=='bs'
+          var collectionDocumentVersionMap = data['s'];
+          var numCollections = Object.keys(collectionDocumentVersionMap).length;
+          if (numCollections != 1) {
+            log.error({message:"Zero or more than one collection not expected",value:numCollections});
+            client.stop();
+            return;
+          }
+          var cName = Object.keys(collectionDocumentVersionMap)[0];
+          var numDocuments = Object.keys(collectionDocumentVersionMap[cName]).length;
+          if (numDocuments != 1) {
+            log.error({message:"Zero or more than one document not expected",value:numDocuments});
+            client.stop();
+            return;
+          }
+          var docName = Object.keys(collectionDocumentVersionMap[cName])[0];
+          document = docName;
         }
-        var cName = Object.keys(collectionDocumentVersionMap)[0];
-        var numDocuments = Object.keys(collectionDocumentVersionMap[cName]).length;
-        if (numDocuments != 1) {
-          log.error({message:"Zero or more than one document not expected",value:numDocuments});
-          throw new Error("Zero or more than one document not expected: " + numDocuments);
-        }
-        var docName = Object.keys(collectionDocumentVersionMap[cName])[0];
-        document = docName;
-        pageConnectionMap[document] = pageConnectionMap[document] ?
-          pageConnectionMap[document]+1 :
-          1;
-        log.info(pageConnectionMap[document] + " CLIENTS CONNECTED TO " + document);
+        mongoStore.get(sessionId, function(err, session) {
+          if (err) {
+            log.error(err);
+            client.stop();
+            return;
+          }
+          if (!session) {
+            log.error({message:"Tried to get session that doesn't exist",value:rawSessionCookie});
+            client.stop();
+            return;
+          }
+          var userId = session.passport.user;
+          if (!userId) {
+            log.error({message:"Tried to get userId that doesn't exist",value:session});
+            client.stop();
+            return;
+          }
+          AuthHelper.userIdCanAccessPageId(userId, document, function(canAccess) {
+            if (!canAccess) {
+              client.stop();
+              return;
+            }
+            pageConnectionMap[document] = pageConnectionMap[document] ?
+              pageConnectionMap[document]+1 :
+              1;
+            log.info(pageConnectionMap[document] + " CLIENTS CONNECTED TO " + document);
+            stream.push(data);
+          });
+        });
+      } else {
+        stream.push(data);
       }
-      stream.push(data);
     });
     stream.on('error', function(msg) {
       log.info("GOT CLIENT ERROR: " + msg);
-      return client.stop();
+      client.stop();
     });
     client.on('close', function(reason) {
       stream.push(null);
       stream.emit('close');
-      return log.debug('client went away');
+      log.debug('client went away');
     });
     stream.on('end', function() {
       log.debug("CLIENT END");
-      pageConnectionMap[document]--;
-      log.info(pageConnectionMap[document] + " CLIENTS ARE CONNECTED TO " + document + "\n");
-      if (pageConnectionMap[document]<=0) {
-        delete pageConnectionMap[document];
-        LiveSync.sync(document, function(){
-        });
+      if (document) {
+        pageConnectionMap[document]--;
+        log.info(pageConnectionMap[document] + " CLIENTS ARE CONNECTED TO " + document + "\n");
+        if (pageConnectionMap[document]<=0) {
+          delete pageConnectionMap[document];
+          LiveSync.sync(document, function(){
+            client.close();
+          });
+        } else {
+          client.close();
+        }
+      } else {
+        client.close();
       }
-      return client.close();
     });
-    return share.listen(stream);
+    share.listen(stream);
   }));
-
-  app.use('/doc', share.rest());
 };
 
 exports.syncAll = function(callback) {

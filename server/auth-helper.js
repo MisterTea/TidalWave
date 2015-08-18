@@ -46,12 +46,36 @@ exports.queryPermissionWrapper = function(query, user) {
   } else {
     return query.where({isPublic:true});
   }
-  //bypass security
-  //return query;
 };
 
-var userCanAccessPage = null;
-exports.userCanAccessPage = userCanAccessPage = function(user,page,callback) {
+exports.userIdCanAccessPageId = function(userId, pageId, callback) {
+  User.findById(userId, function(err, user) {
+    if (err) {
+      callback(false);
+      return;
+    }
+    if (!user) {
+      callback(false);
+      return;
+    }
+    Page.findById(pageId, function(err, page) {
+      if (err) {
+        callback(false);
+        return;
+      }
+      if (!page) {
+        callback(false);
+        return;
+      }
+      userCanAccessPage(user, page, function(canAccess) {
+        callback(canAccess);
+      });
+    });
+  });
+};
+
+
+var userCanAccessPage = exports.userCanAccessPage = function(user,page,callback) {
   if (page.isPublic) {
     callback(true);
     return;
