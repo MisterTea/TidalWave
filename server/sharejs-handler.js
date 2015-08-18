@@ -23,9 +23,6 @@ LiveSync.init(backend.driver, database);
 var pageConnectionMap = {};
 
 exports.init = function(app) {
-  backend.addProjection('_sharejsdocuments', 'sharejsdocuments', 'text', {
-    x: true
-  });
   var share = sharejs.server.createClient({
     backend: backend
   });
@@ -59,36 +56,32 @@ exports.init = function(app) {
         log.debug("Got new sub");
         document = data['d'];
 
-        pageConnectionMap[data['d']] = pageConnectionMap[data['d']] ?
-          pageConnectionMap[data['d']]+1 :
+        pageConnectionMap[document] = pageConnectionMap[document] ?
+          pageConnectionMap[document]+1 :
           1;
-        log.info(pageConnectionMap[data['d']] + " CLIENTS CONNECTED TO " + data['d']);
-
-        var collection = database.getVersion(data['c'], data['d'], function(error, version) {
-
-          if (version == 0) {
-            // Document does not exist
-            log.debug("New document");
-
-            Page.findOne({_id:data['d']},function(err,page){
-              if (page) {
-                log.debug("Fetch page from DB");
-                // Inject document from database
-                database.writeSnapshot(data['c'],data['d'],{
-                  v:0,
-                  type:'http://sharejs.org/types/textv1',
-                  data:page.content
-                }, function(err){});
-              }
-              stream.push(data);
-            });
-          } else {
-            stream.push(data);
-          }
-        });
-      } else {
-        stream.push(data);
+        log.info(pageConnectionMap[document] + " CLIENTS CONNECTED TO " + document);
       }
+      if (data['a']=='bs') {
+        var collectionDocumentVersionMap = data['s'];
+        var numCollections = Object.keys(collectionDocumentVersionMap).length;
+        if (numCollections != 1) {
+          log.error({message:"Zero or more than one collection not expected",value:numCollections});
+          throw new Error("Zero or more than one collection not expected: " + numCollections);
+        }
+        var cName = Object.keys(collectionDocumentVersionMap)[0];
+        var numDocuments = Object.keys(collectionDocumentVersionMap[cName]).length;
+        if (numDocuments != 1) {
+          log.error({message:"Zero or more than one document not expected",value:numDocuments});
+          throw new Error("Zero or more than one document not expected: " + numDocuments);
+        }
+        var docName = Object.keys(collectionDocumentVersionMap[cName])[0];
+        document = docName;
+        pageConnectionMap[document] = pageConnectionMap[document] ?
+          pageConnectionMap[document]+1 :
+          1;
+        log.info(pageConnectionMap[document] + " CLIENTS CONNECTED TO " + document);
+      }
+      stream.push(data);
     });
     stream.on('error', function(msg) {
       log.info("GOT CLIENT ERROR: " + msg);
