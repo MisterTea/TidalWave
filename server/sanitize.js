@@ -18,7 +18,7 @@ exports.sanitize = function() {
     }
     // Make sure the page corresponds to a livedb document
     async.map(pages, function(page, callback) {
-      LiveSync.fetch(page._id, function(err, liveDocument) {
+      LiveSync.fetch(page._id.toString(), function(err, liveDocument) {
         if (err) {
           callback(err);
           return;
