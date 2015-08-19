@@ -348,9 +348,12 @@ var enableEditMode = function(pageStateService, $timeout) {
         $timeout(function() {
           // When there are no future changes, update the document.
           if (nextDocumentChangeTime <= Date.now()) {
-            $("#content-markdown").empty();
-            var markdownText = marked(editor.getSession().getDocument().getValue());
-            $("#content-markdown").append($.parseHTML(markdownText));
+            var documentText = editor.getSession().getDocument().getValue();
+            if (documentText != 'Loading...') {
+              $("#content-markdown").empty();
+              var markdownText = marked(editor.getSession().getDocument().getValue());
+              $("#content-markdown").append($.parseHTML(markdownText));
+            }
           }
         }, 1000);
       });
