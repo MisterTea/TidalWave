@@ -23,7 +23,6 @@ exports.sanitize = function() {
           callback(err);
           return;
         }
-        log.info(liveDocument);
         if (!liveDocument.type) {
           LiveSync.createDocument(page._id.toString(), page.content, function(err) {
             if (err) {
