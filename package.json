@@ -3,11 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node server/server.js --optionsFile=options_example.json | ./node_modules/.bin/bunyan",
+    "start": "node server/bundle.js --optionsFile=options_example.json | ./node_modules/.bin/bunyan",
     "UpdateLDAP": "node tools/UpdateLDAP.js --optionsFile=options_example.json | ./node_modules/.bin/bunyan",
-    "postinstall": "npm run bower ; npm run browserify",
+    "postinstall": "npm run bower ; npm run browserify ; npm run tsd ; npm run buildServer",
     "bower": "pushd public; ../node_modules/.bin/bower install ; popd",
-    "browserify": "./node_modules/.bin/browserify js/app.js --debug > public/bundle.js"
+    "browserify": "./node_modules/.bin/browserify js/app.ts --debug -p [ tsify --module commonjs --noImplicitAny ] > public/bundle.js",
+    "buildServer": "./node_modules/.bin/tsc --sourcemap --module commonjs --out server/bundle.js server/server.ts",
+    "tsd": "./node_modules/.bin/tsd install"
   },
   "dependencies": {
     "angular": "^1.4.3",
@@ -80,6 +82,9 @@
     "serve-favicon": "~2.1.3",
     "share": "^0.7.3",
     "stacktrace-js": "^0.6.4",
+    "tsd": "^0.6.3",
+    "tsify": "^0.11.10",
+    "typescript": "^1.5.3",
     "uglify-js": "^2.4.16",
     "ui-select": "^0.11.2",
     "valid-filename": "^1.1.0",

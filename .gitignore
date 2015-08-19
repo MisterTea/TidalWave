@@ -1,4 +1,6 @@
+typings
 bundle.js
+bundle.js.map
 .DS_Store
 
 lib-cov

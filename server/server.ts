@@ -1,6 +1,6 @@
-try {
-  require('heapdump');
-} catch (_error) {}
+/// <reference path='../typings/node/node.d.ts' />
+/// <reference path='../typings/mongodb/mongodb.d.ts' />
+/// <reference path='../typings/express/express.d.ts' />
 
 var fs = require('fs');
 var path = require('path');
@@ -33,7 +33,7 @@ require('./mongoose-handler').init(function() {
     };
 
     app.set('port', options.port);
-    exports.server = 
+    exports.server =
       https.createServer(credentials, app)
       .listen(
         app.get('port'),
@@ -41,7 +41,7 @@ require('./mongoose-handler').init(function() {
       );
   } else {
     app.set('port', options.port);
-    exports.server = 
+    exports.server =
       http.createServer(app)
       .listen(
         app.get('port'),

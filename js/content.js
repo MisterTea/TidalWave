@@ -313,16 +313,18 @@ var enableEditMode = function(pageStateService, $timeout) {
     console.log("GOT DISCONNECTED");
   });
    */
-  connection.on('stopped', function() {
+  connection.on('stopped', function(data) {
     console.log("GOT STOPPED");
-    ErrorLogging.logError({
-      message:"Real-Time Server rejected client",
-      cause:null,
-      context:navigator.userAgent,
-      stack:"",
-      location : window.location,
-      performance : window.performance
-    });
+    if (data == "Stopped by server") {
+      ErrorLogging.logError({
+        message:"Real-Time Server rejected client",
+        cause:null,
+        context:navigator.userAgent,
+        stack:"",
+        location : window.location,
+        performance : window.performance
+      });
+    }
   });
 
   var pageDetails = pageStateService.get('pageDetails');
@@ -786,9 +788,14 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
               $scope.editMode = false;
             },1);
             if (doc) {
-              doc.destroy();
-              connection.disconnect();
-              doc = socket = connection = null;
+              doc.unsubscribe(function (err) {
+                if (err) {
+                  doc = socket = connection = null;
+                  throw err;
+                }
+                connection.disconnect();
+                doc = socket = connection = null;
+              });
             }
             pageStateService.set('settingsActive',false);
           });

@@ -1,3 +1,10 @@
+declare var require:any;
+declare var exports:any;
+
+interface Window {
+  $: any;
+}
+
 var $ = window.$ = require('jquery');
 var angular = require('angular');
 require('./thirdparty/angular-bootstrap-nav-tree/dist/abn_tree_directive');
@@ -6,7 +13,7 @@ require('angular-ui-bootstrap');
 require('angular-route');
 require('ui-select');
 
-var testEditor = function(testString) {
+var testEditor = function(testString:string) {
   setTimeout(function() {
     var editor = require('./content').editor;
     console.log("BEGIN INJECT\n");
@@ -25,9 +32,9 @@ var testEditor = function(testString) {
   }, 10);
 };
 
-exports.preprocessDiff = function(allDiffs) {
-  var sourceLines = [{text:'',style:'equal'}];
-  var destLines = [{text:'',style:'equal'}];
+exports.preprocessDiff = function(allDiffs:any) {
+  var sourceLines = [{lineNumber:0,text:'',style:'equal'}];
+  var destLines = [{lineNumber:0,text:'',style:'equal'}];
 
   for (var i=0;i<allDiffs.length;i++) {
     var diff = allDiffs[i];
@@ -42,25 +49,29 @@ exports.preprocessDiff = function(allDiffs) {
       }
 
       sourceLines[sourceLines.length-1] = {
+        lineNumber:0,
         text:sourceLines[sourceLines.length-1].text.concat(tokens[0]),
         style:styleToSet
       };
       destLines[destLines.length-1] = {
+        lineNumber:0,
         text:destLines[destLines.length-1].text.concat(tokens[0]),
         style:styleToSet
       };
 
       for (var j=1;j<tokens.length;j++) {
         sourceLines.push({
+          lineNumber:0,
           text:tokens[j],
           style:'equal'});
         destLines.push({
+          lineNumber:0,
           text:tokens[j],
           style:'equal'});
       }
     } else {
-      var bufferWithAdds = null;
-      var otherBuffer = null;
+      var bufferWithAdds:Array<any> = null;
+      var otherBuffer:Array<any> = null;
 
       if (diff[0]==-1) {
         bufferWithAdds = sourceLines;
@@ -130,7 +141,12 @@ exports.preprocessDiff = function(allDiffs) {
 };
 
 // Setting fqn==null will load the curent page
-exports.changePage = function(retryHttp,$location,fqn,pageStateService,callback) {
+exports.changePage = function(
+  retryHttp:any,
+  $location:any,
+  fqn:string,
+  pageStateService:any,
+  callback:(err:any) => void) {
   if (fqn) {
     fqn = '/'+fqn;
     if (fqn == $location.path()) {
@@ -148,18 +164,18 @@ exports.changePage = function(retryHttp,$location,fqn,pageStateService,callback)
   retryHttp.post(
     '/service/pageDetailsByFQN'+fqn,
     null,
-    function(data, status, headers, config) {
+    function(data:any, status:number, headers:any, config:any) {
       pageStateService.set('pageDetails',data);
       $location.hash('');
       $location.path(fqn);
       if (callback) {
-        callback();
+        callback(null);
       }
     },
-    function(data, status, headers, config) {
+    function(data:any, status:number, headers:any, config:any) {
       if (status == 404) {
         console.log("Unknown page");
-        window.location = '/view';
+        window.location.href = '/view';
       }
       $location.hash('');
       $location.path(fqn);
