@@ -7,6 +7,7 @@ var path = require('path');
 var https = require('https');
 var http = require('http');
 var AppHandler = require('./app-handler');
+var Sanitize = require('./sanitize');
 
 var options = require('./options-handler').options;
 
@@ -53,7 +54,7 @@ require('./mongoose-handler').init(function() {
 var launchServer = function() {
   var server = exports.server;
   log.debug('TidalWave server listening on port ' + server.address().port);
-  model.sanitize();
+  Sanitize.sanitize();
   AppHandler.launch();
 
   // Check if we have any documents.  If not, create welcome page.

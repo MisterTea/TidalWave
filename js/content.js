@@ -336,7 +336,7 @@ var enableEditMode = function(pageStateService, $timeout) {
     console.log("SHAREJS IS READY");
     editor.setReadOnly(false);
     editor.setOption("spellcheck", true);
-    console.log(doc);
+    console.dir(doc);
     if (!doc.type) doc.create('text');
     if (doc.type && doc.type.name === 'text') {
       doc.on('closed', function() {

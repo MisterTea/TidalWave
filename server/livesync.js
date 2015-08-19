@@ -94,6 +94,33 @@ var dumpPageVersion = function(result, callback) {
   });
 };
 
+exports.fetch = function(docName, callback) {
+  backend.fetch(cName, docName, function(error, result) {
+    if (error) {
+      log.error(error);
+      callback(error);
+      return;
+    }
+    callback(null, result);
+  });
+};
+
+exports.createDocument = function(docName, content, callback) {
+  backend.submit(cName, docName, {create:{type:'text', data:null}}, function(err, version, transformedByOps, snapshot) {
+    if (err) {
+      callback(err);
+      return;
+    }
+    backend.submit(cName, docName, {op:[content], v:1}, function(err) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      callback(null);
+    });
+  });
+};
+
 exports.sync = function(docName, callback) {
   if (!docName) {
     return;

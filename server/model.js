@@ -180,33 +180,3 @@ var updateChildrenFullyQualifiedName = function(page, callback) {
     }
   });
 };
-
-// Sanitize the database.
-exports.sanitize = function() {
-  var AuthHelper = require('./auth-helper');
-  Page.find({}, function(err, pages) {
-    var onPage = 0;
-    var iterate = function() {
-      onPage++;
-      if (onPage == pages.length) {
-        return;
-      }
-      if (pages[onPage].parentId) {
-        // Updating permissions is recursive: only call for root pages.
-        iterate();
-        return;
-      } else {
-        updateFullyQualifiedName(pages[onPage], function() {
-          AuthHelper.updateDerivedPermissions(pages[onPage], iterate);
-        });
-      }
-    };
-
-    if (onPage == pages.length) {
-      return;
-    }
-    updateFullyQualifiedName(pages[onPage], function() {
-      AuthHelper.updateDerivedPermissions(pages[onPage], iterate);
-    });
-  });
-};
