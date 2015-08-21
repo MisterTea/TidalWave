@@ -1,11 +1,14 @@
+/// <reference path='../../typings/node/node.d.ts' />
+
 var express = require('express');
-var AuthHelper = require('../server/auth-helper');
-var options = require('../server/options-handler').options;
-var log = require('../server/logger').log;
+
+import AuthHelper = require('../auth-helper');
+import options = require('../options-handler');
+import log = require('../logger');
 
 var router = express.Router();
 
-var model = require('../server/model');
+import model = require('../model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
@@ -23,4 +26,4 @@ router.get(
   }
 );
 
-module.exports = router;
+export = router;

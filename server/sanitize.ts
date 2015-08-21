@@ -1,16 +1,21 @@
-var model = require('./model');
+/// <reference path='../typings/node/node.d.ts' />
+/// <reference path='../typings/mongodb/mongodb.d.ts' />
+/// <reference path='../typings/express/express.d.ts' />
+
+var async = require('async');
+
+import model = require('./model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
 var updateFullyQualifiedName = model.updateFullyQualifiedName;
 
-var ShareJSHandler = require('./sharejs-handler');
-var LiveSync = require('./livesync');
-var async = require('async');
-var log = require('./logger').log;
+import ShareJSHandler = require('./sharejs-handler');
+import LiveSync = require('./livesync');
+import log = require('./logger');
 
 // Sanitize the database.
-exports.sanitize = function() {
+export var sanitize = function() {
   Page.find({}, function(err, pages) {
     if (err) {
       log.error(err);

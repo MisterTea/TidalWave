@@ -1,32 +1,37 @@
+/// <reference path='../typings/node/node.d.ts' />
+/// <reference path='../typings/mongodb/mongodb.d.ts' />
+/// <reference path='../typings/express/express.d.ts' />
+
 var Duplex = require('stream').Duplex;
 var browserChannel = require('browserchannel').server;
 var livedb = require('livedb');
 var sharejs = require('share');
 var express = require('express');
-var log = require('./logger').log;
 var async = require('async');
 var cookie = require('cookie');
 var signature = require('cookie-signature');
+var livedbmongo = require('livedb-mongo');
 
-var model = require('./model');
+import log = require('./logger');
+
+import model = require('./model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
 
-var options = require('./options-handler').options;
-var livedbmongo = require('livedb-mongo');
+import options = require('./options-handler');
 var database = livedbmongo(options['database']['uri']);
 
 var backend = livedb.client(database);
 
-var LiveSync = require('./livesync');
+import LiveSync = require('./livesync');
 LiveSync.init(backend);
 
-var AuthHelper = require('./auth-helper');
+import AuthHelper = require('./auth-helper');
 
 var pageConnectionMap = {};
 
-exports.init = function(app, mongoStore) {
+export var init = function(app, mongoStore) {
   var share = sharejs.server.createClient({
     backend: backend
   });
@@ -150,7 +155,7 @@ exports.init = function(app, mongoStore) {
   }));
 };
 
-exports.syncAll = function(callback) {
+export var syncAll = function(callback) {
   // TODO: Gracefully kill connections with clients
   async.map(Object.keys(pageConnectionMap), function(docName, innerCallback) {
     log.warn("SHUTDOWN: Found document "+docName+" in edit mode.  Saving snapshot to DB");

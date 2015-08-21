@@ -1,6 +1,11 @@
-var options = require('./options-handler').options;
+/// <reference path='../typings/node/node.d.ts' />
+/// <reference path='../typings/mongodb/mongodb.d.ts' />
+/// <reference path='../typings/express/express.d.ts' />
 
 var bunyan = require('bunyan');
+
+import options = require('./options-handler');
+
 var log = bunyan.createLogger(
   {
     name: "TidalWave",
@@ -21,4 +26,4 @@ var log = bunyan.createLogger(
   }
 );
 
-exports.log = log;
+export = log;

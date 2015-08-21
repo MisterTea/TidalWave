@@ -1,19 +1,24 @@
-var passport = require('passport')
-, LocalStrategy = require('passport-local').Strategy
-, FacebookStrategy = require('passport-facebook').Strategy
-, GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
+/// <reference path='../typings/node/node.d.ts' />
+/// <reference path='../typings/mongodb/mongodb.d.ts' />
+/// <reference path='../typings/express/express.d.ts' />
 
+var passport = require('passport');
 var validator = require('validator');
-var options = require('./options-handler').options;
-var log = require('./logger').log;
 
-var model = require('./model');
+var LocalStrategy = require('passport-local').Strategy;
+var FacebookStrategy = require('passport-facebook').Strategy;
+var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
+
+import options = require('./options-handler');
+import log = require('./logger');
+
+import model = require('./model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
 var UserPassword = model.UserPassword;
 
-exports.init = function(app) {
+export var init = function(app) {
 
   // Passport session setup.
   //   To support persistent login sessions, Passport needs to be able to

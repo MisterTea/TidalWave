@@ -1,13 +1,17 @@
-var log = require('./logger').log;
+/// <reference path='../typings/node/node.d.ts' />
+/// <reference path='../typings/mongodb/mongodb.d.ts' />
+/// <reference path='../typings/express/express.d.ts' />
 
-var model = require('./model');
+import log = require('./logger');
+
+import model = require('./model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
 
-var AuthHelper = require('./auth-helper');
+import AuthHelper = require('./auth-helper');
 
-var getAncestry = exports.getAncestry = function(page, callback) {
+export var getAncestry = function(page, callback) {
   if (page.parentId) {
     Page.findById(page.parentId,function(err, parentPage) {
       if (err || !parentPage) {
@@ -72,7 +76,7 @@ var getAncestryClosure = function(pages, callback) {
   }
 };
 
-exports.fetch = function(user,filter,cb) {
+export var fetch = function(user,filter,cb) {
   log.debug("Finding with filter: " + JSON.stringify(filter));
   AuthHelper.queryPermissionWrapper(Page.find(filter),user)
     .exec(function(err, pagesWithoutParents) {

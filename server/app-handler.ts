@@ -1,3 +1,7 @@
+/// <reference path='../typings/node/node.d.ts' />
+/// <reference path='../typings/mongodb/mongodb.d.ts' />
+/// <reference path='../typings/express/express.d.ts' />
+
 var readLine = require ("readline");
 var express = require('express');
 var compression = require('compression');
@@ -8,11 +12,16 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
 var MongoStore = require('connect-mongo')(session);
-var LiveSync = require('./livesync');
-var log = require('./logger').log;
-var options = require('./options-handler').options;
 var mongoose = require('mongoose');
-var ShareJSHandler = require('./sharejs-handler');
+
+import LiveSync = require('./livesync');
+import log = require('./logger');
+import options = require('./options-handler');
+import ShareJSHandler = require('./sharejs-handler');
+import PassportHandler = require('./passport-handler');
+
+import ViewRoute = require('./routes/index');
+import ServiceRoute = require('./routes/services');
 
 var BunyanStream = {
   buffer:'',
@@ -26,7 +35,7 @@ var BunyanStream = {
   }
 };
 
-exports.init = function() {
+export var init = function() {
   var app = express();
   // Compress content
   app.use(compression({
@@ -68,7 +77,7 @@ exports.init = function() {
     next();
   });
 
-  require('./passport-handler').init(app);
+  PassportHandler.init(app);
 
   app.get('/', function(req,res) {
     if (req.isAuthenticated()) {
@@ -77,15 +86,15 @@ exports.init = function() {
       res.redirect('/login');
     }
   });
-  app.use('/view', require('../routes/index'));
-  app.use('/service',require('../routes/services'));
+  app.use('/view', ViewRoute);
+  app.use('/service',ServiceRoute);
 
   ShareJSHandler.init(app, mongoStore);
 
   // catch 404 and forward to error handler
   app.use(function(req, res, next) {
     var err = new Error('Not Found');
-    err.status = 404;
+    res.status = 404;
     next(err);
   });
 
@@ -116,7 +125,7 @@ exports.init = function() {
   return app;
 };
 
-exports.launch = function() {
+export var launch = function() {
   if (process.platform === "win32"){
     var rl = readLine.createInterface ({
       input: process.stdin,

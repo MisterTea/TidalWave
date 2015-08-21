@@ -1,19 +1,23 @@
+/// <reference path='../typings/node/node.d.ts' />
+/// <reference path='../typings/mongodb/mongodb.d.ts' />
+/// <reference path='../typings/express/express.d.ts' />
+
 var _ = require('lodash');
 
-var model = require('../server/model');
+import model = require('./model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
 var Group = model.Group;
 var Image = model.Image;
-var log = require('./logger').log;
+import log = require('./logger');
 
 // Simple route middleware to ensure user is authenticated.
 //   Use this route middleware on any resource that needs to be protected.  If
 //   the request is authenticated (typically via a persistent login session),
 //   the request will proceed.  Otherwise, the user will be redirected to the
 //   login page.
-exports.ensureAuthenticated = function(req, res, next) {
+export var ensureAuthenticated = function(req, res, next) {
   if (req.isAuthenticated()) {
     next();
     return;
@@ -23,7 +27,7 @@ exports.ensureAuthenticated = function(req, res, next) {
   res.redirect('/login?redirect='+encodeURIComponent(totalUrl));
 };
 
-exports.queryPermissionWrapper = function(query, user) {
+export var queryPermissionWrapper = function(query, user) {
   if (user) {
     if (user.groups.length==0) {
       console.log("CHECKING PERMISSIONS");
@@ -48,7 +52,7 @@ exports.queryPermissionWrapper = function(query, user) {
   }
 };
 
-exports.userIdCanAccessPageId = function(userId, pageId, callback) {
+export var userIdCanAccessPageId = function(userId, pageId, callback) {
   User.findById(userId, function(err, user) {
     if (err) {
       callback(false);
@@ -75,7 +79,7 @@ exports.userIdCanAccessPageId = function(userId, pageId, callback) {
 };
 
 
-var userCanAccessPage = exports.userCanAccessPage = function(user,page,callback) {
+export var userCanAccessPage = function(user,page,callback) {
   if (page.isPublic) {
     callback(true);
     return;
@@ -119,7 +123,7 @@ var userCanAccessPage = exports.userCanAccessPage = function(user,page,callback)
   return;
 };
 
-var updateDerivedPermissions = exports.updateDerivedPermissions = function(page, callback) {
+export var updateDerivedPermissions = function(page, callback) {
   if (page.parentId) {
     Page.findOne(page.parentId, function(err, parentPage) {
       updateChildrenDerivedPermissions(parentPage, callback);
@@ -136,7 +140,7 @@ var updateDerivedPermissions = exports.updateDerivedPermissions = function(page,
   }
 };
 
-var updateChildrenDerivedPermissions = exports.updateChildrenDerivedPermissions = function(page,callback) {
+export var updateChildrenDerivedPermissions = function(page,callback) {
   // Store off the derived permission to propagate
   var baseUserPermissions = _.union(page.derivedUserPermissions,page.userPermissions);
   var baseGroupPermissions = _.union(page.derivedGroupPermissions,page.groupPermissions);

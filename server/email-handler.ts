@@ -1,8 +1,11 @@
-var options = require('./options-handler').options;
-var log = require('./logger').log;
+/// <reference path='../typings/node/node.d.ts' />
+
 var nodemailer = require('nodemailer');
 var directTransport = require('nodemailer-direct-transport');
 var smtpTransport = require('nodemailer-smtp-transport');
+
+import options = require('./options-handler');
+import log = require('./logger');
 
 var transporter;
 
@@ -12,7 +15,7 @@ if (options.email.transport == 'direct') {
   transporter = nodemailer.createTransport(smtpTransport(options.email.options));
 }
 
-exports.sendMail = function(to,subject,html) {
+export var sendMail = function(to,subject,html) {
   log.info({
     message:"Sending email",
     from:options.email.serverEmailAddress,

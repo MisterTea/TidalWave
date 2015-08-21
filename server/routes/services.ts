@@ -1,17 +1,23 @@
-var fs = require('fs');
+/// <reference path='../../typings/node/node.d.ts' />
 
+var fs = require('fs');
 var express = require('express');
-var Hierarchy = require('../server/hierarchy');
-var AuthHelper = require('../server/auth-helper');
-var LiveSync = require('../server/livesync');
 var toc = require('marked-toc');
 var _ = require('lodash');
-var options = require('../server/options-handler').options;
+var Chance = require('chance');
+var querystring = require('querystring');
 
-var SearchHandler = require('../server/search-handler');
-var log = require('../server/logger').log;
+var chance = new Chance();
 
-var model = require('../server/model');
+import Hierarchy = require('../hierarchy');
+import AuthHelper = require('../auth-helper');
+import LiveSync = require('../livesync');
+import options = require('../options-handler');
+
+import SearchHandler = require('../search-handler');
+import log = require('../logger');
+
+import model = require('../model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
@@ -26,11 +32,11 @@ var updateDerivedPermissions = AuthHelper.updateDerivedPermissions;
 
 var router = express.Router();
 
-RegExp.escape = function(s) {
+var RegExpEscape = function(s) {
     return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
 };
 
-var userPermissionFilter = function(user) {
+var userPermissionFilter = function(user): Object {
   if (user) {
     return {
       or: [
@@ -243,7 +249,7 @@ router.post(
     var query = req.param('query');
 
     queryPermissionWrapper(
-      Page.find({name:new RegExp("^"+RegExp.escape(query), "i")}), req.user)
+      Page.find({name:new RegExp("^"+RegExpEscape(query), "i")}), req.user)
       .limit(10)
       .exec(function(err, pages) {
         log.debug("Result for " + query + ": " + JSON.stringify(pages));
@@ -319,7 +325,7 @@ var fetchPageDetailsForPage = function(page, success, failure) {
 router.post(
   '/pageDetailsByFQN/*',
   function(req, res) {
-    var fqn = unescape(req.path.substring('/pageDetailsByFQN/'.length));
+    var fqn = querystring.unescape(req.path.substring('/pageDetailsByFQN/'.length));
     log.debug("Getting page details with name: " + fqn);
     queryPermissionWrapper(
       Page.findOne({fullyQualifiedName:fqn}), req.user)
@@ -482,7 +488,7 @@ router.post(
   function(req, res) {
     var fullName = req.param('fullName');
     User
-      .find({fullName:new RegExp("^"+RegExp.escape(fullName), "i")})
+      .find({fullName:new RegExp("^"+RegExpEscape(fullName), "i")})
       //.where('lastLoginTime').ne(null)
       .limit(5)
       .sort('fullName')
@@ -525,7 +531,7 @@ router.post(
   function(req, res) {
     var name = req.param('name');
     Group
-      .find({name:new RegExp("^"+RegExp.escape(name), "i")})
+      .find({name:new RegExp("^"+RegExpEscape(name), "i")})
       .limit(5)
       .sort('name')
       .exec(function(err, groups) {
@@ -588,7 +594,7 @@ router.post(
     } else {
       log.info("Searching with mongoose");
       queryPermissionWrapper(Page
-        .find({content:new RegExp(RegExp.escape(content), "i")}), req.user)
+        .find({content:new RegExp(RegExpEscape(content), "i")}), req.user)
         .limit(10)
         .sort('name')
         .exec(function(err, pages) {
@@ -611,8 +617,6 @@ router.post(
     console.log("RECENT CHANGES VISIBLE");
     res.status(200).type("application/json").send("\"asdf\"");
   });
-
-var chance = new require('chance')();
 
 router.post(
   '/saveImage',
@@ -864,7 +868,7 @@ router.post(
 router.post(
   '/hierarchyStartsWith',
   function(req, res) {
-    Hierarchy.fetch(req.user,{name: new RegExp("^"+RegExp.escape(req.param('query')), "i")}, function(result) {
+    Hierarchy.fetch(req.user,{name: new RegExp("^"+RegExpEscape(req.param('query')), "i")}, function(result) {
       res
         .type('application/json')
         .status(200)

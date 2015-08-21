@@ -2,24 +2,26 @@
 /// <reference path='../typings/mongodb/mongodb.d.ts' />
 /// <reference path='../typings/express/express.d.ts' />
 
-var fs = require('fs');
-var path = require('path');
-var https = require('https');
-var http = require('http');
-var AppHandler = require('./app-handler');
-var Sanitize = require('./sanitize');
+import fs = require('fs');
+import path = require('path');
+import https = require('https');
+import http = require('http');
+import AppHandler = require('./app-handler');
+import Sanitize = require('./sanitize');
 
-var options = require('./options-handler').options;
+import options = require('./options-handler');
 
-var model = require('./model');
-var Page = model.Page;
-var PageVersion = model.PageVersion;
+import model = require('./model');
+import Page = model.Page;
+import PageVersion = model.PageVersion;
 
-var hierarchy = require('./hierarchy');
+import hierarchy = require('./hierarchy');
 
-var log = require('./logger').log;
+import log = require('./logger');
 
-require('./mongoose-handler').init(function() {
+import MongooseHandler = require('./mongoose-handler');
+
+MongooseHandler.init(function() {
   log.debug("Connected to MongoDB database");
   var app = AppHandler.init();
   if (options.ssl) {

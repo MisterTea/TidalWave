@@ -1,12 +1,16 @@
-var log = require('./logger').log;
+/// <reference path='../typings/node/node.d.ts' />
+/// <reference path='../typings/mongodb/mongodb.d.ts' />
+/// <reference path='../typings/express/express.d.ts' />
 
-var model = require('./model');
+import log = require('./logger');
+
+import model = require('./model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
 var UserPassword = model.UserPassword;
 
-exports.login = function(username,password,successCallback,errorCallback) {
+export var login = function(username,password,successCallback,errorCallback) {
   User.findOne({username:username}, function(err, user) {
     if (err) {
       log.error({error:err});

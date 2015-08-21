@@ -1,23 +1,25 @@
-var _ = require('lodash');
-var EmailHandler = require('./email-handler');
-var options = require('./options-handler').options;
-var log = require('./logger').log;
-var async = require('async');
+/// <reference path='../typings/node/node.d.ts' />
 
-var model = require('./model');
+var _ = require('lodash');
+var async = require('async');
+var debug = require('debug')('Sync')
+var util = require('livedb/lib/util');
+
+import EmailHandler = require('./email-handler');
+import options = require('./options-handler');
+import log = require('./logger');
+
+import model = require('./model');
 var Page = model.Page;
 var PageVersion = model.PageVersion;
 var User = model.User;
-
-var debug = require('debug')('Sync');
-var util = require('../node_modules/livedb/lib/util');
 
 var lastVersionDumped = {};
 var backend = null;
 
 var cName = 'sharejsdocuments';
 
-exports.init = function(backend_) {
+export var init = function(backend_) {
   backend = backend_;
 };
 
@@ -94,7 +96,7 @@ var dumpPageVersion = function(result, callback) {
   });
 };
 
-exports.fetch = function(docName, callback) {
+export var fetch = function(docName, callback) {
   backend.fetch(cName, docName, function(error, result) {
     if (error) {
       log.error(error);
@@ -105,7 +107,7 @@ exports.fetch = function(docName, callback) {
   });
 };
 
-exports.createDocument = function(docName, content, callback) {
+export var createDocument = function(docName, content, callback) {
   backend.submit(cName, docName, {create:{type:'text', data:null}}, function(err, version, transformedByOps, snapshot) {
     if (err) {
       callback(err);
@@ -121,7 +123,7 @@ exports.createDocument = function(docName, content, callback) {
   });
 };
 
-exports.sync = function(docName, callback) {
+export var sync = function(docName, callback) {
   if (!docName) {
     return;
   }
