@@ -2,6 +2,8 @@ var ErrorLogging = require('./errorlogging');
 var ace = require('brace');
 require('brace/mode/markdown');
 
+var work = require('webworkify');
+
 var $ = require('jquery');
 var app = require('./app').app;
 var preprocessDiff = require('./app').preprocessDiff;
@@ -350,9 +352,12 @@ var enableEditMode = function(pageStateService, $timeout) {
           if (nextDocumentChangeTime <= Date.now()) {
             var documentText = editor.getSession().getDocument().getValue();
             if (documentText != 'Loading...') {
-              $("#content-markdown").empty();
-              var markdownText = marked(editor.getSession().getDocument().getValue());
-              $("#content-markdown").append($.parseHTML(markdownText));
+              var w = work(require('./marked_worker.js'));
+              w.addEventListener('message', function (ev) {
+                $("#content-markdown").empty();
+                $("#content-markdown").append($.parseHTML(ev.data));
+              });
+              w.postMessage(editor.getSession().getDocument().getValue());
             }
           }
         }, 1000);

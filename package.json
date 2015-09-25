@@ -88,6 +88,7 @@
     "uglify-js": "^2.4.16",
     "ui-select": "^0.11.2",
     "valid-filename": "^1.1.0",
-    "validator": "^3.43.0"
+    "validator": "^3.43.0",
+    "webworkify": "^1.0.2"
   }
 }
