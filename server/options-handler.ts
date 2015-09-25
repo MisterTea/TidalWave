@@ -15,3 +15,13 @@ if (options.ssl) {
 } else {
   options.port = process.env.PORT || options.port || 3000;
 }
+
+if(options.login.auth.indexOf('facebook') > -1 &&
+   options.login.facebook.clientID == 'INSERT_FACEBOOK_CLIENTID_HERE') {
+  options.login.auth.splice(options.login.auth.indexOf('facebook'), 1);
+}
+
+if(options.login.auth.indexOf('google') > -1 &&
+   options.login.google.clientID == 'INSERT_GOOGLE_CLIENTID_HERE') {
+  options.login.auth.splice(options.login.auth.indexOf('google'), 1);
+}
