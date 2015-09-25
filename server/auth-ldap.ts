@@ -1,9 +1,16 @@
-var ldap = require('ldapjs');
-var assert = require('assert');
-var options = require('./options-handler').options;
-var log = require('./logger').log;
+/// <reference path='../typings/node/node.d.ts' />
+/// <reference path='../typings/mongodb/mongodb.d.ts' />
+/// <reference path='../typings/express/express.d.ts' />
 
-exports.login = function(uid,password,successCallback,errorCallback) {
+import log = require('./logger');
+import options = require('./options-handler');
+
+import model = require('./model');
+
+var ldap = require('ldapjs-hotfix');
+var assert = require('assert');
+
+export var login = function(uid,password,successCallback,errorCallback) {
   var client = ldap.createClient({
     url: options.login.ldap.server
   });

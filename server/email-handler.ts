@@ -29,9 +29,9 @@ export var sendMail = function(to,subject,html) {
     html: html
   }, function(error, info) {
     if(error){
-        log.error({message:"Mail error",error:error});
+      log.error({message:"Mail error",error:error});
     }else{
-        log.info({message:'Mail sent',info:info});
+      log.info({message:'Mail sent',info:info});
     }
   });
 };

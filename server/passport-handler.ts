@@ -18,6 +18,9 @@ var PageVersion = model.PageVersion;
 var User = model.User;
 var UserPassword = model.UserPassword;
 
+import PlainAuth = require('./auth-plain');
+import LdapAuth = require('./auth-ldap');
+
 export var init = function(app) {
 
   // Passport session setup.
@@ -37,11 +40,13 @@ export var init = function(app) {
     });
   });
 
-  if(options.login.auth.indexOf('facebook') > -1) {
+  if(options.login.auth.indexOf('facebook') > -1 &&
+    options.login.facebook.clientID != 'INSERT_FACEBOOK_CLIENTID_HERE') {
     enableFacebookStrategy(passport);
   }
 
-  if(options.login.auth.indexOf('google') > -1) {
+  if(options.login.auth.indexOf('google') > -1 &&
+    options.login.google.clientID != 'INSERT_GOOGLE_CLIENTID_HERE') {
     enableGoogleStrategy(passport);
   }
 
@@ -310,9 +315,9 @@ var enableLocalStrategy = function(passport) {
         log.warn({message:"Unknown user", username:username});
         return done(null, false, { message: 'Unknown user ' + username });
       }
-      var auth = require('./auth-plain');
+      var auth = PlainAuth;
       if (options.login.auth.indexOf('ldap') > -1) {
-        auth = require('./auth-ldap');
+        auth = LdapAuth;
       }
       auth.login(username,password,function() {
         user.lastLoginTime = Date.now();
