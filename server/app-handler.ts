@@ -93,9 +93,8 @@ export var init = function() {
 
   // catch 404 and forward to error handler
   app.use(function(req, res, next) {
-    var err = new Error('Not Found');
     res.status(404);
-    next(err);
+    res.send("404 - "+req.path+" Not Found");
   });
 
   // error handlers

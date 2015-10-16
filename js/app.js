@@ -1,19 +1,12 @@
-declare var require:any;
-declare var exports:any;
-
-interface Window {
-  $: any;
-}
-
 var $ = window.$ = require('jquery');
 var angular = require('angular');
 require('./thirdparty/angular-bootstrap-nav-tree/dist/abn_tree_directive');
 require('angular-error-shipper');
 require('angular-ui-bootstrap');
 require('angular-route');
-require('ui-select');
+require('./thirdparty/ui-select');
 
-var testEditor = function(testString:string) {
+var testEditor = function(testString) {
   setTimeout(function() {
     var editor = require('./content').editor;
     console.log("BEGIN INJECT\n");
@@ -32,7 +25,7 @@ var testEditor = function(testString:string) {
   }, 10);
 };
 
-exports.preprocessDiff = function(allDiffs:any) {
+exports.preprocessDiff = function(allDiffs) {
   var sourceLines = [{lineNumber:0,text:'',style:'equal'}];
   var destLines = [{lineNumber:0,text:'',style:'equal'}];
 
@@ -70,8 +63,8 @@ exports.preprocessDiff = function(allDiffs:any) {
           style:'equal'});
       }
     } else {
-      var bufferWithAdds:Array<any> = null;
-      var otherBuffer:Array<any> = null;
+      var bufferWithAdds = null;
+      var otherBuffer = null;
 
       if (diff[0]==-1) {
         bufferWithAdds = sourceLines;
@@ -142,11 +135,11 @@ exports.preprocessDiff = function(allDiffs:any) {
 
 // Setting fqn==null will load the curent page
 exports.changePage = function(
-  retryHttp:any,
-  $location:any,
-  fqn:string,
-  pageStateService:any,
-  callback:(err:any) => void) {
+  retryHttp,
+  $location,
+  fqn,
+  pageStateService,
+  callback) {
   if (fqn) {
     fqn = '/'+fqn;
     if (fqn == $location.path()) {
@@ -164,7 +157,7 @@ exports.changePage = function(
   retryHttp.post(
     '/service/pageDetailsByFQN'+fqn,
     null,
-    function(data:any, status:number, headers:any, config:any) {
+    function(data, status, headers, config) {
       pageStateService.set('pageDetails',data);
       $location.hash('');
       $location.path(fqn);
@@ -172,7 +165,7 @@ exports.changePage = function(
         callback(null);
       }
     },
-    function(data:any, status:number, headers:any, config:any) {
+    function(data, status, headers, config) {
       if (status == 404) {
         console.log("Unknown page");
         window.location.href = '/view';

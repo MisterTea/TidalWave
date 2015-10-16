@@ -7,7 +7,7 @@
     "UpdateLDAP": "node tools/UpdateLDAP.js --optionsFile=options_example.json | ./node_modules/.bin/bunyan",
     "postinstall": "npm run bower ; npm run browserify ; npm run tsd ; npm run buildServer",
     "bower": "pushd public; ../node_modules/.bin/bower install ; popd",
-    "browserify": "./node_modules/.bin/browserify js/app.ts --debug -p [ tsify --module commonjs --noImplicitAny ] > public/bundle.js",
+    "browserify": "./node_modules/.bin/browserify js/app.js --debug > public/bundle.js",
     "buildServer": "./node_modules/.bin/tsc --sourcemap --module commonjs --outDir build server/server.ts",
     "tsd": "./node_modules/.bin/tsd install"
   },
@@ -25,7 +25,7 @@
     "bower": "^1.4.1",
     "brace": "^0.5.1",
     "browserchannel": "^2.0.0",
-    "browserify": "^11.0.1",
+    "browserify": "^11.2.0",
     "bunyan": "^1.4.0",
     "chance": "^0.6.1",
     "clean-css": "^3.0.7",
@@ -86,7 +86,6 @@
     "tsify": "^0.11.10",
     "typescript": "^1.5.3",
     "uglify-js": "^2.4.16",
-    "ui-select": "^0.11.2",
     "valid-filename": "^1.1.0",
     "validator": "^3.43.0",
     "webworkify": "^1.0.2"

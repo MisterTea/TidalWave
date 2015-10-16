@@ -64,8 +64,8 @@ var fetchUsers = function(successCallback,errorCallback) {
       res.on('end', function(result) {
         console.error('status: ' + result.status);
         if (result.status==0) {
-          successCallback(users);
           client.unbind(function(err) {
+            successCallback(users);
           });
         } else {
           errorCallback(true);
@@ -134,8 +134,8 @@ var fetchGroups = function(successCallback,errorCallback) {
       res.on('end', function(result) {
         console.error('status: ' + result.status);
         if (result.status==0) {
-          successCallback(groupNames,userGroupMap);
           client.unbind(function(err) {
+            successCallback(groupNames,userGroupMap);
           });
         } else {
           errorCallback(true);
@@ -180,15 +180,13 @@ var getUsersAndGroups = function(success,failure) {
   fetchUsers(
     function(users) {
       userGroupCollection['users'] = users;
+      fetchGroups(
+        function(groupList,userGroupMap) {
+          userGroupCollection['groupList'] = groupList;
+          userGroupCollection['userGroupMap'] = userGroupMap;
+          handoffUsersAndGroups(userGroupCollection, success);
+        });
     });
-
-  fetchGroups(
-    function(groupList,userGroupMap) {
-      userGroupCollection['groupList'] = groupList;
-      userGroupCollection['userGroupMap'] = userGroupMap;
-    });
-
-  handoffUsersAndGroups(userGroupCollection, success);
 };
 
 mongooseHandler.init(function callback () {
