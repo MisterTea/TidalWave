@@ -43,7 +43,7 @@
     "express-session": "^1.9.1",
     "filedrop": "^2.0.0",
     "hat": "0.0.3",
-    "heapdump": "^0.2.10",
+    "heapdump": "^0.3.7",
     "highlightjs": "^8.7.0",
     "hopscotch": "^0.2.5",
     "imagesloaded": "^3.1.8",
