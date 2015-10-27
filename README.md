@@ -6,7 +6,7 @@ documentation on their projects.  [Click to see a demo wiki.](http://tidalwave-d
 
 - Collaborative, real-time editing of pages encourages people to work together and keep documentation up-to-date.
 - Markdown allows for more rich, expressive content.
- 
+
 # How to use
 
 - Creating a page
@@ -33,6 +33,28 @@ documentation on their projects.  [Click to see a demo wiki.](http://tidalwave-d
         return 0;
     }
 ```
+
+# How to run a server
+
+## Dependencies
+
+The only dependency that isn't automatically installed is MongoDb:
+
+### Installing MongoDB
+
+OS/X ```brew install mongo```
+
+Linux ```sudo apt-get install mongo```
+
+Windows ```(no idea)```
+
+```
+git clone git@github.com:MisterTea/TidalWave.git TidalWave
+cd TidalWave
+npm start
+```
+
+Then visit http://localhost:3000/ and you should see your own TidalWave server.
 
 # Contact
 
