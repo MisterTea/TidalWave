@@ -54,7 +54,7 @@ cd TidalWave
 npm start
 ```
 
-Then visit http://localhost:3000/ and you should see your own TidalWave server.
+Then visit [http://localhost:3000/](http://localhost:3000/) and you should see your own TidalWave server.
 
 # Contact
 
