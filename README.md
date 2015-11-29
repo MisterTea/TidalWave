@@ -44,7 +44,7 @@ The only dependency that isn't automatically installed is MongoDb:
 
 OS/X ```brew install mongo```
 
-Linux ```sudo apt-get install mongo```
+Linux ```sudo apt-get install mongodb-server```
 
 Windows ```(no idea)```
 
