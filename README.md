@@ -49,7 +49,7 @@ Linux ```sudo apt-get install mongodb-server```
 Windows ```(no idea)```
 
 ```
-git clone git@github.com:MisterTea/TidalWave.git TidalWave
+git clone https://github.com/MisterTea/TidalWave.git
 cd TidalWave
 npm start
 ```
