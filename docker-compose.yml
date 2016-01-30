@@ -1,0 +1,9 @@
+tidalwave:
+  build: .
+  ports:
+    - 80:3000
+  domainname: klouds.org
+  hostname: tidalwave
+  links: mongo:mongo
+mongo:
+  image: mongo
