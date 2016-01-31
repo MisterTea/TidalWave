@@ -2,6 +2,7 @@ tidalwave:
   build: .
   ports:
     - 80:3000
+#####Change the following two lines to refelect your environment.  The two lines as seen below will host this container @ tidalwave.klouds.org  
   domainname: klouds.org
   hostname: tidalwave
   links: 
