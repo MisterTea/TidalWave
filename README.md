@@ -38,18 +38,18 @@ documentation on their projects.  [Click to see a demo wiki.](http://tidalwave-d
 
 ## Dependencies
 
-The only dependency that isn't automatically installed is MongoDb:
+The dependencies that aren't automatically installed are npm and MongoDb:
 
 ### Installing MongoDB
 
-OS/X ```brew install mongo```
+OS/X ```brew install mongo && brew install npm```
 
-Linux ```sudo apt-get install mongodb-server```
+Linux ```sudo apt-get install mongodb-server npm```
 
 Windows ```(no idea)```
 
 ```
-git clone git@github.com:MisterTea/TidalWave.git TidalWave
+git clone https://github.com/MisterTea/TidalWave.git
 cd TidalWave
 npm start
 ```
