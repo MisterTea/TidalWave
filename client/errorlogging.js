@@ -5,7 +5,7 @@ var logError = exports.logError = function(details) {
   console.dir(details);
   $.ajax({
     type: 'POST',
-    url: '/service/angularerror',
+    url: 'service/angularerror',
     data: JSON.stringify(details),
     contentType: 'application/json; charset=utf-8',
     complete:function(jqXHR, textStatus) {

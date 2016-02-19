@@ -11,6 +11,7 @@ var User = model.User;
 var Group = model.Group;
 var Image = model.Image;
 import log = require('./logger');
+import options = require('./options-handler');
 
 // Simple route middleware to ensure user is authenticated.
 //   Use this route middleware on any resource that needs to be protected.  If
@@ -24,7 +25,7 @@ export var ensureAuthenticated = function(req, res, next) {
   }
   var totalUrl = req.originalUrl;
   log.warn({invalidAuthentication:true,user:req.user,url:totalUrl});
-  res.redirect('/login?redirect='+encodeURIComponent(totalUrl));
+  res.redirect(options.baseUrl + '/login?redirect='+encodeURIComponent(totalUrl));
 };
 
 export var queryPermissionWrapper = function(query, user) {

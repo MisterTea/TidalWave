@@ -35,22 +35,22 @@ exports.setupFiledrop = function(retryHttp, pageStateService) {
         var data = e.target.result.split(',')[1];
         if(file.type.match(/image.*/)){
           retryHttp.post(
-            '/service/saveImage',
+            'service/saveImage',
             {mime:mime,base64:data,pageId:pageDetails.page._id,name:file.name},
             function(filename, status, headers, config) {
               //console.log("INJECTING IMAGE");
               var editor = require('./content').editor;
-              editor.insert("<img src=\"/service/getImage/"+filename+"\"></img>");
+              editor.insert("<img src=\"service/getImage/"+filename+"\"></img>");
             });
         } else {
           // Regular attachment
           retryHttp.post(
-            '/service/saveFile',
+            'service/saveFile',
             {mime:mime,base64:data,pageId:pageDetails.page._id,name:file.name},
             function(filename, status, headers, config) {
               //console.log("INJECTING FILE");
               var editor = require('./content').editor;
-              editor.insert("<a href=\"/service/getFile/"+filename+"\" target=\"_blank\">Download "+file.name+"</a>");
+              editor.insert("<a href=\"service/getFile/"+filename+"\" target=\"_blank\">Download "+file.name+"</a>");
             });
         }
       };

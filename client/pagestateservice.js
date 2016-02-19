@@ -24,7 +24,7 @@ app.service('pageStateService', ['$rootScope', 'retryHttp', function($rootScope,
       if (key == 'user') {
         // Push the new user
         retryHttp.post(
-          '/service/updateMe',
+          'service/updateMe',
           state[key],
           function(data, status, headers, config) {
             //TODO: Say success

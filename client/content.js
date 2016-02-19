@@ -6,6 +6,7 @@ var work = require('webworkify');
 
 var $ = require('jquery');
 var app = require('./app').app;
+var baseUrl = require('./app').baseUrl;
 var preprocessDiff = require('./app').preprocessDiff;
 
 require('selectize');
@@ -187,8 +188,8 @@ $(window).resize(resizeAce);
 var nextDocumentChangeTime = 0;
 
 var lang = "en_US";
-var dicPath = "/dictionaries/en_US/en_US.dic";
-var affPath = "/dictionaries/en_US/en_US.aff";
+var dicPath = "dictionaries/en_US/en_US.dic";
+var affPath = "dictionaries/en_US/en_US.aff";
 
 // Make red underline for gutter and words.
 $("<style type='text/css'>.ace_marker-layer .misspelled { position: absolute; z-index: -2; border-bottom: 1px solid red; margin-bottom: -1px; }</style>").appendTo("head");
@@ -297,7 +298,7 @@ var enableEditMode = function(pageStateService, $timeout) {
     setInterval(spell_check, 500);
   });
 
-  socket = new BCSocket(null, {reconnect: true});
+  socket = new BCSocket(baseUrl + '/channel', {reconnect: true});
   connection = new sharejs.Connection(socket);
   //connection.debug = true;
   /*
@@ -388,7 +389,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
   }
 
   retryHttp.post(
-    '/service/recentChangesVisible',
+    'service/recentChangesVisible',
     null,
     function(data, status, headers, config) {
       // TODO: Implement this url
@@ -398,7 +399,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
 
   // Start by fetching the current user
   retryHttp.post(
-    '/service/me',
+    'service/me',
     null,
     function(data, status, headers, config) {
       if (data) {
@@ -436,7 +437,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
         return;
       }
       $.ajax({
-        url: '/service/pageStartsWith/' + encodeURIComponent(query),
+        url: 'service/pageStartsWith/' + encodeURIComponent(query),
         type: 'POST',
         error: function() {
           callback();
@@ -468,7 +469,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
         return;
       }
       $.ajax({
-        url: '/service/findUserFullName/' + encodeURIComponent(query),
+        url: 'service/findUserFullName/' + encodeURIComponent(query),
         type: 'POST',
         error: function() {
           callback();
@@ -495,7 +496,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
         return;
       }
       $.ajax({
-        url: '/service/findGroupName/' + encodeURIComponent(query),
+        url: 'service/findGroupName/' + encodeURIComponent(query),
         type: 'POST',
         error: function() {
           callback();
@@ -511,7 +512,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
   $scope.restorePageVersion = function(version) {
     var pageDetails = pageStateService.get('pageDetails');
     retryHttp.post(
-      '/service/restorePageVersion',
+      'service/restorePageVersion',
       {
         _id:pageDetails.page._id,
         version:version
@@ -575,7 +576,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
 
     console.log(pageCopy);
     retryHttp.post(
-      '/service/updatePage',
+      'service/updatePage',
       pageCopy,
       function(data, status, headers, config) {
         console.log("UPDATE PAGE RETURN VALUE");
@@ -585,7 +586,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
           //changePage(retryHttp,$location,data.page.fullyQualifiedName,pageStateService,null);
 
           // When this happens, do a complete refresh of the page
-          window.location = '/view#/'+encodeURI(data.page.fullyQualifiedName);
+          window.location = window.location.href + '#/'+encodeURI(data.page.fullyQualifiedName);
           window.location.reload(true);
         } else {
           // Update page details
@@ -746,7 +747,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
       console.log(key);
       if (pageDetails.viewable) {
         retryHttp.post(
-          '/service/getTOC/'+pageDetails.page._id,
+          'service/getTOC/'+pageDetails.page._id,
           null,
           function(data, status, headers, config) {
             $("#content-markdown").empty();
@@ -768,7 +769,7 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
           $("#content-markdown").append(marked("Sorry, you do not have access to this page."));
         } else {
           $("#content-markdown").empty();
-          $("#content-markdown").append(marked("Sorry, you do not have access to this page.\n\nMaybe you need to [login](/login?redirect=/view#/"+pageDetails.page.fullyQualifiedName+")?"));
+          $("#content-markdown").append(marked("Sorry, you do not have access to this page.\n\nMaybe you need to [login](./login?redirect="+window.location.pathname+"#/"+pageDetails.page.fullyQualifiedName+")?"));
         }
       }
     }
@@ -778,12 +779,12 @@ app.controller('PageContentController', ['$scope', 'retryHttp', '$timeout', '$sc
     // Leave edit mode
     console.log("LEAVING EDIT MODE");
     retryHttp.post(
-      '/service/savePageDynamicContent/'+$scope.page._id,
+      'service/savePageDynamicContent/'+$scope.page._id,
       null,
       function(data, status, headers, config) {
         console.log("SAVED PAGE");
         retryHttp.post(
-          '/service/pageDetailsByFQN'+$location.path(),
+          'service/pageDetailsByFQN'+$location.path(),
           null,
           function(data, status, headers, config) {
             console.log("GOT PAGE DETAILS FROM HTTP");

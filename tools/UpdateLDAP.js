@@ -5,13 +5,13 @@ var async = require('async');
 
 var mongoose = require('mongoose');
 
-var model = require('../server/model');
+var model = require('../build/server/model');
 var User = model.User;
 var Group = model.Group;
 
-var options = require('../server/options-handler').options;
+var options = require('../build/server/options-handler');
 
-var mongooseHandler = require('../server/mongoose-handler');
+var mongooseHandler = require('../build/server/mongoose-handler');
 
 var extractor = require('./LDAPExtractor');
 

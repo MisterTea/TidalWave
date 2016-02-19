@@ -6,6 +6,8 @@ require('angular-ui-bootstrap');
 require('angular-route');
 require('./thirdparty/ui-select');
 
+var baseUrl = exports.baseUrl = window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/"));
+
 var testEditor = function(testString) {
   setTimeout(function() {
     var editor = require('./content').editor;
@@ -155,7 +157,7 @@ exports.changePage = function(
   //window.location = '/view/'+fqn;
   console.log("FQN: " + fqn);
   retryHttp.post(
-    '/service/pageDetailsByFQN'+fqn,
+    'service/pageDetailsByFQN'+fqn,
     null,
     function(data, status, headers, config) {
       pageStateService.set('pageDetails',data);
@@ -168,7 +170,9 @@ exports.changePage = function(
     function(data, status, headers, config) {
       if (status == 404) {
         console.log("Unknown page");
-        window.location.href = '/view';
+        window.location.pathname = baseUrl + '/view';
+        window.location.reload(true);
+        return;
       }
       $location.hash('');
       $location.path(fqn);

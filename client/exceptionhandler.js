@@ -24,7 +24,7 @@ app.factory('$exceptionHandler', function($log) {
 
       $.ajax({
         type: 'POST',
-        url: "/service/angularerror",
+        url: "service/angularerror",
         data:JSON.stringify(output),
         contentType: "application/json; charset=utf-8",
         success:function(data, textStatus, jqXHR) {

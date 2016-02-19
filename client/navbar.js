@@ -45,7 +45,7 @@ app.controller('NavbarController', ['$scope', '$rootScope', 'retryHttp', '$modal
     } else {
       console.log("Fetching history");
       retryHttp.post(
-        '/service/pageHistory/'+pageStateService.get('pageDetails').page._id,
+        'service/pageHistory/'+pageStateService.get('pageDetails').page._id,
         null,
         function(data, status, headers, config) {
           console.log("GOT HISTORY");
@@ -115,10 +115,10 @@ app.controller('NavbarController', ['$scope', '$rootScope', 'retryHttp', '$modal
 
     modalInstance.result.then(function () {
       retryHttp.post(
-        '/service/deletePage/'+pageDetails.page._id,
+        'service/deletePage/'+pageDetails.page._id,
         null,
         function(data, status, headers, config) {
-          window.location='/view/';
+          window.location='view/';
         });
     }, function () {
       console.log('Modal dismissed at: ' + new Date());

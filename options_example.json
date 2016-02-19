@@ -15,6 +15,7 @@
   },
   "serverName":"Tidal Wave",
   "hostname":"tidalwave.com",
+  "baseUrl":"/",
   "port":null,
   "email" : {
     "serverEmailAddress":"tidalwave-mailer@tidalwave.com",

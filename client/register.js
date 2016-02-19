@@ -1,4 +1,5 @@
 var app = require('./app').app;
+var baseUrl = app.baseUrl;
 var validator = require('validator');
 require('./pagestateservice');
 
@@ -31,7 +32,7 @@ app.directive('registeremail', function($q, $http) {
 
         var def = $q.defer();
 
-        $http.post('/service/getUserByEmail/'+modelValue)
+        $http.post('service/getUserByEmail/'+modelValue)
           .success(function(data, status, headers, config) {
             if (data) {
               def.reject();
@@ -75,9 +76,10 @@ app.controller('RegisterController', ['$scope', '$http', '$timeout', 'pageStateS
   };
 
   $scope.register = function() {
-    $http.post('/register', $scope.user)
+    $http.post('register', $scope.user)
       .success(function(data, status, headers, config) {
-        window.location.href = "/view?tour=yes#/Welcome";
+        window.location.pathname = baseUrl + "/view?tour=yes#/Welcome";
+        window.location.reload(true);
       })
       .error(function(data, status, headers, config) {
       });

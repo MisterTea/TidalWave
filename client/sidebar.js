@@ -35,7 +35,7 @@ app.controller('SideBarController', ['$scope', '$location', '$timeout', '$rootSc
         }
         $log.debug("Creating page");
         retryHttp.post(
-          '/service/createPage',
+          'service/createPage',
           {name:$scope.query, parentId:newParentId},
           function(data, status, headers, config) {
             $log.debug("Created page");
@@ -90,7 +90,7 @@ app.controller('SideBarController', ['$scope', '$location', '$timeout', '$rootSc
       }
       if (query) {
         retryHttp.post(
-          '/service/findPageContent/'+query,
+          'service/findPageContent/'+query,
           null,
           function(data, status, headers, config) {
             pageStateService.set('searchContentResults',data);
@@ -99,7 +99,7 @@ app.controller('SideBarController', ['$scope', '$location', '$timeout', '$rootSc
           });
 
         retryHttp.post(
-          '/service/pageStartsWith/'+query,
+          'service/pageStartsWith/'+query,
           null,
           function(data, status, headers, config) {
             var nextData = [];
@@ -138,7 +138,7 @@ app.controller('SideBarController', ['$scope', '$location', '$timeout', '$rootSc
         }
         $log.debug("UPDATING HIERARCHY");
         retryHttp.post(
-          '/service/hierarchy',
+          'service/hierarchy',
           null,
           function(data, status, headers, config) {
             var nextData = [];

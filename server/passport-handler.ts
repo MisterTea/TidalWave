@@ -78,11 +78,11 @@ export var init = function(app) {
   app.post('/login', function(req, res, next) {
     var redirect = decodeURIComponent(req.param('redirect'));
     if (!redirect) {
-      redirect = "/view";
+      redirect = options.baseUrl + "/view";
     }
 
     if ('register' in req.body) {
-      res.redirect('/register');
+      res.redirect(options.baseUrl + '/register');
       return;
     }
 
@@ -93,7 +93,7 @@ export var init = function(app) {
       }
       if (!user) {
         req.session.messages = [info.message];
-        res.redirect('/login');
+        res.redirect(options.baseUrl + '/login');
         return;
       }
       req.logIn(user, function(err) {
@@ -109,7 +109,7 @@ export var init = function(app) {
   app.get('/logout', function(req, res){
     req.logOut();
     req.session.destroy(function(err) {
-      res.redirect('/');
+      res.redirect(options.baseUrl + '/');
     });
   });
   app.get('/register', function(req, res){
@@ -197,7 +197,7 @@ export var init = function(app) {
   app.get('/auth/facebook/callback',
           passport.authenticate('facebook', { failureRedirect: '/login' }),
           function(req, res) {
-            var redirect = '/view';
+            var redirect = options.baseUrl + '/view';
             if (req.param('redirect')) {
               redirect = decodeURIComponent(req.param('redirect'));
             }
@@ -217,7 +217,7 @@ export var init = function(app) {
   app.get('/auth/google/callback',
           passport.authenticate('google', { failureRedirect: '/login' }),
           function(req, res) {
-            var redirect = '/view';
+            var redirect = options.baseUrl + '/view';
             if (req.param('redirect')) {
               redirect = decodeURIComponent(req.param('redirect'));
             }

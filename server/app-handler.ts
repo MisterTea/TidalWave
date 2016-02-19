@@ -43,7 +43,7 @@ export var init = function() {
   }));
 
   // view engine setup
-  app.set('views', path.join(__dirname, '../views'));
+  app.set('views', path.join(__dirname, '../../views'));
   app.set('view engine', 'ejs');
 
   // uncomment after placing your favicon in /public
@@ -54,7 +54,7 @@ export var init = function() {
   app.use(bodyParser.json({limit: '128mb'}));
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
-  app.use(express.static(path.join(__dirname, '../public'), {maxAge: 0}));
+  app.use(express.static(path.join(__dirname, '../../public'), {maxAge: 0}));
   var mongoStore = new MongoStore({
       mongooseConnection: mongoose.connection,
       clear_interval: 3600
@@ -81,9 +81,9 @@ export var init = function() {
 
   app.get('/', function(req,res) {
     if (req.isAuthenticated()) {
-      res.redirect('/view');
+      res.redirect(options.baseUrl + '/view');
     } else {
-      res.redirect('/login');
+      res.redirect(options.baseUrl + '/login');
     }
   });
   app.use('/view', ViewRoute);
