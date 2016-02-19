@@ -9,8 +9,9 @@ var logError = exports.logError = function(details) {
     data: JSON.stringify(details),
     contentType: 'application/json; charset=utf-8',
     complete:function(jqXHR, textStatus) {
-      //alert("Sorry, there was a fatal error. Redirecting to the home page.");
-      //window.location.href = "/";
+      alert("Sorry, there was a fatal error. Redirecting to the home page.");
+      var baseUrl = window.location.pathname.substring(0, window.location.pathname.lastIndexOf("/"));
+      window.location.href = baseUrl + '/view';
     }
   });
 };
