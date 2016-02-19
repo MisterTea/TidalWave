@@ -7,7 +7,7 @@ import options = require('./options-handler');
 
 import model = require('./model');
 
-var ldap = require('ldapjs-hotfix');
+var ldap = require('ldapjs');
 var assert = require('assert');
 
 export var login = function(uid,password,successCallback,errorCallback) {
