@@ -63,7 +63,7 @@ var launchServer = function() {
   Page.count({}, function(err, c) {
     if (c==0) {
       log.warn("No pages found.  Creating welcome page");
-      var welcomePage = fs.readFileSync(path.resolve(__dirname,'../../README.md'), "utf8");
+      var welcomePage = fs.readFileSync(path.resolve(__dirname,'../README.md'), "utf8");
       new Page({
         name:'Welcome',
         fullyQualifiedName:'Welcome',

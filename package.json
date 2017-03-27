@@ -3,12 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node build/server/server.js --optionsFile=options.json | ./node_modules/.bin/bunyan",
+    "start": "node build/server.js --optionsFile=options.json | ./node_modules/.bin/bunyan",
     "UpdateLDAP": "node tools/UpdateLDAP.js --optionsFile=options.json | ./node_modules/.bin/bunyan",
     "postinstall": "npm run bower ; npm run buildClient ; npm run tsd ; npm run buildServer",
     "bower": "cd public; ../node_modules/.bin/bower install ; cd ..",
     "buildClient": "./node_modules/.bin/browserify client/app.js --debug > public/bundle.js",
-    "buildServer": "./node_modules/.bin/tsc --sourcemap --module commonjs --outDir build server/server.ts tools/*.ts",
+    "buildServer": "./node_modules/.bin/tsc --sourcemap --module commonjs --outDir build server/server.ts",
     "tsd": "./node_modules/.bin/tsd install"
   },
   "dependencies": {

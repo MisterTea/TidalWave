@@ -1,0 +1,32 @@
+{
+  "logging":{
+    "level":"debug",
+    "file":"./outputlog.json"
+  },
+  "database":{
+    "debug":true,
+    "uri":"mongodb://localhost/tidalwave",
+    "saveMediaToDb":false
+  },
+  "elasticsearch":{
+    "enable":false,
+    "host":"localhost:9200",
+    "loglevel":"warning"
+  },
+  "serverName":"Tidal Wave",
+  "hostname":"localhost",
+  "baseUrl":"/",
+  "port":null,
+  "email" : {
+    "serverEmailAddress":"tidalwave-mailer@tidalwave.com",
+    "transport":"direct",
+    "options": null
+  },
+  "login": {
+    "auth": [
+      "plain"
+    ]
+  },
+  "ssl":false,
+  "sessionSecret":"t1d4lw4ve"
+}
